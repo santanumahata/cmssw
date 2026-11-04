@@ -891,3 +891,88 @@ gh api -H "Accept: application/vnd.github.text-match+json" -X GET search/code \
 - WMass/WMassNanoProduction (v15 production notes): https://github.com/WMass/WMassNanoProduction
 - Purdue AF private MC guide (MiniAODv4/NanoAODv12 with CMSSW_13_0_13): https://analysis-facility.physics.purdue.edu/en/latest/guide-mc-gen.html
 - santanumahata/2023_lowmass_analysis (2022 skim notes: 22Sep2023 = 13_0_13, 16Dec2023 = 13_3_1_patch1, 19Dec2023 = 13_0_17)
+
+---
+
+## 13. Third pass (4 November 2026, evening): is it still there, and how widespread is it?
+
+### 13.1 Latest upstream state (verified live)
+
+- `git ls-remote` on `cms-sw/cmssw`: `master` = `ed35654b1` (no newer commit than this morning's),
+  `CMSSW_16_1_X` = `8aacfa5da`, `CMSSW_16_0_X` = `de8bdeed9`, `CMSSW_15_1_X` = `e9272496`,
+  `CMSSW_15_0_X` = `6db81eb6d`; newest tags `CMSSW_16_1_3`, `CMSSW_16_0_10`.
+- `triggerObjects_cff.py` Photon selection is `type(92) && pt > 15 && coll('hltEgammaCandidates')`
+  on master, on the tips of `CMSSW_14_1_X`, `14_2_X`, `15_0_X`, `15_1_X`, `16_0_X`, `16_1_X`, and at
+  the tags `CMSSW_15_1_0`, `CMSSW_16_0_10`, `CMSSW_16_1_3`. The producer and the matcher are
+  unchanged. The fix branch applies cleanly.
+- GitHub search: no open pull request or issue mentions `hltEgammaCandidatesUnseeded`,
+  `triggerObjects_cff` or photon TrigObj; no PR touched `triggerObjects_cff.py` since June 2026.
+
+### 13.2 Method of the breadth scan
+
+`scripts/deadbits.py <triggerObjects_cff.py> <label=menu.py>...` emulates `mksel` for every
+quality-bit entry of every selection, resolves each `filter('pattern')` (NanoAOD wildcard
+semantics: `*` only, anchored at both ends unless the pattern starts or ends with `*`) against
+the `EDFilter` modules of a menu, reads the collection each matched filter saves its objects from
+(`l1EGCand`, `inputTag`, `CandTag`, `inputCandCollection`, `originTagN`, `taus`, `Jets`, ...,
+following `inputTagN`/`candTag` chains to the first filter when needed) and compares it with the
+`coll()` terms of the selection. Status per bit and menu: OK, COLL (filters exist but the
+selection's collection test rejects all of them), STALE (no module matches), UNK (L1 seed
+modules, whose objects are L1 objects accepted by type). Configs scanned: master (`ed35654b1`),
+`CMSSW_15_0_X` (v15), `CMSSW_13_3_1_patch1` (v13), `CMSSW_13_0_13` (v12). Menus: frozen 2022
+v1.2 and v1.4, 2023 v1.2, 2024 v1.4, 2025 v1.3, 2026 v1.3, and the GRun development menus of
+13_0_X, 14_0_X, 15_0_X (early and late 2025) and 16_1_X. Raw outputs are in `scan/`.
+Limits: the type test of a selection is not emulated (only the collection test), and the Tau
+selection's `coll('*Tau*')` is OR-ed with filter terms, so it is treated as non-restrictive.
+
+### 13.3 Findings: same mechanism (object rejected by the selection)
+
+| Where | Bits | Why | Since |
+|---|---|---|---|
+| Photon | 16, 17, 19 (v15+); 14, 15, 17 (v12 to v14) | unseeded diphoton filters, collection `hltEgammaCandidatesUnseeded` rejected | v12 (PR 40711, Feb 2023) |
+| Photon | 8 (`hltHtEcal800`) | `HLTHtMhtFilter` saves `TriggerTHT`/`TriggerMHT` objects from `hltHtMhtEcal` (types 89/90): never type 92, never an e/gamma collection | v10 (12_4_X list; the v9 photon list had no bits at all) |
+| BoostedTau (whole table) | all | selection `type(85) && pt > 120 && coll('hltAK8PFJetsCorrected') && filter('hltAK8SinglePFJets*SoftDropMass40*ParticleNetTauTau')`: the pattern is end-anchored, the menus have `...ParticleNetTauTau0p30` (2022) and `...PNetTauTauTag0p03/0p05` (2023+), and the jets come from `hltAK8PFJets230SoftDropMass40`, so no object ever passes | v12, v13, v14 and 15_0_0/15_0_1; relaxed to `type(85) && pt > 120 && filter('*TauTau*')` in `CMSSW_15_0_2` |
+| MET (whole table) | none | `skipObjectsNotPassingQualityBits = True` with an empty bit list (`"0"`): no MET object is ever written | every version from 10_6_X (v9) to master |
+| Photon (v9) | none | 10_6_X photon selection `type(92) && pt > 20 && coll('hltEgammaCandidates') && !filter('*PixelMatchFilter')` with no bits and the skip flag: no photon TrigObj in Run 2 UL NanoAOD v9 | v9 only |
+
+Electron and Muon have no collection mismatch in any version or menu (the only unacceptable
+alternatives, muon-leg filters inside the 2e-1mu and 1e-2mu entries, have an acceptable
+electron-leg alternative in the same entry).
+
+### 13.4 Findings: stale filter names (bit defined, no such module in the menu of that year)
+
+Master config against the frozen menus (fine / collection-dead / stale, out of the bit count):
+
+| Object | bits | 2022 v1.4 | 2023 | 2024 | 2025 | 2026 | stale bits in 2025 and why |
+|---|---|---|---|---|---|---|---|
+| Electron | 20 | 18/0/2 | 18/0/2 | 19/0/1 | 18/0/2 | 18/0/2 | 2 `hltEle*WPLoose*TrackIsoFilter` (gone 2023), 8 triple-electron `DphiLeg` (gone 2025) |
+| Photon | 21 | 13/4/4 | 14/3/4 | 15/3/3 | 15/3/3 | 15/3/3 | 12 `hltEG120EBTightID...` (gone 2022 v1.4), 18 and 19 30_18 names (renamed 2023) |
+| Muon | 14 | 13/0/1 | 13/0/1 | 14/0/0 | 12/0/2 | 12/0/2 | 2 and 6 `*OverlapFilterIsoMu*PFTau*` (DeepTau mu-tau overlaps, gone 2025; bit 13 PNet replaces them) |
+| Tau | 31 | 25/0/6 | 27/0/4 | 31/0/0 | 30/0/1 | 30/0/1 | 3 `*DeepTau*` (gone 2025) |
+| BoostedTau | 3 | 1/0/2 | 2/0/1 | 2/0/1 | 2/0/1 | 2/0/1 | 0 `...ParticleNetTauTau0p30` (2022 name) |
+| Jet | 46 | 29/0/15 | 38/0/6 | 37/0/7 | 34/0/10 | 34/0/10 | 0, 1, 6, 22, 27 pixel-only HH4b filters (gone 2024), 8 and 9 three-jet pt40/pt45 (gone 2024/2023), 11 DeepCSV, 24 and 25 DeepJet (gone 2025) |
+| FatJet | 7 | 6/0/1 | 6/0/1 | 4/0/3 | 4/0/3 | 4/0/3 | 3 ParticleNetBB0p35 names (gone 2023), 4 and 5 `hltAK8DoublePFJetSDModMass30/50` (gone 2024) |
+| HT | 6 | 2/0/3 | 3/0/2 | 3/0/2 | 3/0/2 | 3/0/2 | 0 and 1 Run 2 L1 seed names (never in Run 3 menus); bit 2 is an L1 seed that exists |
+| MHT | 2 | 2/0/0 | 2/0/0 | 2/0/0 | 2/0/0 | 2/0/0 | none |
+
+(2 Jet bits and 1 HT bit are L1 seed filters counted as fine.) The v12, v13 and v15 configs
+give the same picture for their own bit lists (`scan/v12_*.txt`, `scan/v13_*.txt`,
+`scan/v15_*.txt`); in v13 the Tau list has 5 stale bits in the 2022 menus and 3 in 2023, and
+the BoostedTau list is dead as described above.
+
+### 13.5 Downstream use (GitHub code search, default branches only)
+
+- The unseeded filter names appear outside cms-sw in 16 files: `kevimota/HYgammaRunIII_analysis`
+  (`trigger_legend.md`, bits 16 and 17 listed as the legs to match), `cms-flaf/FLAF`
+  (`config/Run2_201{6,7,8}/triggers.yaml`, photon bit legends), custom NanoAOD configurations
+  (`portalesHEP/higgs-trigger-nano`, `Gianco99/2024_Nano`), and flashgg's MiniAOD-based
+  `Validation/test/makeHltTreePhotons.py` (unaffected: flashgg reads the MiniAOD objects).
+- 176 files combine `TrigObj_filterBits` with `Diphoton30_22`; most are generic NanoAOD
+  readers. HiggsDNA itself is not indexed by code search.
+
+### 13.6 Consequences for the pull request
+
+The one-line fix stays as it is. The scan adds candidates for separate pull requests:
+`hltHtEcal800` out of the Photon list (or into HT), the 2023 names of the 30_18 filters, a
+per-year statement in the bit documentation, and a note to XPOG about MET (never written) and
+BoostedTau (empty in v12 to v14).

@@ -11,8 +11,10 @@ tags and nineteen HLT menu files; the corrections are listed in section 0 of `NO
 - `report/`: the issue report as PDF and its HTML source; `scripts/render_pdf.js` renders it.
 - `pr/`: the patch against upstream `cms-sw/cmssw` master and the PR title and body.
 - `scripts/`: the scanners used for the verification (`bits.py`, `menuscan.py`,
-  `menusummary.py`, `pathmatrix.py`, `bitfilters.py`, `wfn.py`); run with `python3 -I`
-  and the downloaded files as arguments.
+  `menusummary.py`, `pathmatrix.py`, `bitfilters.py`, `wfn.py`, `deadbits.py`); run with
+  `python3 -I` and the downloaded files as arguments.
+- `scan/`: outputs of `deadbits.py` (every filter bit of every object type resolved against the
+  2022 to 2026 menus; see `NOTES.md` section 13).
 
 Fix in one line, `PhysicsTools/NanoAOD/python/triggerObjects_cff.py`, Photon selection:
 

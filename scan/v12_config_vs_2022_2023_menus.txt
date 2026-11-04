@@ -1,0 +1,70 @@
+config: dl/trig_CMSSW_13_0_13.py
+menus: 22v12 22v14 23
+
+== Electron (sel colls: ['hltEgammaCandidates']; skip=True; 14 bits)
+   bit  2 filter('hltEle*WPLoose*TrackIsoFilter')                                22v12:OK 22v14:OK 23:STALE
+   summary: 22v12 OK=14 COLL=0 STALE=0 UNK=0 | 22v14 OK=14 COLL=0 STALE=0 UNK=0 | 23 OK=13 COLL=0 STALE=1 UNK=0
+
+== Photon (sel colls: ['hltEgammaCandidates']; skip=True; 18 bits)
+   bit  8 filter('hltHtEcal800')                                                 22v12:COLL 22v14:COLL 23:COLL
+          detail: {hltHtEcal800[EDFilter:hltHtMhtEcal]}
+   bit 10 filter('hltEG120EBTightIDTightIsoTrackIsoFilter')                      22v12:OK 22v14:STALE 23:STALE
+   bit 14 filter('hltEG22Iso60CaloId15b35eHE12R9Id50b80eTrackIsoUnseededLastFi.. 22v12:COLL 22v14:COLL 23:COLL
+          detail: {hltEG22Iso60CaloId15b35eHE12R9Id50b80eTrackIsoUnseededLastFilter[EDFilter:hltEgammaCandidatesUnseeded]}
+   bit 15 filter('hltEG22R9Id85b90eHE12R9Id50b80eR9UnseededLastFilter')          22v12:COLL 22v14:COLL 23:COLL
+          detail: {hltEG22R9Id85b90eHE12R9Id50b80eR9UnseededLastFilter[EDFilter:hltEgammaCandidatesUnseeded]}
+   bit 16 filter('hltEG30Iso60CaloId15b35eR9Id50b90eHE12b10eR9Id50b80eEcalIsoF.. 22v12:OK 22v14:OK 23:STALE
+   bit 17 filter('hltEG18TrackIso60Iso60CaloId15b35eR9Id50b90eHE12b10eR9Id50b8.. 22v12:COLL 22v14:COLL 23:STALE
+          detail: {hltEG18TrackIso60Iso60CaloId15b35eR9Id50b90eHE12b10eR9Id50b80eTrackIsoUnseededFilter[EDFilter:hltEgammaCandidatesUnseeded]}
+   summary: 22v12 OK=14 COLL=4 STALE=0 UNK=0 | 22v14 OK=13 COLL=4 STALE=1 UNK=0 | 23 OK=12 COLL=3 STALE=3 UNK=0
+
+== Muon (sel colls: ['hltIterL3MuonCandidates', 'hltHighPtTkMuonCands', 'hltOldL3MuonCandidates']; skip=True; 13 bits)
+   summary: 22v12 OK=13 COLL=0 STALE=0 UNK=0 | 22v14 OK=13 COLL=0 STALE=0 UNK=0 | 23 OK=13 COLL=0 STALE=0 UNK=0
+
+== Tau (sel colls: ['*Tau*']; skip=True; 20 bits)
+   bit  0 filter('*LooseChargedIso*')                                            22v12:OK 22v14:STALE 23:STALE
+   bit  2 filter('*TightChargedIso*')                                            22v12:OK 22v14:OK 23:STALE
+   bit  4 filter('*TightOOSCPhotons*')                                           22v12:OK 22v14:OK 23:STALE
+   bit  6 filter('hlt*DoublePFTau*TrackPt1*ChargedIsolation*Dz02*')              22v12:OK 22v14:OK 23:STALE
+   bit 11 filter('hlt*DoublePFTau*TrackPt1*ChargedIso*')                         22v12:OK 22v14:OK 23:STALE
+   bit 12 filter('hlt*DoublePFTau*Track*ChargedIso*AgainstMuon')                 22v12:OK 22v14:OK 23:STALE
+   bit 17 filter('*Reg')                                                         22v12:STALE 22v14:STALE 23:STALE
+   bit 19 filter('*1Prong')                                                      22v12:STALE 22v14:STALE 23:STALE
+   summary: 22v12 OK=18 COLL=0 STALE=2 UNK=0 | 22v14 OK=17 COLL=0 STALE=3 UNK=0 | 23 OK=12 COLL=0 STALE=8 UNK=0
+
+== BoostedTau (sel colls: ['hltAK8PFJetsCorrected']; skip=True; 2 bits)
+   bit  0 filter('hltAK8SinglePFJets*SoftDropMass40*ParticleNetTauTau')          22v12:STALE 22v14:STALE 23:STALE
+   bit  1 hltAK8SinglePFJets230SoftDropMass40PNetTauTauTag0p03                   22v12:STALE 22v14:STALE 23:COLL
+          detail: {hltAK8SinglePFJets230SoftDropMass40PNetTauTauTag0p03[EDFilter:hltAK8PFJets230SoftDropMass40,hltParticleNetDiscriminatorsJetTagsAK8]}
+   summary: 22v12 OK=0 COLL=0 STALE=2 UNK=0 | 22v14 OK=0 COLL=0 STALE=2 UNK=0 | 23 OK=0 COLL=1 STALE=1 UNK=0
+
+== Jet (sel colls: any; skip=True; 31 bits)
+   bit  7 hltL1sTripleJet1008572VBFIorHTTIorDoubleJetCIorSingleJet|hltL1sTripl.. 22v12:UNK 22v14:UNK 23:UNK
+          detail: {hltL1sTripleJet1008572VBFIorHTTIorDoubleJetCIorSingleJet[EDFilter:?]}
+   bit  9 hlt3PFCentralJetTightIDPt45                                            22v12:OK 22v14:OK 23:STALE
+   bit 10 hltL1sQuadJetC60IorHTT380IorHTT280QuadJetIorHTT300QuadJet|hltL1sQuad.. 22v12:UNK 22v14:UNK 23:UNK
+          detail: {hltL1sQuadJetC50to60IorHTT280to500IorHTT250to340QuadJet[EDFilter:?]}
+   bit 27 hlt2PixelOnlyPFCentralJetTightIDPt20|hlt1PixelOnlyPFCentralJetTightI.. 22v12:STALE 22v14:STALE 23:OK
+   bit 28 hlt2PFCentralJetTightIDPt30|hltPF2CentralJetTightIDPt30                22v12:STALE 22v14:STALE 23:OK
+   bit 29 hlt1PFCentralJetTightIDPt60                                            22v12:STALE 22v14:STALE 23:OK
+   bit 30 hltPF2CentralJetPt30PNet2BTagMean0p50                                  22v12:STALE 22v14:STALE 23:OK
+   summary: 22v12 OK=25 COLL=0 STALE=4 UNK=2 | 22v14 OK=25 COLL=0 STALE=4 UNK=2 | 23 OK=28 COLL=0 STALE=1 UNK=2
+
+== FatJet (sel colls: any; skip=True; 6 bits)
+   bit  3 hltAK8SinglePFJets230SoftDropMass40BTagParticleNetBB0p35|hltAK8Singl.. 22v12:OK 22v14:OK 23:STALE
+   summary: 22v12 OK=6 COLL=0 STALE=0 UNK=0 | 22v14 OK=6 COLL=0 STALE=0 UNK=0 | 23 OK=5 COLL=0 STALE=1 UNK=0
+
+== MET (sel colls: ['hltPFMETProducer']; skip=True; 0 bits)
+   !! no quality bits and skipObjectsNotPassingQualityBits=True: this object type is never written
+   summary: 22v12 OK=0 COLL=0 STALE=0 UNK=0 | 22v14 OK=0 COLL=0 STALE=0 UNK=0 | 23 OK=0 COLL=0 STALE=0 UNK=0
+
+== HT (sel colls: any; skip=True; 6 bits)
+   bit  0 hltL1sTripleJetVBFIorHTTIorDoubleJetCIorSingleJet                      22v12:STALE 22v14:STALE 23:STALE
+   bit  1 hltL1sQuadJetC50IorQuadJetC60IorHTT280IorHTT300IorHTT320IorTripleJet.. 22v12:STALE 22v14:STALE 23:STALE
+   bit  2 hltL1sQuadJetC60IorHTT380IorHTT280QuadJetIorHTT300QuadJet|hltL1sQuad.. 22v12:UNK 22v14:UNK 23:UNK
+          detail: {hltL1sQuadJetC50to60IorHTT280to500IorHTT250to340QuadJet[EDFilter:?]}
+   bit  5 hltPFHT280Jet30                                                        22v12:STALE 22v14:STALE 23:OK
+   summary: 22v12 OK=2 COLL=0 STALE=3 UNK=1 | 22v14 OK=2 COLL=0 STALE=3 UNK=1 | 23 OK=3 COLL=0 STALE=2 UNK=1
+
+== MHT (sel colls: any; skip=True; 2 bits)
+   summary: 22v12 OK=2 COLL=0 STALE=0 UNK=0 | 22v14 OK=2 COLL=0 STALE=0 UNK=0 | 23 OK=2 COLL=0 STALE=0 UNK=0
