@@ -1,0 +1,21 @@
+<section id="producer-versions" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:28px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">The producer changed three times since 2022; the selection-before-bits order never did</h2>
+<table style="font-size:24px;font-family:'IBM Plex Sans', Arial, sans-serif;color:#16213A;background:#FDFCF9;border:1px solid #D9D6CC">
+<tr style="background:#16213A"><th style="width:22%;color:#F6F5F0;text-align:left;padding:10px 14px">releases (NanoAOD)</th><th style="width:16%;color:#F6F5F0;text-align:left">filterBits type</th><th style="width:16%;color:#F6F5F0;text-align:left">bit limit</th><th style="width:24%;color:#F6F5F0;text-align:left">duplicate merging</th><th style="width:22%;color:#F6F5F0;text-align:left">selections per object</th></tr>
+<tr><td>12_4_X, 12_6_X (v10, v11)</td><td>Int_t</td><td>bit &lt; 31</td><td>same id, same pT, same direction</td><td>first match only (break)</td></tr>
+<tr><td>13_0_X to 14_2_X, 15_0_0, 15_0_1 (v12, v13, v14)</td><td>Int_t</td><td>bit &lt; 31</td><td>same id, |delta pT| &lt; 1e-6, delta R squared &lt; 1e-6 (pT test dropped in 15_0_0)</td><td>every matching selection</td></tr>
+<tr style="background:#DCEBEE"><td>15_0_2 onward, master (v15, next)</td><td>unsigned 64-bit</td><td>bit &lt; 64</td><td>same id, delta R squared &lt; 1e-6</td><td>every matching selection</td></tr>
+</table>
+<div style="display:flex;gap:24px">
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace">// CMSSW_13_3_1_patch1 (v13), lines 114, 154, 170</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">assert(bit &lt; 31 &amp;&amp; "quality bits are store on 32 bit");<br>selected_bits[sel.id][&amp;obj] = int(sel.qualityBits(obj));<br>if (sel.id == sel2.id<br>&#160;&#160;&#160;&#160;&amp;&amp; abs(obj.pt() - obj2.pt()) &lt; 1e-6<br>&#160;&#160;&#160;&#160;&amp;&amp; deltaR2(obj, obj2) &lt; 1e-6) {</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace">// master and CMSSW_15_0_2, lines 114, 154, 170</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">assert(bit &lt; 64 &amp;&amp; "quality bits are store on 64 bits");<br>selected_bits[sel.id][&amp;obj] = sel.qualityBits(obj);<br>if (sel.id == sel2.id<br>&#160;&#160;&#160;&#160;&amp;&amp; deltaR2(obj, obj2) &lt; 1e-6) {</p>
+</div>
+</div>
+<p style="font-size:24px;line-height:1.35;color:#44506A">What matters for this issue is in every version: sel.match(obj) is tested first, and only a passing object gets its quality bits computed. The merging rule only decides what happens after the fix, when a seeded and an unseeded object describe the same photon: with the master rule they merge on direction alone.</p>
+<aside>Checked at the tags 14_1_0, 14_2_0, 15_0_0, 15_0_1, 15_0_2, 15_0_5, 15_0_10, 15_0_13, 15_0_15, 15_0_15_patch4, 15_1_0 and 16_0_0 and at the branch tips 12_4_X, 13_0_X, 14_0_X and 15_0_X. The 64-bit change is consistent with PR 47594 and its 15_0_X backport PR 47601, merged on 18 March 2025.</aside>
+</section>

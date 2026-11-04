@@ -1,0 +1,23 @@
+<section id="producer-code" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">The table producer: sel first, bits second, duplicates merged last</h2>
+<div style="display:flex;gap:24px;align-items:stretch">
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace">// TriggerObjectTableProducer.cc, constructor,</p>
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace">// lines 105 to 118; cfg = qualityBitsConfig</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">for (size_t i = 0; i != cfg.size(); ++i) {<br>&#160;&#160;unsigned int bit = i;<br>&#160;&#160;if (cfg[i].existsAs&lt;unsigned int&gt;("bit"))<br>&#160;&#160;&#160;&#160;bit = cfg[i].getParameter&lt;unsigned int&gt;("bit");<br>&#160;&#160;assert(!bits[bit] &amp;&amp; "...inserted twice");<br>&#160;&#160;assert(bit &lt; 64 &amp;&amp; "...on 64 bits");<br>&#160;&#160;func &lt;&lt; std::to_string(1UL &lt;&lt; bit) &lt;&lt; "*("<br>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;&lt; cfg[i].getParameter&lt;std::string&gt;(<br>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;"selection") &lt;&lt; ")";<br>}<br>qualityBits = StringObjectFunction&lt;...&gt;(func.str());</p>
+<hr style="border-top:1px solid #3A4766;width:100%">
+<p style="font-size:24px;line-height:1.35;color:#AEB8CC">The bits form one string function, the sum of 2^bit times each entry's selection. It is evaluated only for objects that already passed sel.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace">// produce(), master lines 151 to 176</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">for (const auto &amp;obj : trigObjs) {<br>&#160;&#160;for (const auto &amp;sel : sels_) {<br>&#160;&#160;&#160;&#160;<span style="color:#F28C4B">if (sel.match(obj)) {</span>&#160;&#160;<span style="color:#AEB8CC">// fails here</span><br>&#160;&#160;&#160;&#160;&#160;&#160;bits = sel.qualityBits(obj);<br>&#160;&#160;&#160;&#160;&#160;&#160;if (skip ? (bits != 0) : true)<br>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;selected.emplace_back(&amp;obj, &amp;sel);<br>&#160;&#160;&#160;&#160;}<br>&#160;&#160;}<br>}<br>// Self-cleaning<br>for (i ...) for (j &lt; i ...)<br>&#160;&#160;if (sel.id == sel2.id<br>&#160;&#160;&#160;&#160;&#160;&#160;&amp;&amp; deltaR2(obj, obj2) &lt; 1e-6) {<br>&#160;&#160;&#160;&#160;bits_of(obj2) |= bits_of(obj);<br>&#160;&#160;&#160;&#160;selected.erase(selected.begin() + i); i--;<br>&#160;&#160;}</p>
+<hr style="border-top:1px solid #3A4766;width:100%">
+<p style="font-size:24px;line-height:1.35;color:#AEB8CC">Abridged: bits stands for selected_bits[sel.id][&amp;obj], skip for sel.skipObjectsNotPassingQualityBits.</p>
+</div>
+</div>
+<div style="display:flex;gap:24px">
+<div style="flex:1;background:#F8E3D7;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;line-height:1.35;color:#44506A"><b>Order of evaluation is the whole story.</b> An object that fails sel never reaches qualityBits, never enters selected, and is never seen by the merging loop. No later step can restore it.</p></div>
+<div style="flex:1;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;line-height:1.35;color:#44506A"><b>No break.</b> Since 13_0_X an object is tested against every selection and can be written once per type it passes (an e/gamma object can be both id 11 and id 22). 12_4_X still had a break after the first match.</p></div>
+</div>
+<aside>The version shown is upstream master, with two local aliases introduced for the slide width. Up to CMSSW_15_0_1 the bits were an int with assert(bit less than 31), the merging also required equal pT, and 12_4_X had a break after the first matching selection; the next slide tabulates the differences.</aside>
+</section>

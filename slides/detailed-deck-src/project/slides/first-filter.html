@@ -1,0 +1,18 @@
+<section id="first-filter" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">Why the unseeded objects carry type 92: the first filter of the leg saves them as TriggerCluster</h2>
+<div style="display:flex;gap:24px;align-items:stretch">
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace"># menu: the first unseeded filter</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">fragment.hltDiEG22EtEta2p55UnseededFilter =<br>&#160;&#160;cms.EDFilter( "HLT1Photon",<br>&#160;&#160;saveTags = cms.bool( True ),<br>&#160;&#160;<span style="color:#F28C4B">inputTag = cms.InputTag(</span><br>&#160;&#160;&#160;&#160;<span style="color:#F28C4B">"hltEgammaCandidatesUnseeded" )</span>,<br>&#160;&#160;<span style="color:#5FC2D3">triggerType = cms.int32( 92 )</span>,<br>&#160;&#160;MinE = cms.double( -1.0 ),<br>&#160;&#160;MinPt = cms.double( 22.0 ),<br>&#160;&#160;MinMass = cms.double( -1.0 ),<br>&#160;&#160;MaxMass = cms.double( -1.0 ),<br>&#160;&#160;MinEta = cms.double( -1.0 ),<br>&#160;&#160;MaxEta = cms.double( 2.55 ),<br>&#160;&#160;MinN = cms.int32( 2 ) )</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace">// HLTrigger/HLTfilters/plugins/HLTSinglet.cc</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">template &lt;typename T&gt;<br>int getObjectType(const T&amp;) { return 0; }<br><span style="color:#AEB8CC">// no specialisation for RecoEcalCandidate</span><br><br>if (saveTags())<br>&#160;&#160;filterproduct.addCollectionTag(<span style="color:#F28C4B">inputTag_</span>);<br>...<br>int tid = getObjectType&lt;T&gt;(*i);<br>if (tid == 0)<br>&#160;&#160;tid = <span style="color:#5FC2D3">triggerType_</span>;&#160;&#160;<span style="color:#AEB8CC">// 92, TriggerCluster</span><br>filterproduct.addObject(tid, ref);</p>
+</div>
+</div>
+<div style="display:flex;gap:24px">
+<div style="flex:1;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;line-height:1.35;color:#44506A"><b>Result.</b> Every candidate of hltEgammaCandidatesUnseeded with Et &gt; 22 GeV is saved with type 92 and the collection tag hltEgammaCandidatesUnseeded. On the seeded leg, HLTEgammaL1TMatchFilterRegional and HLTEgammaEtFilter save TriggerCluster as well.</p></div>
+<div style="flex:1;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;line-height:1.35;color:#44506A"><b>Why it matters.</b> The NanoAOD selection starts with type(92). It is satisfied for both legs, so the object type is not what rejects the unseeded objects; the next slide shows what the later filters save, and the slide after that where the types are merged.</p></div>
+</div>
+<aside>TriggerTypeDefs.h: TriggerPhoton = 81, TriggerCluster = 92, TriggerL1EG = -98. HLT1Photon is HLTSinglet instantiated for reco::RecoEcalCandidate; the generic getObjectType returns 0 for that type, so the configured triggerType is stored.</aside>
+</section>

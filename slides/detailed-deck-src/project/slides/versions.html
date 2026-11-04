@@ -1,0 +1,18 @@
+<section id="versions" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:28px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">Scope by NanoAOD version: present since the bits were added, still present in today's master</h2>
+<table style="font-size:24px;font-family:'IBM Plex Sans', Arial, sans-serif;color:#16213A;background:#FDFCF9;border:1px solid #D9D6CC">
+<tr style="background:#16213A"><th style="width:11%;color:#F6F5F0;text-align:left;padding:8px 14px">NanoAOD</th><th style="width:27%;color:#F6F5F0;text-align:left">releases checked (tags and branch tips)</th><th style="width:20%;color:#F6F5F0;text-align:left">Photon sel</th><th style="width:16%;color:#F6F5F0;text-align:left">Electron sel</th><th style="width:14%;color:#F6F5F0;text-align:left">dead photon bits</th><th style="width:12%;color:#F6F5F0;text-align:left">affected</th></tr>
+<tr><td>v9</td><td>CMSSW_10_6_X</td><td>seeded, pt &gt; 20, no bits</td><td>seeded</td><td>no photon TrigObj</td><td>no</td></tr>
+<tr><td>v10, v11</td><td>CMSSW_12_4_X, CMSSW_12_6_X</td><td>seeded, pt &gt; 20, 12 bits</td><td>seeded</td><td>bits absent</td><td>no</td></tr>
+<tr style="background:#F8E3D7"><td>v12</td><td>13_0_0 (pt &gt; 20), 13_0_1 to 13_0_17 (prod. 13_0_13)</td><td>seeded, 18 bits</td><td>seeded</td><td>14, 15, 17</td><td style="color:#C2410C">yes</td></tr>
+<tr style="background:#F8E3D7"><td>v13</td><td>13_3_0, 13_3_1_patch1 (production), 13_3_X tip</td><td>seeded, 18 bits</td><td>seeded + unseeded</td><td>14, 15, 17</td><td style="color:#C2410C">yes</td></tr>
+<tr style="background:#F8E3D7"><td>v14</td><td>14_0_0, 14_0_X tip, 14_1_0, 14_1_X, 14_2_0, 14_2_X</td><td>seeded, 18 bits</td><td>seeded + unseeded</td><td>14, 15, 17</td><td style="color:#C2410C">yes</td></tr>
+<tr style="background:#F8E3D7"><td>v15</td><td>15_0_2 to 15_0_15_patch4, 15_0_X tip, 15_1_0, 15_1_X (15_0_0 and 15_0_1 still 18 bits)</td><td>seeded, 21 bits</td><td>seeded + unseeded</td><td>16, 17, 19</td><td style="color:#C2410C">yes</td></tr>
+<tr style="background:#F8E3D7"><td>next</td><td>16_0_10, 16_0_X, 16_1_3, 16_1_X, master ed35654b1 (4 Nov 2026, newest commit)</td><td>seeded, 21 bits</td><td>seeded + unseeded</td><td>16, 17, 19</td><td style="color:#C2410C">yes</td></tr>
+</table>
+<div style="display:flex;gap:24px">
+<div style="flex:1;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;line-height:1.35;color:#44506A"><b>Checked live today.</b> git ls-remote on cms-sw/cmssw gives master = ed35654b1 (no newer commit), 16_1_X = 8aacfa5da, 16_0_X = de8bdeed9, 15_1_X = e9272496, 15_0_X = 6db81eb6d; the Photon selection line is identical on all of them and at the newest tags CMSSW_16_1_3 and CMSSW_16_0_10.</p></div>
+<div style="flex:1;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;line-height:1.35;color:#44506A"><b>Nobody has fixed it elsewhere.</b> GitHub shows no open pull request or issue mentioning hltEgammaCandidatesUnseeded, triggerObjects_cff or photon trigger objects, and no change to triggerObjects_cff.py since June 2026.</p></div>
+</div>
+<aside>Decimal values of the dead bits: 16384, 32768 and 131072 in v12 to v14; 65536, 131072 and 524288 in v15 and later. Any Run 2 input re-processed with a v12-or-later release inherits the same defect for the 2018 menu paths.</aside>
+</section>

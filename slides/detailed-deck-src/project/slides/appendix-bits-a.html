@@ -1,0 +1,19 @@
+<section id="appendix-bits-a" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">Appendix A: photon filter bits 0 to 10 (master numbering) and where their filters exist</h2>
+<table style="font-size:24px;font-family:'IBM Plex Sans', Arial, sans-serif;color:#16213A;background:#FDFCF9;border:1px solid #D9D6CC">
+<tr style="background:#16213A"><th style="width:9%;color:#F6F5F0;text-align:left;padding:8px 14px">bit v15</th><th style="width:11%;color:#F6F5F0;text-align:left">bit v12 to v14</th><th style="width:40%;color:#F6F5F0;text-align:left">filter</th><th style="width:22%;color:#F6F5F0;text-align:left">objects come from</th><th style="width:18%;color:#F6F5F0;text-align:left">filter exists in menus</th></tr>
+<tr><td>0</td><td>0</td><td>hltEG33L1EG26HEFilter</td><td>hltEgammaCandidates</td><td>2018 to 2026</td></tr>
+<tr><td>1</td><td>1</td><td>hltEG50HEFilter</td><td>hltEgammaCandidates</td><td>2018 to 2026</td></tr>
+<tr><td>2</td><td>2</td><td>hltEG75HEFilter</td><td>hltEgammaCandidates</td><td>2018 to 2026</td></tr>
+<tr><td>3</td><td>3</td><td>hltEG90HEFilter</td><td>hltEgammaCandidates</td><td>2018 to 2026</td></tr>
+<tr><td>4</td><td>4</td><td>hltEG120HEFilter</td><td>hltEgammaCandidates</td><td>2018 to 2026</td></tr>
+<tr><td>5</td><td>5</td><td>hltEG150HEFilter</td><td>hltEgammaCandidates</td><td>2018 to 2026</td></tr>
+<tr><td>6</td><td>6</td><td>hltEG175HEFilter</td><td>hltEgammaCandidates</td><td>2018 to 2026</td></tr>
+<tr><td>7</td><td>7</td><td>hltEG200HEFilter</td><td>hltEgammaCandidates</td><td>2018 to 2026</td></tr>
+<tr style="background:#F8E3D7"><td>8</td><td>8</td><td>hltHtEcal800</td><td>hltHtMhtEcal (HT object, type 89): never a photon</td><td>2018 to 2026</td></tr>
+<tr><td>9</td><td>none</td><td>hltEG45EBTightIDTightIsoTrackIsoFilter</td><td>hltEgammaCandidates</td><td>2024 to 2026</td></tr>
+<tr><td>10</td><td>none</td><td>hltEG50EBTightIDTightIsoTrackIsoFilter</td><td>hltEgammaCandidates</td><td>2023 to 2026</td></tr>
+</table>
+<p style="font-size:24px;line-height:1.35;color:#44506A">Source: PhysicsTools/NanoAOD/python/triggerObjects_cff.py at master ed35654b1 (21 entries) and CMSSW_13_3_1_patch1 (18 entries); menu presence from the frozen 2018 to 2026 menus listed on the menus slide. "Objects come from" is the l1EGCand (or htLabels) of the module in the menu.</p>
+<aside>Bits 0 to 7 are the single-photon H/E filters of the HLT_Photon paths; 9 to 12 the barrel tight-ID isolated photon filters; 13 the photon leg of Mu17_Photon30. Only bit 8 is misplaced in this half of the list.</aside>
+</section>

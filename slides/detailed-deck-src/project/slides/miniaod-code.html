@@ -1,0 +1,25 @@
+<section id="miniaod-code" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">MiniAOD slims the objects but keeps the collection name; NanoAOD unpacks the labels again</h2>
+<div style="display:flex;gap:24px;align-items:stretch">
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace"># PatAlgos/python/slimming/selectedPatTrigger_cfi.py</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">selectedPatTrigger = cms.EDFilter(<br>&#160;&#160;"PATTriggerObjectStandAloneSelector",<br>&#160;&#160;src = cms.InputTag("patTrigger"),<br>&#160;&#160;<span style="color:#5FC2D3">cut = cms.string("!filterLabels.empty()")</span><br>)</p>
+<hr style="border-top:1px solid #3A4766;width:100%">
+<p style="font-size:24px;line-height:1.35;color:#AEB8CC">Keeps every object accepted by at least one filter with saveTags. The unseeded photons carry their last-filter labels, so they stay.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace"># PatAlgos/python/slimming/slimmedPatTrigger_cfi.py</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">slimmedPatTrigger = cms.EDProducer(<br>&#160;&#160;"PATTriggerObjectStandAloneSlimmer",<br>&#160;&#160;src = cms.InputTag("selectedPatTrigger"),<br>&#160;&#160;triggerResults =<br>&#160;&#160;&#160;&#160;cms.InputTag( 'TriggerResults::HLT' ),<br>&#160;&#160;packFilterLabels = cms.bool(True),<br>&#160;&#160;packP4 = cms.bool(True),<br>)</p>
+<hr style="border-top:1px solid #3A4766;width:100%">
+<p style="font-size:24px;line-height:1.35;color:#AEB8CC">Packs the four-vector and the filter labels; the collection string and the type list are stored as they are.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace"># NanoAOD/python/triggerObjects_cff.py, lines 8 to 12</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">unpackedPatTrigger = cms.EDProducer(<br>&#160;&#160;"PATTriggerObjectStandAloneUnpacker",<br>&#160;&#160;patTriggerObjectsStandAlone =<br>&#160;&#160;&#160;&#160;cms.InputTag('slimmedPatTrigger'),<br>&#160;&#160;triggerResults =<br>&#160;&#160;&#160;&#160;cms.InputTag('TriggerResults::HLT'),<br>&#160;&#160;<span style="color:#5FC2D3">unpackFilterLabels = cms.bool(True)</span><br>)</p>
+<hr style="border-top:1px solid #3A4766;width:100%">
+<p style="font-size:24px;line-height:1.35;color:#AEB8CC">Restores the labels so that filter('...') can be evaluated; hasFilterOrCondition throws if labels are still packed.</p>
+</div>
+</div>
+<p style="font-size:24px;line-height:1.35;color:#44506A">Proof that the unseeded objects really reach NanoAOD: the Electron selection has accepted coll('hltEgammaCandidatesUnseeded') since June 2023 and its bit "2e (CaloIdL_MW unseeded)" is populated in production files. The same objects enter the Photon branch of the producer and are rejected there.</p>
+<aside>From MiniAOD onward the object is a pat::TriggerObjectStandAlone with: the packed four-vector, the collection string, the list of trigger object types, the packed filter labels and the path names. NanoAOD reads it back through unpackedPatTrigger and hands it to TriggerObjectTableProducer.</aside>
+</section>

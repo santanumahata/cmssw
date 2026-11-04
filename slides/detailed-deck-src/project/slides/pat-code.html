@@ -1,0 +1,20 @@
+<section id="pat-code" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">The trigger summary and PAT keep everything: collection label, all types, all filter labels</h2>
+<div style="display:flex;gap:24px;align-items:stretch">
+<div style="width:640px;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace"># menu: the summary producer</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">fragment.hltTriggerSummaryAOD =<br>&#160;&#160;cms.EDProducer(<br>&#160;&#160;"TriggerSummaryProducerAOD",<br>&#160;&#160;throw = cms.bool( False ),<br>&#160;&#160;processName = cms.string( "@" ),<br>&#160;&#160;moduleLabelPatternsToMatch =<br>&#160;&#160;&#160;&#160;cms.vstring( 'hlt*' ),<br>&#160;&#160;moduleLabelPatternsToSkip =<br>&#160;&#160;&#160;&#160;cms.vstring( ) )</p>
+<hr style="border-top:1px solid #3A4766;width:100%">
+<p style="font-size:24px;line-height:1.35;color:#AEB8CC">Every filter with saveTags contributes; objects are stored once per collection tag, and each filter records the keys of its objects and the type it saved them with.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace">// PhysicsTools/PatAlgos/plugins/PATTriggerProducer.cc (master 680 to 731)</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">for (size_t iK = 0; iK &lt; keys.size(); ++iK) {<br>&#160;&#160;filterLabels.insert({keys[iK], nameFilter});<br>&#160;&#160;objectTypes.insert({keys[iK], types[iK]});&#160;&#160;<span style="color:#AEB8CC">// per filter</span><br>}<br>...<br><span style="color:#F28C4B">triggerObject.setCollection(</span><br><span style="color:#F28C4B">&#160;&#160;&#160;&#160;handleTriggerEvent-&gt;collectionTagEncoded(iC));</span><br>for (auto t = objectTypes.equal_range(iO); ...)<br>&#160;&#160;<span style="color:#5FC2D3">triggerObject.addTriggerObjectType(t.first-&gt;second);</span><br>...<br>triggerObjectStandAlone.addFilterLabel(frange.first-&gt;second);<br>triggerObjectStandAlone.addPathName(iP-&gt;pathName, ...);</p>
+</div>
+</div>
+<div style="display:flex;gap:24px">
+<div style="flex:1;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;line-height:1.35;color:#44506A"><b>Collection.</b> setCollection stores the encoded tag of the collection the object came from: hltEgammaCandidatesUnseeded::HLT for the sub-leading leg, hltEgammaCandidates::HLT for the leading one.</p></div>
+<div style="flex:1;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;line-height:1.35;color:#44506A"><b>Types and labels.</b> addTriggerObjectType is called for every filter that referenced the object, so the unseeded object carries 92 and 81; addFilterLabel records every filter label, including the two unseeded last filters NanoAOD looks for.</p></div>
+</div>
+<aside>patTrigger has onlyStandAlone = False and no excluded collections (the exludeCollections parameter is commented out in triggerLayer1/triggerProducer_cfi.py in 13_3_X and master), so nothing from the unseeded collection is lost at this stage.</aside>
+</section>

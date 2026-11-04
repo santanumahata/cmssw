@@ -1,0 +1,21 @@
+<section id="trigobj" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:28px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">What a NanoAOD trigger object is, and how analyses use the filter bits</h2>
+<div style="display:flex;gap:32px;align-items:flex-start">
+<table style="width:860px;font-size:24px;font-family:'IBM Plex Sans', Arial, sans-serif;color:#16213A;background:#FDFCF9;border:1px solid #D9D6CC">
+<tr style="background:#16213A"><th style="width:30%;color:#F6F5F0;text-align:left;padding:8px 14px">branch</th><th style="width:70%;color:#F6F5F0;text-align:left">meaning</th></tr>
+<tr><td>TrigObj_id</td><td>object type: 11 electron, 22 photon, 13 muon, 15 tau, 1 jet, 6 fat jet, 2 MET, 3 HT, 4 MHT</td></tr>
+<tr><td>TrigObj_pt, eta, phi</td><td>the HLT object's kinematics (for e/gamma: the supercluster)</td></tr>
+<tr><td>TrigObj_l1pt, l1iso, l1charge</td><td>the matched L1 seed within a cone (type -98 for e/gamma)</td></tr>
+<tr><td>TrigObj_l2pt</td><td>the matched L2 object where configured (muons, jets, MET)</td></tr>
+<tr style="background:#F8E3D7"><td>TrigObj_filterBits</td><td>one bit per HLT filter the object passed, from a per-type list in triggerObjects_cff.py; 32-bit up to 15_0_1, 64-bit from 15_0_2</td></tr>
+</table>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;background:#16213A;border-radius:12px;padding:24px 28px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace"># sketch of a typical NanoAOD trigger match (awkward)</p>
+<p style="font-size:24px;line-height:1.4;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">to&#160;&#160;&#160;= events.TrigObj<br>ph&#160;&#160;&#160;= to[to.id == 22]<br><span style="color:#F28C4B">leg2 = ph[(ph.filterBits &gt;&gt; 17) &amp; 1 == 1]</span><br># unseeded R9 leg: always empty today<br>dr&#160;&#160;&#160;= photons.metric_table(leg2)<br>ok&#160;&#160;&#160;= ak.any(dr &lt; 0.1, axis=2)</p>
+<hr style="border-top:1px solid #3A4766;width:100%">
+<p style="font-size:24px;line-height:1.35;color:#AEB8CC">A leg-by-leg efficiency, a trigger-matched tag-and-probe, or a HiggsDNA-style matching of both photons needs the bit of the last filter of each leg. For the sub-leading leg of the diphoton triggers that bit is never set, so the match always fails.</p>
+</div>
+</div>
+<p style="font-size:24px;line-height:1.35;color:#44506A">The table is produced by TriggerObjectTableProducer from the unpacked MiniAOD trigger objects. Each object type has its own selection string; an object is written only if it passes that string and sets at least one bit of that type.</p>
+<aside>The filter bits are the only way to know which HLT filter an object passed in NanoAOD, because the filter labels themselves are not stored. Everything therefore depends on the per-type selection admitting the objects that carry the labels.</aside>
+</section>

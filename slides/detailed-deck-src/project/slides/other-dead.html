@@ -1,0 +1,21 @@
+<section id="other-dead" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">Three more entries that can never be filled, found by the same scan</h2>
+<div style="display:flex;gap:20px;align-items:stretch">
+<div style="flex:1;display:flex;flex-direction:column;gap:10px;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 22px">
+<p style="font-size:26px;font-weight:600;color:#C2410C">Photon bit 8: hltHtEcal800</p>
+<div style="display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:10px;padding:16px 18px"><p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">fragment.hltHtEcal800 = cms.EDFilter(<br>&#160;&#160;"HLTHtMhtFilter",<br>&#160;&#160;saveTags = cms.bool( True ),<br>&#160;&#160;htLabels = cms.VInputTag(<br>&#160;&#160;&#160;&#160;<span style="color:#F28C4B">'hltHtMhtEcal'</span> ),<br>&#160;&#160;minHt = cms.vdouble( 800.0 ), ... )<br><br>// HLTHtMhtFilter.cc, 104 to 105<br>addObject(trigger::TriggerTHT, htref);<br>addObject(trigger::TriggerMHT, mhtref);</p></div>
+<p style="font-size:24px;line-height:1.35;color:#44506A">HT objects (types 89, 90) from hltHtMhtEcal: never type 92, never an e/gamma collection. Dead since the bit appeared in the 12_4_X list (v10); the v9 photon list had no bits at all.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:10px;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 22px">
+<p style="font-size:26px;font-weight:600;color:#C2410C">MET: no bits, skip flag on</p>
+<div style="display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:10px;padding:16px 18px"><p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">MET = cms.PSet(<br>&#160;&#160;id = cms.int32(2),<br>&#160;&#160;sel = cms.string("type(87) &amp;&amp; pt &gt; 30<br>&#160;&#160;&#160;&#160;&amp;&amp; coll('hltPFMETProducer')"),<br>&#160;&#160;<span style="color:#F28C4B">skipObjectsNotPassingQualityBits</span><br>&#160;&#160;&#160;&#160;<span style="color:#F28C4B">= cms.bool(True),</span><br>&#160;&#160;<span style="color:#F28C4B">qualityBits = cms.VPSet()</span><br>)</p></div>
+<p style="font-size:24px;line-height:1.35;color:#44506A">With no entries the bit function is the constant "0"; with the skip flag every MET object is dropped. Identical in 10_6_X (qualityBits "0"), 12_4_X, v12 to v15 and master: TrigObj has never contained MET entries although the documentation lists id 2.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:10px;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 22px">
+<p style="font-size:26px;font-weight:600;color:#C2410C">BoostedTau in v12 to v14: empty table</p>
+<div style="display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:10px;padding:16px 18px"><p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace"># 13_0_X to 15_0_1<br>sel = "type(85) &amp;&amp; pt &gt; 120<br>&#160;&#160;&amp;&amp; coll('hltAK8PFJetsCorrected')<br>&#160;&#160;&amp;&amp; filter('hltAK8SinglePFJets*<br>&#160;&#160;&#160;&#160;&#160;SoftDropMass40*<span style="color:#F28C4B">ParticleNetTauTau</span>')"<br><br># menus: 2022 ...ParticleNetTauTau<span style="color:#F28C4B">0p30</span><br>#&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;2023+ ...PNetTauTauTag0p03<br># 15_0_2: filter('*TauTau*')</p></div>
+<p style="font-size:24px;line-height:1.35;color:#44506A">The pattern is anchored at its end, so no menu name ever matched, and the jets come from hltAK8PFJets230SoftDropMass40, not hltAK8PFJetsCorrected. Relaxed in CMSSW_15_0_2.</p>
+</div>
+</div>
+<aside>These are side findings of the breadth scan, reported for completeness and for XPOG; none of them changes the one-line photon fix. The HT bit could be moved to the HT selection or dropped; MET and BoostedTau are configuration choices that may or may not have been intended.</aside>
+</section>

@@ -1,0 +1,30 @@
+<section id="next" data-transition="fade" style="background:#16213A;color:#F6F5F0;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:32px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1;color:#F6F5F0">Validation, pull request, and the follow-ups this fix does not cover</h2>
+<div style="display:flex;gap:40px;align-items:flex-start">
+<div style="flex:1;display:flex;flex-direction:column;gap:18px">
+<p style="font-size:28px;font-weight:600;color:#5FC2D3">Validation (needs a CMSSW area)</p>
+<ul style="font-size:24px;line-height:1.45;color:#D7DCE6">
+<li>Run standard workflows with a NANO step before and after: H to gamma gamma 12452.0 and 12852.0, TTbar 12434.0 and 12834.0, data 141.046 (RunEGamma2023D); confirm the numbers with runTheMatrix.py -n -e.</li>
+<li>Count photon TrigObj with bits 16 and 17 in events firing the diphoton path: zero before, of the order of the number of triggered events after.</li>
+<li>Only diphoton-triggered events move: nTrigObj and the TrigObj DQM histograms for id 22, nothing else.</li>
+</ul>
+<p style="font-size:28px;font-weight:600;color:#5FC2D3">Pull request</p>
+<ul style="font-size:24px;line-height:1.45;color:#D7DCE6">
+<li>Push nano-photon-trigobj-unseeded to the fork, open it against cms-sw:master citing PR 40711 and PR 41827; xpog signature.</li>
+<li>Request a CMSSW_15_0_X backport if another NanoAOD production from that branch is planned.</li>
+</ul>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:18px">
+<p style="font-size:28px;font-weight:600;color:#F28C4B">Follow-ups, separate from the one-line fix</p>
+<ul style="font-size:24px;line-height:1.45;color:#D7DCE6">
+<li>Add the 2023 names of the Diphoton30_18 filters as alternatives inside bits 18 and 19, so the numbering stays stable.</li>
+<li>Move or drop bit 8 (hltHtEcal800): its objects are HT objects and can never be photons.</li>
+<li>Review the stale bits per year (WPLoose, triple-electron, DeepTau overlaps, pixel-only jet filters, DeepCSV and DeepJet) and say in the documentation which menus each bit covers.</li>
+<li>Bits for the low-mass eta1p5, DiphotonMVA14p25, Diphoton15_1x EBEB and DoublePhoton paths, with the EGM POG and the Higgs PAG.</li>
+<li>Inform XPOG that MET trigger objects are never written and that the BoostedTau table was empty in v12 to v14.</li>
+</ul>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#AEB8CC">Notes, scripts, patch and PR text: the nanoaod-trigobj-notes repository (bundle delivered). Nothing has been pushed to any GitHub repository.</p>
+<aside>Decision needed from Santanu: say "push the PR branch" to publish nano-photon-trigobj-unseeded to the fork, after which the pull request toward cms-sw/cmssw can be opened from the GitHub web interface or from this session once the repository is attached with write access.</aside>
+</section>

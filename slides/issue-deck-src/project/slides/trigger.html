@@ -1,0 +1,38 @@
+<section id="trigger" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px">
+<h2 style="position:absolute;left:128px;top:128px;width:1664px;font-size:56px;font-weight:600;line-height:1.1">One path, two legs, four last filters</h2>
+<p style="position:absolute;left:128px;top:204px;width:1664px;font-size:24px;line-height:1.3;color:#44506A">HLT_Diphoton30_22_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass90 and Mass95 (same sequence), every menu 2018 to 2026</p>
+<!-- canvas coords; lanes S y 260-560, U y 600-900; boxes carry no padding, the inner p does -->
+<div style="position:absolute;left:128px;top:260px;width:1664px;height:300px;background:#E4ECEE;border-radius:16px"></div>
+<div style="position:absolute;left:128px;top:600px;width:1664px;height:300px;background:#F3E6DE;border-radius:16px"></div>
+<p style="position:absolute;left:152px;top:296px;width:184px;font-size:24px;line-height:1.3;color:#16213A"><b>SEEDED LEG</b><br>L1-seeded, leading photon</p>
+<p style="position:absolute;left:152px;top:400px;width:184px;font-size:24px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;color:#176B7B">hltEgamma<br>Candidates</p>
+<p style="position:absolute;left:152px;top:636px;width:184px;font-size:24px;line-height:1.3;color:#16213A"><b>UNSEEDED LEG</b><br>no L1 seed, sub-leading photon</p>
+<p style="position:absolute;left:152px;top:740px;width:184px;font-size:24px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;color:#C2410C">hltEgamma<br>Candidates<br>Unseeded</p>
+<div style="position:absolute;left:368px;top:362px;width:220px;height:96px;background:#FDFCF9;border:2px solid #176B7B;border-radius:12px;display:flex;flex-direction:column;justify-content:center"><p style="padding:12px 16px;font-size:24px;line-height:1.2;text-align:center">L1 match, Et &gt; 30 GeV</p></div>
+<div style="position:absolute;left:620px;top:362px;width:200px;height:96px;background:#FDFCF9;border:2px solid #176B7B;border-radius:12px;display:flex;flex-direction:column;justify-content:center"><p style="padding:12px 16px;font-size:24px;line-height:1.2;text-align:center">R9 and H/E cuts</p></div>
+<div style="position:absolute;left:872px;top:280px;width:340px;height:116px;background:#DCEBEE;border:2px solid #176B7B;border-radius:12px;display:flex;flex-direction:column;justify-content:center"><p style="padding:12px 16px;font-size:24px;line-height:1.2;text-align:center">R9 &gt; 0.85/0.90 last filter: <b>bit 14 works</b></p></div>
+<div style="position:absolute;left:872px;top:424px;width:340px;height:116px;background:#DCEBEE;border:2px solid #176B7B;border-radius:12px;display:flex;flex-direction:column;justify-content:center"><p style="padding:12px 16px;font-size:24px;line-height:1.2;text-align:center">cluster shape + ECAL iso last filter: <b>bit 15 works</b></p></div>
+<div style="position:absolute;left:1244px;top:280px;width:180px;height:260px;background:#FDFCF9;border:2px solid #176B7B;border-radius:12px;display:flex;flex-direction:column;justify-content:center"><p style="padding:12px 16px;font-size:24px;line-height:1.2;text-align:center">Leg combiner: (R9 or iso) and H/E</p></div>
+<div style="position:absolute;left:368px;top:702px;width:220px;height:96px;background:#FDFCF9;border:2px solid #C2410C;border-radius:12px;display:flex;flex-direction:column;justify-content:center"><p style="padding:12px 16px;font-size:24px;line-height:1.2;text-align:center">Et &gt; 22 GeV, no L1 seed</p></div>
+<div style="position:absolute;left:620px;top:702px;width:200px;height:96px;background:#FDFCF9;border:2px solid #C2410C;border-radius:12px;display:flex;flex-direction:column;justify-content:center"><p style="padding:12px 16px;font-size:24px;line-height:1.2;text-align:center">R9 and H/E cuts</p></div>
+<div style="position:absolute;left:872px;top:620px;width:340px;height:116px;background:#C2410C;border:2px solid #C2410C;border-radius:12px;display:flex;flex-direction:column;justify-content:center"><p style="padding:12px 16px;font-size:24px;line-height:1.2;text-align:center;color:#F6F5F0">R9 &gt; 0.85/0.90 last filter: <b>bit 17 never set</b></p></div>
+<div style="position:absolute;left:872px;top:764px;width:340px;height:116px;background:#C2410C;border:2px solid #C2410C;border-radius:12px;display:flex;flex-direction:column;justify-content:center"><p style="padding:12px 16px;font-size:24px;line-height:1.2;text-align:center;color:#F6F5F0">shape, ECAL, track iso last: <b>bit 16 never set</b></p></div>
+<div style="position:absolute;left:1456px;top:360px;width:336px;height:480px;background:#16213A;border-radius:12px;display:flex;flex-direction:column;justify-content:center;gap:16px"><p style="padding:0 16px;font-size:24px;line-height:1.25;text-align:center;color:#F6F5F0">Pair: m(&gamma;&gamma;) &gt; 90 GeV (Mass95: &gt; 95 GeV)</p><p style="padding:0 16px;font-size:24px;line-height:1.25;text-align:center;font-family:'JetBrains Mono', 'Courier New', monospace;color:#5FC2D3">HLTEgammaAll<br>CombMassFilter</p><p style="padding:0 16px;font-size:24px;line-height:1.25;text-align:center;color:#AEB8CC">no NanoAOD bit</p></div>
+<x-connector x1="588" y1="410" x2="620" y2="410" style="color:#5B6475;border-width:3px"></x-connector>
+<x-connector x1="820" y1="410" x2="846" y2="410" head="none" style="color:#5B6475;border-width:3px"></x-connector>
+<x-connector x1="846" y1="338" x2="846" y2="482" head="none" style="color:#5B6475;border-width:3px"></x-connector>
+<x-connector x1="846" y1="338" x2="872" y2="338" style="color:#5B6475;border-width:3px"></x-connector>
+<x-connector x1="846" y1="482" x2="872" y2="482" style="color:#5B6475;border-width:3px"></x-connector>
+<x-connector x1="1212" y1="338" x2="1244" y2="338" style="color:#5B6475;border-width:3px"></x-connector>
+<x-connector x1="1212" y1="482" x2="1244" y2="482" style="color:#5B6475;border-width:3px"></x-connector>
+<x-connector x1="1424" y1="410" x2="1456" y2="410" style="color:#5B6475;border-width:3px"></x-connector>
+<x-connector x1="588" y1="750" x2="620" y2="750" style="color:#5B6475;border-width:3px"></x-connector>
+<x-connector x1="820" y1="750" x2="846" y2="750" head="none" style="color:#5B6475;border-width:3px"></x-connector>
+<x-connector x1="846" y1="678" x2="846" y2="822" head="none" style="color:#5B6475;border-width:3px"></x-connector>
+<x-connector x1="846" y1="678" x2="872" y2="678" style="color:#5B6475;border-width:3px"></x-connector>
+<x-connector x1="846" y1="822" x2="872" y2="822" style="color:#5B6475;border-width:3px"></x-connector>
+<x-connector x1="1212" y1="678" x2="1456" y2="678" style="color:#C2410C;border-width:3px"></x-connector>
+<x-connector x1="1212" y1="822" x2="1456" y2="822" style="color:#C2410C;border-width:3px"></x-connector>
+<p style="position:absolute;left:128px;top:912px;width:1664px;font-size:24px;line-height:1.3;color:#44506A">Orange boxes: the unseeded last filters NanoAOD discards. Bits in v15 numbering; v12 to v14: 12, 13, 15, 14.</p>
+<aside>The seeded leg runs on hltEgammaCandidates (L1-seeded superclusters, Et above 30 GeV). The unseeded leg runs on hltEgammaCandidatesUnseeded, built from all ECAL clusters without an L1 seed, Et above 22 GeV; its first filter is an HLT1Photon with triggerType 92. Each leg ends in two alternative last filters (R9, or cluster shape plus isolation); the leg combiner ORs them and the HLTEgammaAllCombMassFilter requires the pair mass above 90 or 95 GeV. NanoAOD defines one filter bit per last filter. The seeded ones work; the unseeded ones can never be set.</aside>
+</section>
