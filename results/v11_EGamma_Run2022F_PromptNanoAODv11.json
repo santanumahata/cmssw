@@ -1,0 +1,70 @@
+{
+ "version": "v11",
+ "dataset": "/EGamma/Run2022F-PromptNanoAODv11_v1-v2/NANOAOD",
+ "file": "root://cms-xrd-global.cern.ch//store/data/Run2022F/EGamma/NANOAOD/PromptNanoAODv11_v1-v2/80000/6d07f113-b587-45b3-8db6-c2928358ae0b.root",
+ "events_in_file": 1784948,
+ "events_read": 300000,
+ "filterBits_interpretation": "AsJagged(AsDtype('>i4'))",
+ "n_photon_bits_documented": 12,
+ "n_electron_bits_documented": 0,
+ "photon_bit_numbers": {
+  "R9UnseededLast": null,
+  "TrackIsoUnseededLast": null,
+  "EG18Unseeded": null,
+  "seeded_R9IdLast": null,
+  "seeded_EcalIsoLast": null,
+  "hltHtEcal800": 8
+ },
+ "electron_CaloIdL_MW_unseeded_bit": null,
+ "paths_present": [
+  "HLT_Diphoton30_22_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass90",
+  "HLT_DoubleEle33_CaloIdL_MW"
+ ],
+ "fired_Mass90": 41546,
+ "fired_DoubleEle33_CaloIdL_MW": 7992,
+ "photons_with_bit": {
+  "R9UnseededLast": null,
+  "TrackIsoUnseededLast": null,
+  "EG18Unseeded": null,
+  "seeded_R9IdLast": null,
+  "seeded_EcalIsoLast": null,
+  "hltHtEcal800": 0
+ },
+ "photons_with_bit_in_Mass90_events": {
+  "R9UnseededLast": null,
+  "TrackIsoUnseededLast": null,
+  "EG18Unseeded": null,
+  "seeded_R9IdLast": null,
+  "seeded_EcalIsoLast": null,
+  "hltHtEcal800": 0
+ },
+ "electrons_with_CaloIdL_MW_unseeded_bit": null,
+ "objects_per_id": {
+  "1": 607669,
+  "3": 64328,
+  "4": 28137,
+  "11": 205442,
+  "13": 4989,
+  "15": 90487,
+  "22": 18158
+ },
+ "n_id2_MET": 0,
+ "n_id1515_BoostedTau": 0,
+ "n_id22_Photon": 18158,
+ "events_with_unseeded_photon_bit": 0,
+ "first_offending_run_lumi_event": [],
+ "photon_bits_documented": {
+  "0": "hltEG33L1EG26HEFilter",
+  "1": "hltEG50HEFilter",
+  "2": "hltEG75HEFilter",
+  "3": "hltEG90HEFilter",
+  "4": "hltEG120HEFilter",
+  "5": "hltEG150HEFilter",
+  "6": "hltEG150HEFilter",
+  "7": "hltEG200HEFilter",
+  "8": "hltHtEcal800",
+  "9": "hltEG110EBTightIDTightIsoTrackIsoFilter",
+  "10": "hltEG120EBTightIDTightIsoTrackIsoFilter",
+  "11": "1mu-1photon"
+ }
+}
