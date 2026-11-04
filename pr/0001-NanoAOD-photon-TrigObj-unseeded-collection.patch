@@ -1,0 +1,45 @@
+From aebf3eb64b9c525e77a99405f8a97aa254b335e9 Mon Sep 17 00:00:00 2001
+From: santanumahata <santanuedu.m@gmail.com>
+Date: Wed, 4 Nov 2026 18:28:26 +0000
+Subject: [PATCH] NanoAOD: let photon TrigObj keep objects from the unseeded
+ e/gamma collection
+
+The Photon selection of triggerObjectTable only accepted trigger objects
+whose collection is hltEgammaCandidates. The unseeded-leg filters of
+HLT_Diphoton30_22_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass90 (and Mass95),
+    hltEG22R9Id85b90eHE12R9Id50b80eR9UnseededLastFilter
+    hltEG22Iso60CaloId15b35eHE12R9Id50b80eTrackIsoUnseededLastFilter
+(and hltEG18TrackIso60...TrackIsoUnseededFilter), run on
+hltEgammaCandidatesUnseeded, so their objects were rejected by the
+selection before the quality bits were evaluated. The corresponding
+TrigObj_filterBits were therefore defined but could never be set for
+photons (bits 14/15 in NanoAODv13, 16/17 here), which breaks trigger
+matching of the subleading diphoton leg.
+
+Accept both collections, as the Electron selection already does since
+PR #41827. With skipObjectsNotPassingQualityBits=True only unseeded
+objects that pass one of the photon filters are added, and the
+producer's self-cleaning merges them with the seeded duplicate.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01QJYkW4qPckDhLoe6VfCP28
+---
+ PhysicsTools/NanoAOD/python/triggerObjects_cff.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/PhysicsTools/NanoAOD/python/triggerObjects_cff.py b/PhysicsTools/NanoAOD/python/triggerObjects_cff.py
+index 2691ff0e8..6239ec1de 100644
+--- a/PhysicsTools/NanoAOD/python/triggerObjects_cff.py
++++ b/PhysicsTools/NanoAOD/python/triggerObjects_cff.py
+@@ -87,7 +87,7 @@ triggerObjectTable = triggerObjectTableProducer.clone(
+         ),
+         Photon = cms.PSet(
+             id = cms.int32(22),
+-            sel = cms.string("type(92) && pt > 15 && coll('hltEgammaCandidates')"),
++            sel = cms.string("type(92) && pt > 15 && (coll('hltEgammaCandidates') || coll('hltEgammaCandidatesUnseeded'))"),
+             l1seed = cms.string("type(-98)"),  l1deltaR = cms.double(0.3),
+             #l2seed = cms.string("type(92) && coll('')"),  l2deltaR = cms.double(0.5),
+             skipObjectsNotPassingQualityBits = cms.bool(True),
+-- 
+2.43.0
+
