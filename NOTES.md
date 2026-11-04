@@ -976,3 +976,50 @@ The one-line fix stays as it is. The scan adds candidates for separate pull requ
 `hltHtEcal800` out of the Photon list (or into HT), the 2023 names of the 30_18 filters, a
 per-year statement in the bit documentation, and a note to XPOG about MET (never written) and
 BoostedTau (empty in v12 to v14).
+
+---
+
+## 14. Empirical verification on NanoAOD files (lxplus, 4 November 2026)
+
+Done by Santanu's lxplus workflow from the handover prompt (commit `61bb149`, `results/REPORT.md`
+and one JSON per file under `results/`): ten files, one per dataset, up to 300000 events each, read
+through `root://cms-xrd-global.cern.ch/` with uproot (LCG_107); bit numbers parsed from each file's
+own `TrigObj_filterBits` documentation. **Every prediction of sections 7 and 13 holds.**
+
+| NanoAOD | dataset (one file) | events | fired Mass90 | photons with seeded bits | photons with unseeded bits | e unseeded bit | id 2 | id 1515 |
+|---|---|---|---|---|---|---|---|---|
+| v9 | /EGamma/Run2018D-UL2018_MiniAODv2_NanoAODv9-v3/NANOAOD | 300000 | 31771 | no id-22 object at all | none defined | n/a | 0 | 0 |
+| v10 | /EGamma/Run2022D-PromptNanoAODv10_v2-v1/NANOAOD | 300000 | 46707 | bits not defined (11 photon filters documented) | none defined | n/a | 0 | 0 |
+| v11 | /EGamma/Run2022F-PromptNanoAODv11_v1-v2/NANOAOD | 300000 | 41546 | bits not defined (12 photon filters) | none defined | n/a | 0 | 0 |
+| v12 | GluGluHtoGG_M-125 Run3Summer22NanoAODv12 | 12979 | 7725 | 12: 15626, 13: 17978 | 14: 0, 15: 0, 17: 0 | not defined | 0 | 0 |
+| v12 | /EGamma/Run2022D-22Sep2023-v1/NANOAOD | 300000 | 46407 | 12: 208527, 13: 255099 | 14: 0, 15: 0, 17: 0 | not defined | 0 | 0 |
+| v13 | GluGluHto2G_M-125 Run3Summer23NanoAODv13 (ext1-v4) | 17760 | 10453 | 12: 20865, 13: 24170 | 14: 0, 15: 0, 17: 0 | 16: 702 | 0 | 0 |
+| v13 | /EGamma/Run2022D-16Dec2023-v1/NANOAOD | 300000 | 46794 | 12: 207844, 13: 252774 | 14: 0, 15: 0, 17: 0 | 16: 29042 | 0 | 0 |
+| v14 | /EGamma0/Run2024D-PromptReco-v1/NANOAOD | 300000 | 35892 | 12: 203620, 13: 252039 | 14: 0, 15: 0, 17: 0 | 16: 19444 | 0 | 0 |
+| v15 | GluGluH-Hto2G_M-125 RunIII2024Summer24NanoAODv15 | 4180 | 2406 | 14: 4815, 15: 5588 | 16: 0, 17: 0, 19: 0 | 16: 205 | 0 | 22 |
+| v15 | /EGamma/Run2022D-NanoAODv15-v1/NANOAOD | 300000 | 48687 | 14: 212270, 15: 258546 | 16: 0, 17: 0, 19: 0 | 16: 30451 | 0 | 430 |
+
+Reading of the table:
+
+- **The claim is confirmed.** Across about 1.2 million events of v12, v13, v14 and v15 (data and MC)
+  not one photon object carries an unseeded-leg bit, while the seeded-leg bits of the same paths are
+  set on more objects than there are Mass90 events (both leading-leg alternatives, both Mass90 and
+  Mass95 contribute). In Mass90-fired events the photons with seeded bits number, for example,
+  53153 / 52221 against 46794 fired events in the v13 data file.
+- **Controls.** v9 has no photon trigger objects at all (section 13.3); v10 and v11 define no
+  diphoton bits; the electron "CaloIdL_MW unseeded" bit is absent in v12 and populated from v13
+  (section 0 item 12 and PR 41827), which also proves that unseeded objects reach the table.
+- **Side findings confirmed.** No object with id 2 (MET) in any file (section 13.3); no id 1515
+  (BoostedTau) in v12 to v14 and 22 / 430 of them in the v15 files (selection relaxed in 15_0_2).
+  `hltHtEcal800` (photon bit 8): 0 objects wherever the parser could resolve it (v11 to v15).
+- **Documentation curiosities seen in the files.** The v10 file (PromptNanoAODv10, early 12_4_X)
+  lists 11 photon filters, without the Mu17_Photon30 leg that the 12_4_X branch tip has as the 12th;
+  the v11 file names bits 5 and 6 both `hltEG150HEFilter` (a doc typo in the 12_6_X list). The
+  script's bit parser does not read the old `1 = ..., 2 = ...` bitmask-value layout of v9 and v10,
+  so the hltHtEcal800 count is missing for v10.
+- **Not covered.** The NANO re-run with the fix (step 7 of the handover prompt), which must show
+  the unseeded bits appearing; no v14 MC and no 2024 data at v15 were found in DAS; one file per
+  dataset.
+
+Decks: the slide "Measured on real files" was added to both decks (issue deck slide 8, detailed deck
+slide 19) and the validation slides were updated.

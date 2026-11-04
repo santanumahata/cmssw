@@ -15,6 +15,8 @@ tags and nineteen HLT menu files; the corrections are listed in section 0 of `NO
   `python3 -I` and the downloaded files as arguments.
 - `scan/`: outputs of `deadbits.py` (every filter bit of every object type resolved against the
   2022 to 2026 menus; see `NOTES.md` section 13).
+- `results/`: the lxplus measurement on ten NanoAOD files, v9 to v15 (`REPORT.md` and one JSON per
+  file): the unseeded photon bits are never set, all controls behave; see `NOTES.md` section 14.
 
 Fix in one line, `PhysicsTools/NanoAOD/python/triggerObjects_cff.py`, Photon selection:
 
@@ -26,8 +28,8 @@ Two decks, built on 4 November 2026 (private Claude artifacts; the files below a
 
 | Deck | Slides | PDF | Standalone HTML | Source (Slides format) | Claude artifact |
 |---|---|---|---|---|---|
-| Issue deck (problem, scope, fix) | 9 | `slides/issue-deck.pdf` | `slides/issue-deck.html` | `slides/issue-deck-src/project/` | https://claude.ai/artifact/CnPtNgvGdp6PAAh9xfizof |
-| Detailed walkthrough (code at every step, breadth scan, appendices) | 31 | `slides/detailed-deck.pdf` | `slides/detailed-deck.html` | `slides/detailed-deck-src/project/` | https://claude.ai/artifact/Qx2HzCEjougjAQmaH6P2Qc |
+| Issue deck (problem, scope, measurement, fix) | 10 | `slides/issue-deck.pdf` | `slides/issue-deck.html` | `slides/issue-deck-src/project/` | https://claude.ai/artifact/CnPtNgvGdp6PAAh9xfizof |
+| Detailed walkthrough (code at every step, breadth scan, measurement, appendices) | 32 | `slides/detailed-deck.pdf` | `slides/detailed-deck.html` | `slides/detailed-deck-src/project/` | https://claude.ai/artifact/Qx2HzCEjougjAQmaH6P2Qc |
 
 `scripts/render_deck.js <deck root> <output base>` turns a deck's `project/` folder into the standalone HTML
 and the PDF (Node + Playwright with Chromium; Google Fonts are used when reachable, otherwise the
