@@ -1,0 +1,57 @@
+{
+ "version": "v10",
+ "dataset": "/EGamma/Run2022D-PromptNanoAODv10_v2-v1/NANOAOD",
+ "file": "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/NANOAOD/PromptNanoAODv10_v2-v1/2520000/3f1fe826-1729-4ba9-83b9-d28a2cfd2b88.root",
+ "events_in_file": 1673669,
+ "events_read": 300000,
+ "filterBits_interpretation": "AsJagged(AsDtype('>i4'))",
+ "n_photon_bits_documented": 0,
+ "n_electron_bits_documented": 0,
+ "photon_bit_numbers": {
+  "R9UnseededLast": null,
+  "TrackIsoUnseededLast": null,
+  "EG18Unseeded": null,
+  "seeded_R9IdLast": null,
+  "seeded_EcalIsoLast": null,
+  "hltHtEcal800": null
+ },
+ "electron_CaloIdL_MW_unseeded_bit": null,
+ "paths_present": [
+  "HLT_Diphoton30_22_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass90",
+  "HLT_DoubleEle33_CaloIdL_MW"
+ ],
+ "fired_Mass90": 46707,
+ "fired_DoubleEle33_CaloIdL_MW": 8288,
+ "photons_with_bit": {
+  "R9UnseededLast": null,
+  "TrackIsoUnseededLast": null,
+  "EG18Unseeded": null,
+  "seeded_R9IdLast": null,
+  "seeded_EcalIsoLast": null,
+  "hltHtEcal800": null
+ },
+ "photons_with_bit_in_Mass90_events": {
+  "R9UnseededLast": null,
+  "TrackIsoUnseededLast": null,
+  "EG18Unseeded": null,
+  "seeded_R9IdLast": null,
+  "seeded_EcalIsoLast": null,
+  "hltHtEcal800": null
+ },
+ "electrons_with_CaloIdL_MW_unseeded_bit": null,
+ "objects_per_id": {
+  "1": 212624,
+  "3": 56456,
+  "4": 23088,
+  "11": 207370,
+  "13": 4827,
+  "15": 89389,
+  "22": 12476
+ },
+ "n_id2_MET": 0,
+ "n_id1515_BoostedTau": 0,
+ "n_id22_Photon": 12476,
+ "events_with_unseeded_photon_bit": 0,
+ "first_offending_run_lumi_event": [],
+ "photon_bits_documented": {}
+}

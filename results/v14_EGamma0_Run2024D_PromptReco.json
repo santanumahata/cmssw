@@ -1,0 +1,77 @@
+{
+ "version": "v14",
+ "dataset": "/EGamma0/Run2024D-PromptReco-v1/NANOAOD",
+ "file": "root://cms-xrd-global.cern.ch//store/data/Run2024D/EGamma0/NANOAOD/PromptReco-v1/000/380/306/00000/9bfae790-c112-48bf-bc54-ef1feaa74a96.root",
+ "events_in_file": 447133,
+ "events_read": 300000,
+ "filterBits_interpretation": "AsJagged(AsDtype('>i4'))",
+ "n_photon_bits_documented": 18,
+ "n_electron_bits_documented": 18,
+ "photon_bit_numbers": {
+  "R9UnseededLast": 15,
+  "TrackIsoUnseededLast": 14,
+  "EG18Unseeded": 17,
+  "seeded_R9IdLast": 12,
+  "seeded_EcalIsoLast": 13,
+  "hltHtEcal800": 8
+ },
+ "electron_CaloIdL_MW_unseeded_bit": 16,
+ "paths_present": [
+  "HLT_Diphoton30_22_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass90",
+  "HLT_DoubleEle33_CaloIdL_MW"
+ ],
+ "fired_Mass90": 35892,
+ "fired_DoubleEle33_CaloIdL_MW": 5402,
+ "photons_with_bit": {
+  "R9UnseededLast": 0,
+  "TrackIsoUnseededLast": 0,
+  "EG18Unseeded": 0,
+  "seeded_R9IdLast": 203620,
+  "seeded_EcalIsoLast": 252039,
+  "hltHtEcal800": 0
+ },
+ "photons_with_bit_in_Mass90_events": {
+  "R9UnseededLast": 0,
+  "TrackIsoUnseededLast": 0,
+  "EG18Unseeded": 0,
+  "seeded_R9IdLast": 40085,
+  "seeded_EcalIsoLast": 40157,
+  "hltHtEcal800": 0
+ },
+ "electrons_with_CaloIdL_MW_unseeded_bit": 19444,
+ "objects_per_id": {
+  "1": 236447,
+  "3": 61366,
+  "4": 194,
+  "6": 63440,
+  "11": 133134,
+  "13": 3818,
+  "15": 2684992,
+  "22": 272504
+ },
+ "n_id2_MET": 0,
+ "n_id1515_BoostedTau": 0,
+ "n_id22_Photon": 272504,
+ "events_with_unseeded_photon_bit": 0,
+ "first_offending_run_lumi_event": [],
+ "photon_bits_documented": {
+  "0": "hltEG33L1EG26HEFilter",
+  "1": "hltEG50HEFilter",
+  "2": "hltEG75HEFilter",
+  "3": "hltEG90HEFilter",
+  "4": "hltEG120HEFilter",
+  "5": "hltEG150HEFilter",
+  "6": "hltEG175HEFilter",
+  "7": "hltEG200HEFilter",
+  "8": "hltHtEcal800",
+  "9": "hltEG110EBTightIDTightIsoTrackIsoFilter",
+  "10": "hltEG120EBTightIDTightIsoTrackIsoFilter",
+  "11": "1mu-1photon",
+  "12": "hltEG30LR9Id85b90eHE12R9Id50b80eR9IdLastFilter",
+  "13": "hltEG30LIso60CaloId15b35eHE12R9Id50b80eEcalIsoLastFilter",
+  "14": "hltEG22Iso60CaloId15b35eHE12R9Id50b80eTrackIsoUnseededLastFilter",
+  "15": "hltEG22R9Id85b90eHE12R9Id50b80eR9UnseededLastFilter",
+  "16": "hltEG30Iso60CaloId15b35eR9Id50b90eHE12b10eR9Id50b80eEcalIsoFilter",
+  "17": "hltEG18TrackIso60Iso60CaloId15b35eR9Id50b90eHE12b10eR9Id50b80eTrackIsoUnseededFilter"
+ }
+}
