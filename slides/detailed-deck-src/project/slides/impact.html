@@ -1,0 +1,18 @@
+<section id="impact" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">What analyses see: every Run 3 NanoAOD file, and no sub-leading match for the diphoton triggers</h2>
+<div style="display:flex;gap:24px;align-items:stretch">
+<div style="flex:1;display:flex;flex-direction:column;gap:12px">
+<div style="background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:26px;font-weight:600;color:#176B7B">Datasets</p><p style="font-size:24px;line-height:1.35;color:#44506A">Data: 2022 (PromptNano v10/v11, 22Sep2023 v12, 16Dec2023 v13), 2023 (22Sep2023 v12), 2024 (prompt v14), 2025 (prompt v15) and the v15 re-NANO of 2022 to 2024. MC: Run3Summer22, 22EE, 23, 23BPix at v12 and v13, Summer24 at v15, and the v15 re-NANO of all of them. Any Run 2 input re-processed with v12 or later.</p></div>
+<div style="background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:26px;font-weight:600;color:#176B7B">Frameworks</p><p style="font-size:24px;line-height:1.35;color:#44506A">NanoAOD-based photon matching (HiggsDNA-style workflows, the HYgammaRunIII legend that lists bits 16 and 17 as the legs, FLAF configurations, custom NanoAOD setups) finds no object for the sub-leading leg. MiniAOD-based flashgg reads the pat trigger objects directly and is unaffected.</p></div>
+<div style="background:#F8E3D7;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;line-height:1.35;color:#44506A"><b>Existing files cannot be repaired.</b> The unseeded objects were never written; no post-processing can recover them. Only a new NANO pass with the fix restores the information.</p></div>
+</div>
+<div style="width:760px;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace"># schematic TrigObj rows of one diphoton-triggered event</p>
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace"># (illustration of the structure, not real data)</p>
+<p style="font-size:24px;line-height:1.4;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">today (v15):<br>&#160;id&#160;&#160;pt&#160;&#160;&#160;&#160;&#160;filterBits&#160;&#160;&#160;&#160;&#160;&#160;meaning<br>&#160;22&#160;&#160;41.7&#160;&#160;&#160;0x4000 (bit 14)&#160;&#160;leading leg, R9 last<br>&#160;<span style="color:#F28C4B">-- no row for the 26 GeV photon --</span><br><br>with the fix:<br>&#160;22&#160;&#160;41.7&#160;&#160;&#160;0x4000 (bit 14)&#160;&#160;leading leg, R9 last<br>&#160;<span style="color:#5FC2D3">22&#160;&#160;26.3&#160;&#160;&#160;0x20000 (bit 17)&#160;unseeded leg, R9 last</span></p>
+<hr style="border-top:1px solid #3A4766;width:100%">
+<p style="font-size:24px;line-height:1.35;color:#AEB8CC">A leading photon that also passes the unseeded leg merges with its unseeded twin (same direction) and carries both bits; a sub-leading photon appears as a new row.</p>
+</div>
+</div>
+<aside>The schematic rows are made up to show the structure; pT values and the number of rows will differ event by event. GitHub code search finds the unseeded filter names in 16 files outside cms-sw: analysis legends and configurations, custom NanoAOD producers, and flashgg's MiniAOD validation script.</aside>
+</section>

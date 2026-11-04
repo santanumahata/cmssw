@@ -19,3 +19,30 @@ tags and nineteen HLT menu files; the corrections are listed in section 0 of `NO
 Fix in one line, `PhysicsTools/NanoAOD/python/triggerObjects_cff.py`, Photon selection:
 
     type(92) && pt > 15 && (coll('hltEgammaCandidates') || coll('hltEgammaCandidatesUnseeded'))
+
+## Slides
+
+Two decks, built on 4 November 2026 (private Claude artifacts; the files below are viewable without them):
+
+| Deck | Slides | PDF | Standalone HTML | Source (Slides format) | Claude artifact |
+|---|---|---|---|---|---|
+| Issue deck (problem, scope, fix) | 9 | `slides/issue-deck.pdf` | `slides/issue-deck.html` | `slides/issue-deck-src/project/` | https://claude.ai/artifact/CnPtNgvGdp6PAAh9xfizof |
+| Detailed walkthrough (code at every step, breadth scan, appendices) | 31 | `slides/detailed-deck.pdf` | `slides/detailed-deck.html` | `slides/detailed-deck-src/project/` | https://claude.ai/artifact/Qx2HzCEjougjAQmaH6P2Qc |
+
+`scripts/render_deck.js <deck root> <output base>` turns a deck's `project/` folder into the standalone HTML
+and the PDF (Node + Playwright with Chromium; Google Fonts are used when reachable, otherwise the
+basic faces).
+
+## Where this lives on GitHub
+
+Everything is in the fork `santanumahata/cmssw` only; nothing was pushed to `cms-sw/cmssw` and no pull
+request has been opened.
+
+- Notes, scripts, scan outputs, report and slides (this repository, as a branch of the fork):
+  https://github.com/santanumahata/cmssw/tree/nanoaod-trigobj-notes
+- The fix on top of upstream master (branch for the future pull request, commit aebf3eb64):
+  https://github.com/santanumahata/cmssw/tree/nano-photon-trigobj-unseeded
+- The same fix on the fork's own master (session working branch, commit 1699a39f7):
+  https://github.com/santanumahata/cmssw/tree/claude/fervent-lamport-3oiuh6
+- To open the pull request later (creates nothing by itself):
+  https://github.com/cms-sw/cmssw/compare/master...santanumahata:cmssw:nano-photon-trigobj-unseeded

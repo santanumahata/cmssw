@@ -1,0 +1,24 @@
+<section id="mechanism" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:32px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">Where it breaks: the producer's decision for one unseeded photon object</h2>
+<div style="display:flex;gap:40px;align-items:flex-start">
+<div style="width:820px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;gap:20px;align-items:center;background:#FDFCF9;border:2px solid #176B7B;border-radius:12px;padding:16px 24px"><p style="width:80px;font-size:40px;font-weight:600;color:#176B7B">1</p><p style="flex:1;font-size:24px;line-height:1.3"><b>type(92)?</b> yes. The leg's first filter (HLT1Photon, triggerType 92) saved the object as TriggerCluster; PAT keeps every type.</p></div>
+<x-shape kind="arrow-down" style="width:32px;height:24px;background:#5B6475;align-self:center"></x-shape>
+<div style="display:flex;gap:20px;align-items:center;background:#FDFCF9;border:2px solid #176B7B;border-radius:12px;padding:16px 24px"><p style="width:80px;font-size:40px;font-weight:600;color:#176B7B">2</p><p style="flex:1;font-size:24px;line-height:1.3"><b>pt &gt; 15?</b> yes. The unseeded leg requires Et &gt; 22 GeV (18 GeV for the Diphoton30_18 paths).</p></div>
+<x-shape kind="arrow-down" style="width:32px;height:24px;background:#5B6475;align-self:center"></x-shape>
+<div style="display:flex;gap:20px;align-items:center;background:#F8E3D7;border:2px solid #C2410C;border-radius:12px;padding:16px 24px"><p style="width:80px;font-size:40px;font-weight:600;color:#C2410C">3</p><p style="flex:1;font-size:24px;line-height:1.3"><b>coll('hltEgammaCandidates')?</b> no. The stored label is hltEgammaCandidatesUnseeded::HLT. Without a wildcard the comparison is exact (TriggerObjectStandAlone::hasCollection falls back to TriggerObject::hasCollection).</p></div>
+<x-shape kind="arrow-down" style="width:32px;height:24px;background:#C2410C;align-self:center"></x-shape>
+<div style="display:flex;gap:20px;align-items:center;background:#C2410C;border-radius:12px;padding:16px 24px"><p style="width:80px;font-size:40px;font-weight:600;color:#F6F5F0">4</p><p style="flex:1;font-size:24px;line-height:1.3;color:#F6F5F0"><b>Discarded before the bits.</b> qualityBits is only evaluated for objects that pass sel; the duplicate merging only sees accepted objects. Bits 16 and 17 stay 0 in every event.</p></div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#16213A;border-radius:12px;padding:28px 32px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace"># triggerObjects_cff.py, Photon</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">sel = "type(92) &amp;&amp; pt &gt; 15 &amp;&amp;<br>&#160;&#160;&#160;&#160;&#160;&#160;&#160;<span style="color:#F28C4B">coll('hltEgammaCandidates')</span>"<br>skipObjectsNotPassingQualityBits = True</p>
+<hr style="border-top:1px solid #3A4766;width:100%">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace">// TriggerObjectTableProducer.cc, produce()</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">for (const auto &amp;obj : trigObjs)<br>&#160;&#160;for (const auto &amp;sel : sels_)<br>&#160;&#160;&#160;&#160;<span style="color:#F28C4B">if (sel.match(obj)) {</span> // fails here<br>&#160;&#160;&#160;&#160;&#160;&#160;bits = sel.qualityBits(obj);<br>&#160;&#160;&#160;&#160;&#160;&#160;if (bits != 0) selected.push_back(...);<br>&#160;&#160;&#160;&#160;}</p>
+<hr style="border-top:1px solid #3A4766;width:100%">
+<p style="font-size:24px;line-height:1.35;color:#AEB8CC">Same logic in 13_0_X, 13_3_X, 14_0_X, 15_0_X and master; only the bit width (32 bits up to 15_0_1, 64 bits from 15_0_2) and the merging rule changed.</p>
+</div>
+</div>
+<aside>The object is correct in every respect the selection tests, except the collection label. The comparison is exact because the selection string carries no wildcard; the StandAlone matcher would honour a star. The electron selection was given the second collection in June 2023 (PR 41827); the photon selection was not.</aside>
+</section>

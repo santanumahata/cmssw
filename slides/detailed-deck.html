@@ -1,0 +1,667 @@
+<!doctype html><html><head><meta charset="utf-8"><title>NanoAOD Photon TrigObj: Detailed Walkthrough</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300..700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+@page { size: 1920px 1080px; margin: 0; }
+html, body { margin: 0; padding: 0; background: #2a2f3a; }
+section, section * { box-sizing: border-box; }
+section { position: relative; width: 1920px; height: 1080px; overflow: hidden; margin: 0 auto 24px auto;
+          page-break-after: always; break-after: page; }
+@media print { section { margin: 0; } }
+section h1, section h2, section h3, section p, section ul, section ol { margin: 0; }
+section h1 { font-size: 96px; font-weight: 600; line-height: 1.1; }
+section h2 { font-size: 64px; font-weight: 600; line-height: 1.15; }
+section h3 { font-size: 44px; font-weight: 600; line-height: 1.2; }
+section p { font-size: 32px; line-height: 1.4; }
+section ul, section ol { padding-left: 1.1em; }
+section div:not([style*="display:"]) { display: flex; flex-direction: column; }
+section hr { border: 0; margin: 0; height: 0; }
+section table { border-collapse: collapse; width: 100%; }
+section th, section td { padding: 0.35em 0.6em; border-bottom: 1px solid #D9D6CC; vertical-align: top; text-align: left; }
+section aside { display: none; }
+x-shape { display: block; }
+x-shape[kind="arrow-right"] { clip-path: polygon(0 25%, 60% 25%, 60% 0, 100% 50%, 60% 100%, 60% 75%, 0 75%); }
+x-shape[kind="arrow-down"]  { clip-path: polygon(25% 0, 75% 0, 75% 60%, 100% 60%, 50% 100%, 0 60%, 25% 60%); }
+x-shape[kind="arrow-left"]  { clip-path: polygon(100% 25%, 40% 25%, 40% 0, 0 50%, 40% 100%, 40% 75%, 100% 75%); }
+x-shape[kind="arrow-up"]    { clip-path: polygon(25% 100%, 75% 100%, 75% 40%, 100% 40%, 50% 0, 0 40%, 25% 40%); }
+x-shape[kind="ellipse"] { border-radius: 50%; }
+x-shape[kind="diamond"] { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+x-connector { display: none; }
+</style></head><body>
+<section id="cover" data-transition="fade" style="background:#16213A;color:#F6F5F0;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;justify-content:space-between;gap:40px">
+<x-shape kind="rect" style="position:absolute;left:0;top:0;width:24px;height:1080px;background:#F28C4B"></x-shape>
+<div style="display:flex;flex-direction:column;gap:28px">
+<p style="font-size:28px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#5FC2D3">CMS · NanoAOD · trigger objects · detailed walkthrough</p>
+<h1 style="font-size:84px;font-weight:600;line-height:1.08;color:#F6F5F0">Why the unseeded diphoton leg has no NanoAOD filter bits, from the HLT menu to the fix</h1>
+<p style="font-size:32px;line-height:1.4;color:#AEB8CC;max-width:1540px">Thirty-one slides with the real code at each step: the HLT path and its filters, the trigger summary, PAT and MiniAOD, the NanoAOD table producer and its selection string, the scope across every NanoAOD version and every menu since 2018, a scan of the whole trigger-object table, and the one-line fix with its validation.</p>
+</div>
+<div style="display:flex;gap:48px;align-items:flex-end;justify-content:space-between">
+<p style="font-size:26px;line-height:1.4;color:#AEB8CC">Santanu Mahata · 4 November 2026<br>Sources: cms-sw/cmssw master ed35654b1, CMSSW_13_3_1_patch1 (NanoAOD v13), release branches 12_4_X to 16_1_X, HLT menus 2018 to 2026</p>
+<p style="font-size:26px;font-family:'JetBrains Mono', 'Courier New', monospace;color:#5FC2D3;white-space:nowrap">TrigObj_filterBits · bits 16, 17 (v15) · 14, 15 (v12 to v14)</p>
+</div>
+<aside>This is the long version of the issue deck. Every code excerpt is copied from the repository or the menu file named on the slide; line numbers refer to upstream master unless a release is named.</aside>
+</section>
+
+<section id="summary" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:32px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">The problem in one page</h2>
+<div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:24px">
+<div style="display:flex;flex-direction:column;gap:6px;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:24px 28px"><p style="font-size:96px;font-weight:600;line-height:1;color:#C2410C">3</p><p style="font-size:24px;line-height:1.3;color:#44506A">photon filter bits documented but impossible to set (16, 17, 19 in v15; 14, 15, 17 in v12 to v14)</p></div>
+<div style="display:flex;flex-direction:column;gap:6px;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:24px 28px"><p style="font-size:96px;font-weight:600;line-height:1;color:#C2410C">4+</p><p style="font-size:24px;line-height:1.3;color:#44506A">NanoAOD versions affected: v12, v13, v14, v15 and everything after, including today's master</p></div>
+<div style="display:flex;flex-direction:column;gap:6px;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:24px 28px"><p style="font-size:96px;font-weight:600;line-height:1;color:#176B7B">19</p><p style="font-size:24px;line-height:1.3;color:#44506A">HLT menu files checked, 2018 to 2026: same filter names, same collections, same chain everywhere</p></div>
+<div style="display:flex;flex-direction:column;gap:6px;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:24px 28px"><p style="font-size:96px;font-weight:600;line-height:1;color:#176B7B">1</p><p style="font-size:24px;line-height:1.3;color:#44506A">line to change in triggerObjects_cff.py, mirroring what the Electron selection has done since 2023</p></div>
+</div>
+<div style="display:flex;gap:24px">
+<div style="flex:1;display:flex;flex-direction:column;gap:10px;background:#F8E3D7;border:1px solid #D9D6CC;border-radius:12px;padding:24px 28px"><p style="font-size:28px;font-weight:600;color:#C2410C">Problem</p><p style="font-size:24px;line-height:1.35;color:#44506A">The Photon entry of the NanoAOD trigger-object table only accepts HLT objects from the collection hltEgammaCandidates. The sub-leading leg of HLT_Diphoton30_22_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass90 and _Mass95 is built from hltEgammaCandidatesUnseeded. The collection test is applied before the filter bits are computed, so every object carrying the unseeded last-filter labels is dropped and its bits can never appear. The sub-leading photon of the main H to gamma gamma triggers cannot be trigger-matched from NanoAOD.</p></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:10px;background:#DCEBEE;border:1px solid #D9D6CC;border-radius:12px;padding:24px 28px"><p style="font-size:28px;font-weight:600;color:#176B7B">Solution</p><p style="font-size:24px;line-height:1.35;color:#44506A">Accept both e/gamma collections in the Photon selection string, exactly as the Electron selection does. Because objects are kept only when they set at least one photon bit, and the only photon-bit filters on the unseeded collection are the three diphoton ones, the output changes only in events that fired those triggers. Bit numbers and documentation stay the same. The fix is committed locally on top of today's upstream master and applies cleanly; nothing is pushed yet.</p></div>
+</div>
+<aside>The three dead bits are the unseeded last filters of the Diphoton30_22 paths (two bits) and of the 2018 and 2022 Diphoton30_18 paths (one bit). The rest of the deck shows the evidence step by step.</aside>
+</section>
+
+<section id="trigobj" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:28px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">What a NanoAOD trigger object is, and how analyses use the filter bits</h2>
+<div style="display:flex;gap:32px;align-items:flex-start">
+<table style="width:860px;font-size:24px;font-family:'IBM Plex Sans', Arial, sans-serif;color:#16213A;background:#FDFCF9;border:1px solid #D9D6CC">
+<tr style="background:#16213A"><th style="width:30%;color:#F6F5F0;text-align:left;padding:8px 14px">branch</th><th style="width:70%;color:#F6F5F0;text-align:left">meaning</th></tr>
+<tr><td>TrigObj_id</td><td>object type: 11 electron, 22 photon, 13 muon, 15 tau, 1 jet, 6 fat jet, 2 MET, 3 HT, 4 MHT</td></tr>
+<tr><td>TrigObj_pt, eta, phi</td><td>the HLT object's kinematics (for e/gamma: the supercluster)</td></tr>
+<tr><td>TrigObj_l1pt, l1iso, l1charge</td><td>the matched L1 seed within a cone (type -98 for e/gamma)</td></tr>
+<tr><td>TrigObj_l2pt</td><td>the matched L2 object where configured (muons, jets, MET)</td></tr>
+<tr style="background:#F8E3D7"><td>TrigObj_filterBits</td><td>one bit per HLT filter the object passed, from a per-type list in triggerObjects_cff.py; 32-bit up to 15_0_1, 64-bit from 15_0_2</td></tr>
+</table>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;background:#16213A;border-radius:12px;padding:24px 28px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace"># sketch of a typical NanoAOD trigger match (awkward)</p>
+<p style="font-size:24px;line-height:1.4;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">to&#160;&#160;&#160;= events.TrigObj<br>ph&#160;&#160;&#160;= to[to.id == 22]<br><span style="color:#F28C4B">leg2 = ph[(ph.filterBits &gt;&gt; 17) &amp; 1 == 1]</span><br># unseeded R9 leg: always empty today<br>dr&#160;&#160;&#160;= photons.metric_table(leg2)<br>ok&#160;&#160;&#160;= ak.any(dr &lt; 0.1, axis=2)</p>
+<hr style="border-top:1px solid #3A4766;width:100%">
+<p style="font-size:24px;line-height:1.35;color:#AEB8CC">A leg-by-leg efficiency, a trigger-matched tag-and-probe, or a HiggsDNA-style matching of both photons needs the bit of the last filter of each leg. For the sub-leading leg of the diphoton triggers that bit is never set, so the match always fails.</p>
+</div>
+</div>
+<p style="font-size:24px;line-height:1.35;color:#44506A">The table is produced by TriggerObjectTableProducer from the unpacked MiniAOD trigger objects. Each object type has its own selection string; an object is written only if it passes that string and sets at least one bit of that type.</p>
+<aside>The filter bits are the only way to know which HLT filter an object passed in NanoAOD, because the filter labels themselves are not stored. Everything therefore depends on the per-type selection admitting the objects that carry the labels.</aside>
+</section>
+
+<section id="egamma" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:28px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">Two e/gamma candidate collections at HLT: L1-seeded and unseeded</h2>
+<div style="display:flex;gap:24px">
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#DCEBEE;border:1px solid #D9D6CC;border-radius:12px;padding:22px 26px">
+<p style="font-size:28px;font-weight:600;color:#176B7B">hltEgammaCandidates (seeded)</p>
+<p style="font-size:24px;line-height:1.35;color:#44506A">Superclusters built only in regions around L1 e/gamma candidates. Used by the leading leg (Et &gt; 30 GeV, L1 match required) and by nearly every single-photon and single-electron path.</p>
+<div style="display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:10px;padding:18px 22px"><p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">fragment.hltEgammaCandidates = cms.EDProducer(<br>&#160;&#160;"EgammaHLTRecoEcalCandidateProducers",<br>&#160;&#160;scHybridBarrelProducer = cms.InputTag(<br>&#160;&#160;&#160;&#160;'hltParticleFlowSuperCluster<span style="color:#5FC2D3">ECALL1Seeded</span>',<br>&#160;&#160;&#160;&#160;'hltParticleFlowSuperClusterECALBarrel' ),<br>&#160;&#160;scIslandEndcapProducer = cms.InputTag(<br>&#160;&#160;&#160;&#160;'hltParticleFlowSuperCluster<span style="color:#5FC2D3">ECALL1Seeded</span>',<br>&#160;&#160;&#160;&#160;'hltParticleFlowSuperClusterECALEndcapWithPreshower' ),<br>&#160;&#160;recoEcalCandidateCollection = cms.string( "" ) )</p></div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#F8E3D7;border:1px solid #D9D6CC;border-radius:12px;padding:22px 26px">
+<p style="font-size:28px;font-weight:600;color:#C2410C">hltEgammaCandidatesUnseeded</p>
+<p style="font-size:24px;line-height:1.35;color:#44506A">Superclusters built over the whole ECAL, with no L1 requirement. Used for the sub-leading object of double-object paths (Et &gt; 22 GeV here), which may have no L1 seed of its own.</p>
+<div style="display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:10px;padding:18px 22px"><p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">fragment.hltEgammaCandidatesUnseeded = cms.EDProducer(<br>&#160;&#160;"EgammaHLTRecoEcalCandidateProducers",<br>&#160;&#160;scHybridBarrelProducer = cms.InputTag(<br>&#160;&#160;&#160;&#160;'hltParticleFlowSuperCluster<span style="color:#F28C4B">ECALUnseeded</span>',<br>&#160;&#160;&#160;&#160;'hltParticleFlowSuperClusterECALBarrel' ),<br>&#160;&#160;scIslandEndcapProducer = cms.InputTag(<br>&#160;&#160;&#160;&#160;'hltParticleFlowSuperCluster<span style="color:#F28C4B">ECALUnseeded</span>',<br>&#160;&#160;&#160;&#160;'hltParticleFlowSuperClusterECALEndcapWithPreshower' ),<br>&#160;&#160;recoEcalCandidateCollection = cms.string( "" ) )</p></div>
+</div>
+</div>
+<p style="font-size:24px;line-height:1.35;color:#44506A">Two producers, two RecoEcalCandidate collections, two distinct trigger objects in the event even when they describe the same photon. The trigger summary, PAT and MiniAOD keep the collection name with each object. NanoAOD decides per object type which collection names it accepts, and that decision is where the photon table goes wrong.</p>
+<aside>Both producers come from the same menu file (CMSSW_13_3_1_patch1, HLT_FULL_cff.py); the only difference is the supercluster input, L1-seeded versus unseeded. The sub-leading photon often has no L1 seed above threshold of its own, which is why double-photon paths reconstruct it unseeded.</aside>
+</section>
+
+<section id="path" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:20px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">HLT_Diphoton30_22_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass90: one path, two legs, four last filters</h2>
+<div style="display:flex;flex-direction:column;gap:12px;background:#E4ECEE;border-radius:12px;padding:18px 22px">
+<p style="font-size:24px;font-weight:600;color:#176B7B">SEEDED LEG · hltEgammaCandidates · L1-seeded · Et &gt; 30 GeV</p>
+<div style="display:flex;gap:12px;align-items:stretch">
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;background:#FDFCF9;border:2px solid #176B7B;border-radius:10px;padding:14px 16px"><p style="font-size:24px;line-height:1.25;text-align:center">L1 match, then Et &gt; 30 GeV</p></div>
+<x-shape kind="arrow-right" style="width:40px;height:20px;background:#5B6475;align-self:center"></x-shape>
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;background:#FDFCF9;border:2px solid #176B7B;border-radius:10px;padding:14px 16px"><p style="font-size:24px;line-height:1.25;text-align:center">R9 &gt; 0.5 (EB) / 0.8 (EE), then H/E</p></div>
+<x-shape kind="arrow-right" style="width:40px;height:20px;background:#5B6475;align-self:center"></x-shape>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;background:#FDFCF9;border:2px solid #176B7B;border-radius:10px;padding:10px 12px"><p style="font-size:24px;line-height:1.25;text-align:center;background:#DCEBEE;border-radius:8px;padding:8px 10px">either R9 &gt; 0.85 / 0.90, last filter: <b>bit 14</b></p><p style="font-size:24px;line-height:1.25;text-align:center;background:#DCEBEE;border-radius:8px;padding:8px 10px">or cluster shape + ECAL iso, last filter: <b>bit 15</b></p></div>
+<x-shape kind="arrow-right" style="width:40px;height:20px;background:#5B6475;align-self:center"></x-shape>
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;background:#FDFCF9;border:2px solid #176B7B;border-radius:10px;padding:14px 16px"><p style="font-size:24px;line-height:1.25;text-align:center">leg combiner: (R9 or iso) and H/E</p></div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;background:#F3E6DE;border-radius:12px;padding:18px 22px">
+<p style="font-size:24px;font-weight:600;color:#C2410C">UNSEEDED LEG · hltEgammaCandidatesUnseeded · no L1 seed · Et &gt; 22 GeV</p>
+<div style="display:flex;gap:12px;align-items:stretch">
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;background:#FDFCF9;border:2px solid #C2410C;border-radius:10px;padding:14px 16px"><p style="font-size:24px;line-height:1.25;text-align:center">HLT1Photon: Et &gt; 22 GeV, |eta| &lt; 2.55, saved as type 92</p></div>
+<x-shape kind="arrow-right" style="width:40px;height:20px;background:#5B6475;align-self:center"></x-shape>
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;background:#FDFCF9;border:2px solid #C2410C;border-radius:10px;padding:14px 16px"><p style="font-size:24px;line-height:1.25;text-align:center">R9 &gt; 0.5 (EB) / 0.8 (EE), then H/E</p></div>
+<x-shape kind="arrow-right" style="width:40px;height:20px;background:#5B6475;align-self:center"></x-shape>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;background:#FDFCF9;border:2px solid #C2410C;border-radius:10px;padding:10px 12px"><p style="font-size:24px;line-height:1.25;text-align:center;background:#C2410C;color:#F6F5F0;border-radius:8px;padding:8px 10px">either R9 &gt; 0.85 / 0.90, last filter: <b>bit 17 never set</b></p><p style="font-size:24px;line-height:1.25;text-align:center;background:#C2410C;color:#F6F5F0;border-radius:8px;padding:8px 10px">or cluster shape + ECAL + track iso, last filter: <b>bit 16 never set</b></p></div>
+<x-shape kind="arrow-right" style="width:40px;height:20px;background:#5B6475;align-self:center"></x-shape>
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;background:#FDFCF9;border:2px solid #C2410C;border-radius:10px;padding:14px 16px"><p style="font-size:24px;line-height:1.25;text-align:center">(no combiner; the ignore() filters feed the pair filter directly)</p></div>
+</div>
+</div>
+<div style="display:flex;gap:16px;align-items:center;justify-content:center">
+<x-shape kind="arrow-down" style="width:32px;height:24px;background:#5B6475"></x-shape>
+<div style="display:flex;flex-direction:column;justify-content:center;background:#16213A;border-radius:10px;padding:14px 28px"><p style="font-size:24px;line-height:1.3;text-align:center;color:#F6F5F0">Pair filter hltDiEG22R9Id85b90eORIso60CaloId15b35eANDHE12R9Id50b80eMass90CombMassLastFilter (HLTEgammaAllCombMassFilter): m(&gamma;&gamma;) &gt; 90 GeV, Mass95 path: &gt; 95 GeV. No NanoAOD bit.</p></div>
+</div>
+<p style="font-size:24px;line-height:1.3;color:#44506A">Bit numbers are those of NanoAOD v15 and master; in v12 to v14 the same four last filters are bits 12, 13 (seeded) and 15, 14 (unseeded). Mass95 shares the whole sequence.</p>
+<aside>Each leg ends in two alternative last filters, wrapped in cms.ignore() so that failing one does not stop the path; the leg combiner on the seeded leg ORs them, and the pair filter requires one object from each leg. NanoAOD defines one bit per last filter. Only the seeded ones can ever be set.</aside>
+</section>
+
+<section id="path-code" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">The path and its sequence as defined in the NanoAOD v13 release menu</h2>
+<div style="display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:24px 28px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace"># CMSSW_13_3_1_patch1, HLTrigger/Configuration/python/HLT_FULL_cff.py, line 119468 (path) and 118801 (sequence)</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">fragment.HLT_Diphoton30_22_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass90_v19 = cms.Path(<br>&#160;&#160;&#160;&#160;fragment.HLTBeginSequence + fragment.hltL1sSingleAndDoubleEGor<br>&#160;&#160;+ fragment.hltPreDiphoton3022R9IdORIsoCaloIdANDHER9IdMass90<br>&#160;&#160;+ <span style="color:#5FC2D3">fragment.HLTDiphoton30L22R9Id85b90eORIso60CaloId15b35eANDHE12R9Id50b80eSequence</span><br>&#160;&#160;+ fragment.hltDiEG22R9Id85b90eORIso60CaloId15b35eANDHE12R9Id50b80eMass90CombMassLastFilter<br>&#160;&#160;+ fragment.HLTEndSequence )</p>
+<hr style="border-top:1px solid #3A4766;width:100%">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace"># the sequence, e/gamma modules only; cms.ignore(f) = f is run and saves its objects but cannot stop the path</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace"><span style="color:#5FC2D3">hltEgammaCandidates</span> &gt; hltEGL1SingleAndDoubleEGOrFilter &gt; hltEG30L1SingleAndDoubleEGOrEtFilter<br>&#160;&#160;&gt; hltEG30LR9Id50b80eR9IdFilter &gt; hltEG30LHE12R9Id50b80eHEFilter<br>&#160;&#160;&gt; ignore(hltEG30LR9Id85b90eHE12R9Id50b80eR9IdLastFilter)&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;<span style="color:#AEB8CC"># bit 14</span><br>&#160;&#160;&gt; ignore(hltEG30LCaloId15b35eHE12R9Id50b80eClusterShapeFilter)<br>&#160;&#160;&gt; ignore(hltEG30LIso60CaloId15b35eHE12R9Id50b80eEcalIsoLastFilter)&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;<span style="color:#AEB8CC"># bit 15</span><br>&#160;&#160;&gt; hltEG30LRId85ORIso60CaloId15b35eANDHE12R9Id50b80eLegCombLastFilter<br><span style="color:#F28C4B">hltEgammaCandidatesUnseeded</span> &gt; hltDiEG22EtEta2p55UnseededFilter<br>&#160;&#160;&gt; hltDiEG22R9Id50b80eR9IdUnseededFilter &gt; hltDiEG22HE12R9Id50b80eHEUnseededFilter<br>&#160;&#160;&gt; ignore(<span style="color:#F28C4B">hltEG22R9Id85b90eHE12R9Id50b80eR9UnseededLastFilter</span>)&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;<span style="color:#AEB8CC"># bit 17</span><br>&#160;&#160;&gt; ignore(hltEG22CaloId15b35eHE12R9Id50b80eClusterShapeUnseededFilter)<br>&#160;&#160;&gt; ignore(hltEG22Iso60CaloId15b35eHE12R9Id50b80eEcalIsoUnseededFilter)<br>&#160;&#160;&gt; ignore(<span style="color:#F28C4B">hltEG22Iso60CaloId15b35eHE12R9Id50b80eTrackIsoUnseededLastFilter</span>)&#160;&#160;<span style="color:#AEB8CC"># bit 16</span></p>
+</div>
+<p style="font-size:24px;line-height:1.3;color:#44506A">The producers that compute the variables (hltEgammaR9IDUnseeded, hltEgammaHoverEUnseeded, hltEgammaHollowTrackIsoUnseeded, ...) sit between the filters and are omitted here. The same sequence, module for module, is in the 2018, 2022, 2023, 2024, 2025 and 2026 menus.</p>
+<aside>Read from the menu file of the NanoAOD v13 production release. The path version changes from menu to menu (v13 in 2018, v29 in the frozen 2026 menu), the e/gamma filter chain does not: the MD5 of the ordered filter-name list is identical in all nineteen menu files checked.</aside>
+</section>
+
+<section id="filter-code" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">The two unseeded last filters: their candidate collection is explicit in l1EGCand</h2>
+<div style="display:flex;gap:24px">
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace"># bit 17 (v12 to v14: bit 15), trimmed to the relevant parameters</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">fragment.hltEG22R9Id85b90eHE12R9Id50b80e<br>&#160;&#160;R9UnseededLastFilter = cms.EDFilter(<br>&#160;&#160;"HLTEgammaGenericFilter",<br>&#160;&#160;saveTags = cms.bool( True ),<br>&#160;&#160;candTag = cms.InputTag(<br>&#160;&#160;&#160;&#160;"hltDiEG22HE12R9Id50b80eHEUnseededFilter" ),<br>&#160;&#160;varTag = cms.InputTag(<br>&#160;&#160;&#160;&#160;'hltEgammaR9IDUnseeded', 'r95x5' ),<br>&#160;&#160;lessThan = cms.bool( False ),<br>&#160;&#160;useEt = cms.bool( False ),<br>&#160;&#160;thrRegularEB = cms.vdouble( 0.85 ),<br>&#160;&#160;thrRegularEE = cms.vdouble( 0.9 ),<br>&#160;&#160;ncandcut = cms.int32( 1 ),<br>&#160;&#160;<span style="color:#F28C4B">l1EGCand = cms.InputTag(</span><br>&#160;&#160;&#160;&#160;<span style="color:#F28C4B">"hltEgammaCandidatesUnseeded" )</span> )</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace"># bit 16 (v12 to v14: bit 14), trimmed to the relevant parameters</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">fragment.hltEG22Iso60CaloId15b35eHE12R9Id50b80e<br>&#160;&#160;TrackIsoUnseededLastFilter = cms.EDFilter(<br>&#160;&#160;"HLTEgammaGenericQuadraticFilter",<br>&#160;&#160;saveTags = cms.bool( True ),<br>&#160;&#160;candTag = cms.InputTag( "hltEG22Iso60CaloId15b35e<br>&#160;&#160;&#160;&#160;HE12R9Id50b80eEcalIsoUnseededFilter" ),<br>&#160;&#160;varTag = cms.InputTag(<br>&#160;&#160;&#160;&#160;"hltEgammaHollowTrackIsoUnseeded" ),<br>&#160;&#160;lessThan = cms.bool( True ),<br>&#160;&#160;useEt = cms.bool( True ),<br>&#160;&#160;thrRegularEB = cms.vdouble( 6.0 ),<br>&#160;&#160;thrRegularEE = cms.vdouble( 6.0 ),<br>&#160;&#160;thrOverEEB = cms.vdouble( 0.002 ),<br>&#160;&#160;thrOverEEE = cms.vdouble( 0.002 ),<br>&#160;&#160;ncandcut = cms.int32( 1 ),<br>&#160;&#160;<span style="color:#F28C4B">l1EGCand = cms.InputTag(</span><br>&#160;&#160;&#160;&#160;<span style="color:#F28C4B">"hltEgammaCandidatesUnseeded" )</span> )</p>
+</div>
+</div>
+<p style="font-size:24px;line-height:1.3;color:#44506A">candTag points to the previous filter of the chain (the objects to test), varTag to the variable producer, and l1EGCand to the candidate collection the filter tags its saved objects with. The seeded last filters are identical in structure with l1EGCand = hltEgammaCandidates. Module names are broken over two lines here only for display.</p>
+<aside>HLTEgammaGenericFilter and HLTEgammaGenericQuadraticFilter are the standard e/gamma selection modules; the quadratic variant applies a threshold that grows with Et (thrOverE terms). Both read l1EGCand and use it as the collection tag of the objects they save, as the next slides show in the plugin code.</aside>
+</section>
+
+<section id="first-filter" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">Why the unseeded objects carry type 92: the first filter of the leg saves them as TriggerCluster</h2>
+<div style="display:flex;gap:24px;align-items:stretch">
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace"># menu: the first unseeded filter</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">fragment.hltDiEG22EtEta2p55UnseededFilter =<br>&#160;&#160;cms.EDFilter( "HLT1Photon",<br>&#160;&#160;saveTags = cms.bool( True ),<br>&#160;&#160;<span style="color:#F28C4B">inputTag = cms.InputTag(</span><br>&#160;&#160;&#160;&#160;<span style="color:#F28C4B">"hltEgammaCandidatesUnseeded" )</span>,<br>&#160;&#160;<span style="color:#5FC2D3">triggerType = cms.int32( 92 )</span>,<br>&#160;&#160;MinE = cms.double( -1.0 ),<br>&#160;&#160;MinPt = cms.double( 22.0 ),<br>&#160;&#160;MinMass = cms.double( -1.0 ),<br>&#160;&#160;MaxMass = cms.double( -1.0 ),<br>&#160;&#160;MinEta = cms.double( -1.0 ),<br>&#160;&#160;MaxEta = cms.double( 2.55 ),<br>&#160;&#160;MinN = cms.int32( 2 ) )</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace">// HLTrigger/HLTfilters/plugins/HLTSinglet.cc</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">template &lt;typename T&gt;<br>int getObjectType(const T&amp;) { return 0; }<br><span style="color:#AEB8CC">// no specialisation for RecoEcalCandidate</span><br><br>if (saveTags())<br>&#160;&#160;filterproduct.addCollectionTag(<span style="color:#F28C4B">inputTag_</span>);<br>...<br>int tid = getObjectType&lt;T&gt;(*i);<br>if (tid == 0)<br>&#160;&#160;tid = <span style="color:#5FC2D3">triggerType_</span>;&#160;&#160;<span style="color:#AEB8CC">// 92, TriggerCluster</span><br>filterproduct.addObject(tid, ref);</p>
+</div>
+</div>
+<div style="display:flex;gap:24px">
+<div style="flex:1;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;line-height:1.35;color:#44506A"><b>Result.</b> Every candidate of hltEgammaCandidatesUnseeded with Et &gt; 22 GeV is saved with type 92 and the collection tag hltEgammaCandidatesUnseeded. On the seeded leg, HLTEgammaL1TMatchFilterRegional and HLTEgammaEtFilter save TriggerCluster as well.</p></div>
+<div style="flex:1;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;line-height:1.35;color:#44506A"><b>Why it matters.</b> The NanoAOD selection starts with type(92). It is satisfied for both legs, so the object type is not what rejects the unseeded objects; the next slide shows what the later filters save, and the slide after that where the types are merged.</p></div>
+</div>
+<aside>TriggerTypeDefs.h: TriggerPhoton = 81, TriggerCluster = 92, TriggerL1EG = -98. HLT1Photon is HLTSinglet instantiated for reco::RecoEcalCandidate; the generic getObjectType returns 0 for that type, so the configured triggerType is stored.</aside>
+</section>
+
+<section id="generic-filter" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">What the later filters save: HLTGenericFilter tags the collection and uses type 81 when saveTags is on</h2>
+<div style="display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:24px 28px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace">// HLTrigger/Egamma/plugins/HLTGenericFilter.cc (master lines 28 to 32 and 139 to 159; same logic from 10_6_X on)</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">l1EGTag_ = iConfig.template getParameter&lt;edm::InputTag&gt;("l1EGCand");<br>...<br>if (saveTags()) {<br>&#160;&#160;<span style="color:#F28C4B">filterproduct.addCollectionTag(l1EGTag_);</span>&#160;&#160;<span style="color:#AEB8CC">// hltEgammaCandidatesUnseeded for the unseeded leg</span><br>}<br>// Set output format<br>int trigger_type = trigger::TriggerCluster;<br>if (saveTags())<br>&#160;&#160;<span style="color:#5FC2D3">trigger_type = trigger::TriggerPhoton;</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;<span style="color:#AEB8CC">// 81 for every saved object</span><br>...<br>PrevFilterOutput-&gt;getObjects(TriggerCluster, recoCands);<br>if (recoCands.empty())<br>&#160;&#160;PrevFilterOutput-&gt;getObjects(TriggerPhoton, recoCands);&#160;&#160;<span style="color:#AEB8CC">// accepts either type from the previous filter</span></p>
+</div>
+<div style="display:flex;gap:24px">
+<div style="flex:1;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;line-height:1.35;color:#44506A"><b>Collection.</b> The saved reference points into the l1EGCand collection. For the unseeded last filters that is hltEgammaCandidatesUnseeded, which PAT turns into the label hltEgammaCandidatesUnseeded::HLT on the object.</p></div>
+<div style="flex:1;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;line-height:1.35;color:#44506A"><b>Type.</b> These filters save type 81 (TriggerPhoton). The object keeps the 92 it received from the first filter, because PAT attaches the type of every filter that accepted an object (next slide). So type(92) in NanoAOD passes, and the collection test is the only thing left to fail.</p></div>
+<div style="flex:1;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;line-height:1.35;color:#44506A"><b>Unchanged for years.</b> The same three statements are in the 10_6_X, 12_4_X, 12_6_X, 13_0_X, 13_3_X, 14_0_X, 15_0_X and master versions of the plugin (only the line numbers move).</p></div>
+</div>
+<aside>HLTEgammaGenericQuadraticFilter.cc has the identical block at lines 118 to 135. The first version of my notes described line 143 as saving TriggerCluster; that was wrong and was corrected in the second pass: with saveTags true the type is TriggerPhoton, and the 92 comes from the leg's first filter.</aside>
+</section>
+
+<section id="pat-code" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">The trigger summary and PAT keep everything: collection label, all types, all filter labels</h2>
+<div style="display:flex;gap:24px;align-items:stretch">
+<div style="width:640px;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace"># menu: the summary producer</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">fragment.hltTriggerSummaryAOD =<br>&#160;&#160;cms.EDProducer(<br>&#160;&#160;"TriggerSummaryProducerAOD",<br>&#160;&#160;throw = cms.bool( False ),<br>&#160;&#160;processName = cms.string( "@" ),<br>&#160;&#160;moduleLabelPatternsToMatch =<br>&#160;&#160;&#160;&#160;cms.vstring( 'hlt*' ),<br>&#160;&#160;moduleLabelPatternsToSkip =<br>&#160;&#160;&#160;&#160;cms.vstring( ) )</p>
+<hr style="border-top:1px solid #3A4766;width:100%">
+<p style="font-size:24px;line-height:1.35;color:#AEB8CC">Every filter with saveTags contributes; objects are stored once per collection tag, and each filter records the keys of its objects and the type it saved them with.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace">// PhysicsTools/PatAlgos/plugins/PATTriggerProducer.cc (master 680 to 731)</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">for (size_t iK = 0; iK &lt; keys.size(); ++iK) {<br>&#160;&#160;filterLabels.insert({keys[iK], nameFilter});<br>&#160;&#160;objectTypes.insert({keys[iK], types[iK]});&#160;&#160;<span style="color:#AEB8CC">// per filter</span><br>}<br>...<br><span style="color:#F28C4B">triggerObject.setCollection(</span><br><span style="color:#F28C4B">&#160;&#160;&#160;&#160;handleTriggerEvent-&gt;collectionTagEncoded(iC));</span><br>for (auto t = objectTypes.equal_range(iO); ...)<br>&#160;&#160;<span style="color:#5FC2D3">triggerObject.addTriggerObjectType(t.first-&gt;second);</span><br>...<br>triggerObjectStandAlone.addFilterLabel(frange.first-&gt;second);<br>triggerObjectStandAlone.addPathName(iP-&gt;pathName, ...);</p>
+</div>
+</div>
+<div style="display:flex;gap:24px">
+<div style="flex:1;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;line-height:1.35;color:#44506A"><b>Collection.</b> setCollection stores the encoded tag of the collection the object came from: hltEgammaCandidatesUnseeded::HLT for the sub-leading leg, hltEgammaCandidates::HLT for the leading one.</p></div>
+<div style="flex:1;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;line-height:1.35;color:#44506A"><b>Types and labels.</b> addTriggerObjectType is called for every filter that referenced the object, so the unseeded object carries 92 and 81; addFilterLabel records every filter label, including the two unseeded last filters NanoAOD looks for.</p></div>
+</div>
+<aside>patTrigger has onlyStandAlone = False and no excluded collections (the exludeCollections parameter is commented out in triggerLayer1/triggerProducer_cfi.py in 13_3_X and master), so nothing from the unseeded collection is lost at this stage.</aside>
+</section>
+
+<section id="miniaod-code" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">MiniAOD slims the objects but keeps the collection name; NanoAOD unpacks the labels again</h2>
+<div style="display:flex;gap:24px;align-items:stretch">
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace"># PatAlgos/python/slimming/selectedPatTrigger_cfi.py</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">selectedPatTrigger = cms.EDFilter(<br>&#160;&#160;"PATTriggerObjectStandAloneSelector",<br>&#160;&#160;src = cms.InputTag("patTrigger"),<br>&#160;&#160;<span style="color:#5FC2D3">cut = cms.string("!filterLabels.empty()")</span><br>)</p>
+<hr style="border-top:1px solid #3A4766;width:100%">
+<p style="font-size:24px;line-height:1.35;color:#AEB8CC">Keeps every object accepted by at least one filter with saveTags. The unseeded photons carry their last-filter labels, so they stay.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace"># PatAlgos/python/slimming/slimmedPatTrigger_cfi.py</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">slimmedPatTrigger = cms.EDProducer(<br>&#160;&#160;"PATTriggerObjectStandAloneSlimmer",<br>&#160;&#160;src = cms.InputTag("selectedPatTrigger"),<br>&#160;&#160;triggerResults =<br>&#160;&#160;&#160;&#160;cms.InputTag( 'TriggerResults::HLT' ),<br>&#160;&#160;packFilterLabels = cms.bool(True),<br>&#160;&#160;packP4 = cms.bool(True),<br>)</p>
+<hr style="border-top:1px solid #3A4766;width:100%">
+<p style="font-size:24px;line-height:1.35;color:#AEB8CC">Packs the four-vector and the filter labels; the collection string and the type list are stored as they are.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace"># NanoAOD/python/triggerObjects_cff.py, lines 8 to 12</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">unpackedPatTrigger = cms.EDProducer(<br>&#160;&#160;"PATTriggerObjectStandAloneUnpacker",<br>&#160;&#160;patTriggerObjectsStandAlone =<br>&#160;&#160;&#160;&#160;cms.InputTag('slimmedPatTrigger'),<br>&#160;&#160;triggerResults =<br>&#160;&#160;&#160;&#160;cms.InputTag('TriggerResults::HLT'),<br>&#160;&#160;<span style="color:#5FC2D3">unpackFilterLabels = cms.bool(True)</span><br>)</p>
+<hr style="border-top:1px solid #3A4766;width:100%">
+<p style="font-size:24px;line-height:1.35;color:#AEB8CC">Restores the labels so that filter('...') can be evaluated; hasFilterOrCondition throws if labels are still packed.</p>
+</div>
+</div>
+<p style="font-size:24px;line-height:1.35;color:#44506A">Proof that the unseeded objects really reach NanoAOD: the Electron selection has accepted coll('hltEgammaCandidatesUnseeded') since June 2023 and its bit "2e (CaloIdL_MW unseeded)" is populated in production files. The same objects enter the Photon branch of the producer and are rejected there.</p>
+<aside>From MiniAOD onward the object is a pat::TriggerObjectStandAlone with: the packed four-vector, the collection string, the list of trigger object types, the packed filter labels and the path names. NanoAOD reads it back through unpackedPatTrigger and hands it to TriggerObjectTableProducer.</aside>
+</section>
+
+<section id="nano-config" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">The NanoAOD Photon selection: one collection in sel, three unseeded filters in the bit list</h2>
+<div style="display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:24px 28px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace"># PhysicsTools/NanoAOD/python/triggerObjects_cff.py, master lines 88 to 116 (v13: 81 to 108), abbreviated</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">Photon = cms.PSet(<br>&#160;&#160;id = cms.int32(22),<br>&#160;&#160;<span style="color:#F28C4B">sel = cms.string("type(92) &amp;&amp; pt &gt; 15 &amp;&amp; coll('hltEgammaCandidates')"),</span><br>&#160;&#160;l1seed = cms.string("type(-98)"),&#160;&#160;l1deltaR = cms.double(0.3),<br>&#160;&#160;skipObjectsNotPassingQualityBits = cms.bool(True),<br>&#160;&#160;qualityBits = cms.VPSet(<br>&#160;&#160;&#160;&#160;mksel("filter('hltEG33L1EG26HEFilter')","hltEG33L1EG26HEFilter"),&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;<span style="color:#AEB8CC"># bit 0</span><br>&#160;&#160;&#160;&#160;...&#160;&#160;<span style="color:#AEB8CC"># bits 1 to 13: HE filters, hltHtEcal800, EB tight-ID filters, Mu17_Photon30 photon leg</span><br>&#160;&#160;&#160;&#160;mksel("filter('hltEG30LR9Id85b90eHE12R9Id50b80eR9IdLastFilter')", ...),&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;<span style="color:#AEB8CC"># 14</span><br>&#160;&#160;&#160;&#160;mksel("filter('hltEG30LIso60CaloId15b35eHE12R9Id50b80eEcalIsoLastFilter')", ...),&#160;&#160;&#160;&#160;<span style="color:#AEB8CC"># 15</span><br>&#160;&#160;&#160;&#160;<span style="color:#F28C4B">mksel("filter('hltEG22Iso60CaloId15b35eHE12R9Id50b80eTrackIsoUnseededLastFilter')", ...),</span>&#160;&#160;<span style="color:#AEB8CC"># 16</span><br>&#160;&#160;&#160;&#160;<span style="color:#F28C4B">mksel("filter('hltEG22R9Id85b90eHE12R9Id50b80eR9UnseededLastFilter')", ...),</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;<span style="color:#AEB8CC"># 17</span><br>&#160;&#160;&#160;&#160;mksel("filter('hltEG30Iso60CaloId15b35eR9Id50b90eHE12b10eR9Id50b80eEcalIsoFilter')", ...),&#160;&#160;<span style="color:#AEB8CC"># 18</span><br>&#160;&#160;&#160;&#160;<span style="color:#F28C4B">mksel("filter('hltEG18TrackIso60Iso60CaloId15b35eR9Id50b90eHE12b10eR9Id50b80e</span><br>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;<span style="color:#F28C4B">TrackIsoUnseededFilter')", ...),</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;<span style="color:#AEB8CC"># 19</span><br>&#160;&#160;&#160;&#160;mksel("filter('hltEG*L1VBFLooseIsoEGHEFilter')", "hltEG*L1VBFLooseIsoEGHEFilter"),&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;<span style="color:#AEB8CC"># 20</span><br>&#160;&#160;)<br>),</p>
+</div>
+<div style="display:flex;gap:24px">
+<div style="flex:1;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;line-height:1.35;color:#44506A"><b>mksel</b> turns a filter name into filter('name'), a list into an OR (max of the terms) and a tuple into an AND; bit i is the position in the VPSet unless bit= is given. No photon entry uses an explicit bit.</p></div>
+<div style="flex:1;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;line-height:1.35;color:#44506A"><b>The contradiction</b> is inside this one PSet: sel admits only hltEgammaCandidates, while bits 16, 17 and 19 name filters that run exclusively on hltEgammaCandidatesUnseeded (slide 7). No era modifier touches this block.</p></div>
+</div>
+<aside>In NanoAOD v12 to v14 the list has 18 entries and the same four diphoton filters sit at bits 12, 13, 14, 15 (and 16, 17 for the 30_18 pair). The 21-entry list and the 64-bit filterBits branch arrived in CMSSW_15_0_2 with PR 47601, the backport of PR 47594.</aside>
+</section>
+
+<section id="producer-code" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">The table producer: sel first, bits second, duplicates merged last</h2>
+<div style="display:flex;gap:24px;align-items:stretch">
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace">// TriggerObjectTableProducer.cc, constructor,</p>
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace">// lines 105 to 118; cfg = qualityBitsConfig</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">for (size_t i = 0; i != cfg.size(); ++i) {<br>&#160;&#160;unsigned int bit = i;<br>&#160;&#160;if (cfg[i].existsAs&lt;unsigned int&gt;("bit"))<br>&#160;&#160;&#160;&#160;bit = cfg[i].getParameter&lt;unsigned int&gt;("bit");<br>&#160;&#160;assert(!bits[bit] &amp;&amp; "...inserted twice");<br>&#160;&#160;assert(bit &lt; 64 &amp;&amp; "...on 64 bits");<br>&#160;&#160;func &lt;&lt; std::to_string(1UL &lt;&lt; bit) &lt;&lt; "*("<br>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&lt;&lt; cfg[i].getParameter&lt;std::string&gt;(<br>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;"selection") &lt;&lt; ")";<br>}<br>qualityBits = StringObjectFunction&lt;...&gt;(func.str());</p>
+<hr style="border-top:1px solid #3A4766;width:100%">
+<p style="font-size:24px;line-height:1.35;color:#AEB8CC">The bits form one string function, the sum of 2^bit times each entry's selection. It is evaluated only for objects that already passed sel.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace">// produce(), master lines 151 to 176</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">for (const auto &amp;obj : trigObjs) {<br>&#160;&#160;for (const auto &amp;sel : sels_) {<br>&#160;&#160;&#160;&#160;<span style="color:#F28C4B">if (sel.match(obj)) {</span>&#160;&#160;<span style="color:#AEB8CC">// fails here</span><br>&#160;&#160;&#160;&#160;&#160;&#160;bits = sel.qualityBits(obj);<br>&#160;&#160;&#160;&#160;&#160;&#160;if (skip ? (bits != 0) : true)<br>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;selected.emplace_back(&amp;obj, &amp;sel);<br>&#160;&#160;&#160;&#160;}<br>&#160;&#160;}<br>}<br>// Self-cleaning<br>for (i ...) for (j &lt; i ...)<br>&#160;&#160;if (sel.id == sel2.id<br>&#160;&#160;&#160;&#160;&#160;&#160;&amp;&amp; deltaR2(obj, obj2) &lt; 1e-6) {<br>&#160;&#160;&#160;&#160;bits_of(obj2) |= bits_of(obj);<br>&#160;&#160;&#160;&#160;selected.erase(selected.begin() + i); i--;<br>&#160;&#160;}</p>
+<hr style="border-top:1px solid #3A4766;width:100%">
+<p style="font-size:24px;line-height:1.35;color:#AEB8CC">Abridged: bits stands for selected_bits[sel.id][&amp;obj], skip for sel.skipObjectsNotPassingQualityBits.</p>
+</div>
+</div>
+<div style="display:flex;gap:24px">
+<div style="flex:1;background:#F8E3D7;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;line-height:1.35;color:#44506A"><b>Order of evaluation is the whole story.</b> An object that fails sel never reaches qualityBits, never enters selected, and is never seen by the merging loop. No later step can restore it.</p></div>
+<div style="flex:1;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;line-height:1.35;color:#44506A"><b>No break.</b> Since 13_0_X an object is tested against every selection and can be written once per type it passes (an e/gamma object can be both id 11 and id 22). 12_4_X still had a break after the first match.</p></div>
+</div>
+<aside>The version shown is upstream master, with two local aliases introduced for the slide width. Up to CMSSW_15_0_1 the bits were an int with assert(bit less than 31), the merging also required equal pT, and 12_4_X had a break after the first matching selection; the next slide tabulates the differences.</aside>
+</section>
+
+<section id="producer-versions" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:28px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">The producer changed three times since 2022; the selection-before-bits order never did</h2>
+<table style="font-size:24px;font-family:'IBM Plex Sans', Arial, sans-serif;color:#16213A;background:#FDFCF9;border:1px solid #D9D6CC">
+<tr style="background:#16213A"><th style="width:22%;color:#F6F5F0;text-align:left;padding:10px 14px">releases (NanoAOD)</th><th style="width:16%;color:#F6F5F0;text-align:left">filterBits type</th><th style="width:16%;color:#F6F5F0;text-align:left">bit limit</th><th style="width:24%;color:#F6F5F0;text-align:left">duplicate merging</th><th style="width:22%;color:#F6F5F0;text-align:left">selections per object</th></tr>
+<tr><td>12_4_X, 12_6_X (v10, v11)</td><td>Int_t</td><td>bit &lt; 31</td><td>same id, same pT, same direction</td><td>first match only (break)</td></tr>
+<tr><td>13_0_X to 14_2_X, 15_0_0, 15_0_1 (v12, v13, v14)</td><td>Int_t</td><td>bit &lt; 31</td><td>same id, |delta pT| &lt; 1e-6, delta R squared &lt; 1e-6 (pT test dropped in 15_0_0)</td><td>every matching selection</td></tr>
+<tr style="background:#DCEBEE"><td>15_0_2 onward, master (v15, next)</td><td>unsigned 64-bit</td><td>bit &lt; 64</td><td>same id, delta R squared &lt; 1e-6</td><td>every matching selection</td></tr>
+</table>
+<div style="display:flex;gap:24px">
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace">// CMSSW_13_3_1_patch1 (v13), lines 114, 154, 170</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">assert(bit &lt; 31 &amp;&amp; "quality bits are store on 32 bit");<br>selected_bits[sel.id][&amp;obj] = int(sel.qualityBits(obj));<br>if (sel.id == sel2.id<br>&#160;&#160;&#160;&#160;&amp;&amp; abs(obj.pt() - obj2.pt()) &lt; 1e-6<br>&#160;&#160;&#160;&#160;&amp;&amp; deltaR2(obj, obj2) &lt; 1e-6) {</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace">// master and CMSSW_15_0_2, lines 114, 154, 170</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">assert(bit &lt; 64 &amp;&amp; "quality bits are store on 64 bits");<br>selected_bits[sel.id][&amp;obj] = sel.qualityBits(obj);<br>if (sel.id == sel2.id<br>&#160;&#160;&#160;&#160;&amp;&amp; deltaR2(obj, obj2) &lt; 1e-6) {</p>
+</div>
+</div>
+<p style="font-size:24px;line-height:1.35;color:#44506A">What matters for this issue is in every version: sel.match(obj) is tested first, and only a passing object gets its quality bits computed. The merging rule only decides what happens after the fix, when a seeded and an unseeded object describe the same photon: with the master rule they merge on direction alone.</p>
+<aside>Checked at the tags 14_1_0, 14_2_0, 15_0_0, 15_0_1, 15_0_2, 15_0_5, 15_0_10, 15_0_13, 15_0_15, 15_0_15_patch4, 15_1_0 and 16_0_0 and at the branch tips 12_4_X, 13_0_X, 14_0_X and 15_0_X. The 64-bit change is consistent with PR 47594 and its 15_0_X backport PR 47601, merged on 18 March 2025.</aside>
+</section>
+
+<section id="matcher-code" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">How coll('hltEgammaCandidates') is evaluated: no star, so an exact label comparison</h2>
+<div style="display:flex;gap:24px;align-items:stretch">
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace">// DataFormats/PatCandidates/src/TriggerObjectStandAlone.cc</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">bool TriggerObjectStandAlone::hasCollection(<br>&#160;&#160;&#160;&#160;const std::string &amp;collName) const {<br>&#160;&#160;// Move to wild-card parser, if needed only<br>&#160;&#160;if (collName.find(wildcard_) != std::string::npos) {<br>&#160;&#160;&#160;&#160;if (hasAnyName(collName, {collection()}))<br>&#160;&#160;&#160;&#160;&#160;&#160;return true;<br>&#160;&#160;&#160;&#160;...&#160;&#160;<span style="color:#AEB8CC">// label / instance / process with wildcards</span><br>&#160;&#160;&#160;&#160;return false;<br>&#160;&#160;}<br>&#160;&#160;// Use parent class's method otherwise<br>&#160;&#160;<span style="color:#F28C4B">return TriggerObject::hasCollection(collName);</span><br>}</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace">// DataFormats/PatCandidates/src/TriggerObject.cc, 54 to 71</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">bool TriggerObject::hasCollection(<br>&#160;&#160;&#160;&#160;const std::string&amp; collName) const {<br>&#160;&#160;if (collName == collection_) return true;<br>&#160;&#160;const edm::InputTag collectionTag(collection_);<br>&#160;&#160;const edm::InputTag collTag(collName);<br>&#160;&#160;if (collTag.process().empty()) {<br>&#160;&#160;&#160;&#160;if ((collTag.instance().empty()<br>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&amp;&amp; collectionTag.instance().empty())<br>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;|| collTag.instance() == collectionTag.instance()) {<br>&#160;&#160;&#160;&#160;&#160;&#160;<span style="color:#F28C4B">return (collTag.label() == collectionTag.label());</span><br>&#160;&#160;&#160;&#160;}<br>&#160;&#160;}<br>&#160;&#160;return false;<br>}</p>
+</div>
+</div>
+<div style="display:flex;gap:24px">
+<div style="flex:1;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;line-height:1.35;color:#44506A"><b>Evaluated for the unseeded object:</b> collName = hltEgammaCandidates, collection_ = hltEgammaCandidatesUnseeded::HLT. No star, so the base method runs; labels hltEgammaCandidates and hltEgammaCandidatesUnseeded differ; the result is false.</p></div>
+<div style="flex:1;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;line-height:1.35;color:#44506A"><b>Wildcards do exist</b> (the Run 2 muon selection writes coll('hlt*L3MuonCandidates')), so coll('hltEgammaCandidates*') would also have worked. The explicit OR of the two names was chosen for the fix because it names exactly the two collections.</p></div>
+</div>
+<aside>filter('...') behaves the same way through hasFilterOrCondition: wildcard parser when the pattern contains a star, otherwise an exact match against the unpacked filter labels. The string cut calls the StandAlone overrides because the selector is templated on pat::TriggerObjectStandAlone.</aside>
+</section>
+
+<section id="decision" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">One unseeded photon object through the Photon selection, test by test</h2>
+<div style="display:flex;gap:32px;align-items:flex-start">
+<div style="width:860px;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;gap:20px;align-items:center;background:#FDFCF9;border:2px solid #176B7B;border-radius:12px;padding:14px 22px"><p style="width:70px;font-size:40px;font-weight:600;color:#176B7B">1</p><p style="flex:1;font-size:24px;line-height:1.3"><b>type(92)</b>: true. hltDiEG22EtEta2p55UnseededFilter saved the object with triggerType 92 and PAT kept that type next to the 81 of the later filters.</p></div>
+<x-shape kind="arrow-down" style="width:32px;height:24px;background:#5B6475;align-self:center"></x-shape>
+<div style="display:flex;gap:20px;align-items:center;background:#FDFCF9;border:2px solid #176B7B;border-radius:12px;padding:14px 22px"><p style="width:70px;font-size:40px;font-weight:600;color:#176B7B">2</p><p style="flex:1;font-size:24px;line-height:1.3"><b>pt &gt; 15</b>: true. MinPt is 22 GeV on this leg (18 GeV for the Diphoton30_18 paths).</p></div>
+<x-shape kind="arrow-down" style="width:32px;height:24px;background:#5B6475;align-self:center"></x-shape>
+<div style="display:flex;gap:20px;align-items:center;background:#F8E3D7;border:2px solid #C2410C;border-radius:12px;padding:14px 22px"><p style="width:70px;font-size:40px;font-weight:600;color:#C2410C">3</p><p style="flex:1;font-size:24px;line-height:1.3"><b>coll('hltEgammaCandidates')</b>: false. The label is hltEgammaCandidatesUnseeded; exact comparison (previous slide).</p></div>
+<x-shape kind="arrow-down" style="width:32px;height:24px;background:#C2410C;align-self:center"></x-shape>
+<div style="display:flex;gap:20px;align-items:center;background:#C2410C;border-radius:12px;padding:14px 22px"><p style="width:70px;font-size:40px;font-weight:600;color:#F6F5F0">4</p><p style="flex:1;font-size:24px;line-height:1.3;color:#F6F5F0"><b>sel.match(obj) is false</b>: qualityBits is never evaluated; the object is not in selected; bits 16 and 17 are 0 in every event, in every file.</p></div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace"># the Electron selection, same file</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace"># CMSSW_13_0_13 (v12)<br>sel = "type(92) &amp;&amp; pt &gt; 7<br>&#160;&#160;&amp;&amp; coll('hltEgammaCandidates')<br>&#160;&#160;&amp;&amp; filter('*PixelMatchFilter')"<br><br># CMSSW_13_3_0 onward (v13), PR 41827<br>sel = "type(92) &amp;&amp; pt &gt; 7<br>&#160;&#160;&amp;&amp; (coll('hltEgammaCandidates')<br>&#160;&#160;&#160;&#160;&#160;&#160;<span style="color:#5FC2D3">|| coll('hltEgammaCandidatesUnseeded')</span>)<br>&#160;&#160;&amp;&amp; (filter('*PixelMatchFilter')<br>&#160;&#160;&#160;&#160;&#160;&#160;|| filter('*PixelMatchUnseededFilter'))"</p>
+</div>
+<div style="background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;line-height:1.35;color:#44506A">PR 41827 (merged 8 June 2023) added the unseeded CaloIdL_MW electron bit and "added the collection hltEgammaCandidatesUnseeded, which are the objects on which the selection of the unseeded trigger leg is made". The photon diphoton bits had been added four months earlier by PR 40711 without that change, and nobody came back to it.</p></div>
+</div>
+</div>
+<aside>The electron precedent is the strongest evidence: the identical construct has been in production since NanoAOD v13 and its unseeded electron bit is populated, which also proves that the unseeded objects are present in MiniAOD and reach the producer.</aside>
+</section>
+
+<section id="ruled-out" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:28px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">Six other explanations, and the evidence that rules each one out</h2>
+<table style="font-size:24px;font-family:'IBM Plex Sans', Arial, sans-serif;color:#16213A;background:#FDFCF9;border:1px solid #D9D6CC">
+<tr style="background:#16213A"><th style="width:26%;color:#F6F5F0;text-align:left;padding:10px 14px">hypothesis</th><th style="width:58%;color:#F6F5F0;text-align:left">what the code and the menus show</th><th style="width:16%;color:#F6F5F0;text-align:left">verdict</th></tr>
+<tr><td>The filter names in NanoAOD are misspelt or outdated</td><td>All four Diphoton30_22 names are defined with saveTags = True in the 2018 GRun, 2022 v1.2/v1.4/v1.5, 2023, 2024, 2025 and 2026 menus and in every development menu checked (19 files); the chain is identical everywhere</td><td style="color:#176B7B">ruled out</td></tr>
+<tr><td>The unseeded objects never reach MiniAOD</td><td>patTrigger excludes no collection; selectedPatTrigger keeps objects with any filter label; the Electron selection has consumed coll('hltEgammaCandidatesUnseeded') in production since June 2023</td><td style="color:#176B7B">ruled out</td></tr>
+<tr><td>The objects have the wrong type for type(92)</td><td>HLT1Photon saves them with triggerType 92; the later filters add 81; PAT keeps both types</td><td style="color:#176B7B">ruled out</td></tr>
+<tr><td>The pT threshold removes them</td><td>sel requires pt &gt; 15; the unseeded leg requires Et &gt; 22 GeV (18 GeV for Diphoton30_18)</td><td style="color:#176B7B">ruled out</td></tr>
+<tr><td>An era modifier changes the Photon block for Run 3</td><td>The modifiers in triggerObjects_cff.py act on Muon, Tau and Jet (Run 2 eras) and on the prefiring producer; none touches Photon</td><td style="color:#176B7B">ruled out</td></tr>
+<tr><td>Something specific to the v13 release</td><td>CMSSW_13_3_1_patch1 and the 13_3_X tip have byte-identical NanoAOD configuration; 13_0_X, 14_0_X, 15_0_X, 16_x and master carry the same Photon selection</td><td style="color:#176B7B">ruled out</td></tr>
+<tr style="background:#F8E3D7"><td>The Photon selection rejects the collection</td><td>sel = type(92) &amp;&amp; pt &gt; 15 &amp;&amp; coll('hltEgammaCandidates'), exact comparison, evaluated before the bits</td><td style="color:#C2410C">the cause</td></tr>
+</table>
+<p style="font-size:24px;line-height:1.35;color:#44506A">Each row was checked in the source: menu files (filter definitions and saveTags), PhysicsTools/PatAlgos (patTrigger, selectedPatTrigger, slimmedPatTrigger), the HLT plugins (HLTSinglet, HLTGenericFilter), the era modifiers at the end of triggerObjects_cff.py, and the configuration at the tags and branch tips named on the next slide.</p>
+<aside>The observation that started this was that NanoAOD v13 documents the unseeded last-filter bits but no photon object ever has them. The table lists the alternatives considered during the investigation and why each one fails.</aside>
+</section>
+
+<section id="versions" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:28px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">Scope by NanoAOD version: present since the bits were added, still present in today's master</h2>
+<table style="font-size:24px;font-family:'IBM Plex Sans', Arial, sans-serif;color:#16213A;background:#FDFCF9;border:1px solid #D9D6CC">
+<tr style="background:#16213A"><th style="width:11%;color:#F6F5F0;text-align:left;padding:8px 14px">NanoAOD</th><th style="width:27%;color:#F6F5F0;text-align:left">releases checked (tags and branch tips)</th><th style="width:20%;color:#F6F5F0;text-align:left">Photon sel</th><th style="width:16%;color:#F6F5F0;text-align:left">Electron sel</th><th style="width:14%;color:#F6F5F0;text-align:left">dead photon bits</th><th style="width:12%;color:#F6F5F0;text-align:left">affected</th></tr>
+<tr><td>v9</td><td>CMSSW_10_6_X</td><td>seeded, pt &gt; 20, no bits</td><td>seeded</td><td>no photon TrigObj</td><td>no</td></tr>
+<tr><td>v10, v11</td><td>CMSSW_12_4_X, CMSSW_12_6_X</td><td>seeded, pt &gt; 20, 12 bits</td><td>seeded</td><td>bits absent</td><td>no</td></tr>
+<tr style="background:#F8E3D7"><td>v12</td><td>13_0_0 (pt &gt; 20), 13_0_1 to 13_0_17 (prod. 13_0_13)</td><td>seeded, 18 bits</td><td>seeded</td><td>14, 15, 17</td><td style="color:#C2410C">yes</td></tr>
+<tr style="background:#F8E3D7"><td>v13</td><td>13_3_0, 13_3_1_patch1 (production), 13_3_X tip</td><td>seeded, 18 bits</td><td>seeded + unseeded</td><td>14, 15, 17</td><td style="color:#C2410C">yes</td></tr>
+<tr style="background:#F8E3D7"><td>v14</td><td>14_0_0, 14_0_X tip, 14_1_0, 14_1_X, 14_2_0, 14_2_X</td><td>seeded, 18 bits</td><td>seeded + unseeded</td><td>14, 15, 17</td><td style="color:#C2410C">yes</td></tr>
+<tr style="background:#F8E3D7"><td>v15</td><td>15_0_2 to 15_0_15_patch4, 15_0_X tip, 15_1_0, 15_1_X (15_0_0 and 15_0_1 still 18 bits)</td><td>seeded, 21 bits</td><td>seeded + unseeded</td><td>16, 17, 19</td><td style="color:#C2410C">yes</td></tr>
+<tr style="background:#F8E3D7"><td>next</td><td>16_0_10, 16_0_X, 16_1_3, 16_1_X, master ed35654b1 (4 Nov 2026, newest commit)</td><td>seeded, 21 bits</td><td>seeded + unseeded</td><td>16, 17, 19</td><td style="color:#C2410C">yes</td></tr>
+</table>
+<div style="display:flex;gap:24px">
+<div style="flex:1;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;line-height:1.35;color:#44506A"><b>Checked live today.</b> git ls-remote on cms-sw/cmssw gives master = ed35654b1 (no newer commit), 16_1_X = 8aacfa5da, 16_0_X = de8bdeed9, 15_1_X = e9272496, 15_0_X = 6db81eb6d; the Photon selection line is identical on all of them and at the newest tags CMSSW_16_1_3 and CMSSW_16_0_10.</p></div>
+<div style="flex:1;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;line-height:1.35;color:#44506A"><b>Nobody has fixed it elsewhere.</b> GitHub shows no open pull request or issue mentioning hltEgammaCandidatesUnseeded, triggerObjects_cff or photon trigger objects, and no change to triggerObjects_cff.py since June 2026.</p></div>
+</div>
+<aside>Decimal values of the dead bits: 16384, 32768 and 131072 in v12 to v14; 65536, 131072 and 524288 in v15 and later. Any Run 2 input re-processed with a v12-or-later release inherits the same defect for the 2018 menu paths.</aside>
+</section>
+
+<section id="menus" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">Scope by HLT menu: nine years of menus, the same four filters on the same collections</h2>
+<table style="font-size:24px;font-family:'IBM Plex Sans', Arial, sans-serif;color:#16213A;background:#FDFCF9;border:1px solid #D9D6CC">
+<tr style="background:#16213A"><th style="width:34%;color:#F6F5F0;text-align:left;padding:8px 14px">menu (table name)</th><th style="width:12%;color:#F6F5F0;text-align:left">Mass90/95</th><th style="width:14%;color:#F6F5F0;text-align:left">Diphoton30_18</th><th style="width:40%;color:#F6F5F0;text-align:left">unseeded photon bits dead (v12 to v14 / v15 numbering)</th></tr>
+<tr><td>2018 GRun, /dev/CMSSW_10_6_0/GRun/V3</td><td>v13</td><td>NoPixelVeto v2</td><td>14, 15, 17 / 16, 17, 19</td></tr>
+<tr><td>2022 frozen v1.2 (HLT_2022v12, Run3Summer22 MC)</td><td>v13</td><td>v2</td><td>14, 15, 17 / 16, 17, 19</td></tr>
+<tr><td>2022 frozen v1.4 and v1.5, GRun 12_4 V171, GRun 12_6 V16</td><td>v15</td><td>v3</td><td>14, 15, 17 / 16, 17, 19</td></tr>
+<tr><td>2023 frozen v1.2 (HLT_2023v12), GRun 13_0 V153</td><td>v17</td><td>v5 (renamed filters)</td><td>14, 15 / 16, 17</td></tr>
+<tr><td>2023 development, 13_3 GRun V11 and HLT V19</td><td>v19</td><td>v7</td><td>14, 15 / 16, 17</td></tr>
+<tr><td>2024 frozen v1.4 (HLT_2024v14), GRun 14_0 V182</td><td>v22</td><td>v10</td><td>14, 15 / 16, 17</td></tr>
+<tr><td>2025 development (fork, May 2025), GRun 15_0 V62</td><td>v24</td><td>v12</td><td>16, 17</td></tr>
+<tr><td>2025 frozen v1.3 (HLT_2025v13), GRun 15_0 V120</td><td>v26</td><td>v14</td><td>16, 17</td></tr>
+<tr><td>2026 frozen v1.3 (HLT_2026v13, in master)</td><td>v29</td><td>v17</td><td>16, 17</td></tr>
+<tr><td>2026 development, GRun 16_1 V16 (master)</td><td>v30</td><td>v18</td><td>16, 17</td></tr>
+</table>
+<p style="font-size:24px;line-height:1.35;color:#44506A">In all of these the two unseeded last filters of the Mass90/Mass95 sequence carry l1EGCand = hltEgammaCandidatesUnseeded and saveTags = True, and the ordered list of the sixteen e/gamma filters of the sequence is identical (same MD5). From 2023 the Diphoton30_18 filters were renamed, so its two NanoAOD bits (18, 19) match nothing in those menus, a separate stale-name problem.</p>
+<aside>The frozen menus are the ones used for Monte Carlo (2022v12 and 2022v14 for Summer22 and Summer22EE, 2023v12 for Summer23 and Summer23BPix, 2024v14 for Summer24, as reported by the production configurations); online data menus evolve during a year but keep the filter names.</aside>
+</section>
+
+<section id="scan-method" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">How widespread: a scanner that resolves every filter bit of every object type against each menu</h2>
+<div style="display:flex;gap:24px;align-items:stretch">
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace"># scripts/deadbits.py (notes repository), the core</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">def glob_re(pat):&#160;&#160;<span style="color:#AEB8CC"># NanoAOD wildcard semantics</span><br>&#160;&#160;parts = pat.split("*")<br>&#160;&#160;return re.compile("^" + ".*".join(<br>&#160;&#160;&#160;&#160;&#160;&#160;re.escape(p) for p in parts) + "$")<br><br>def collections_of(mods, name):<br>&#160;&#160;<span style="color:#AEB8CC"># EDProducer labels a filter saves its objects from</span><br>&#160;&#160;typ, body = mods[name]<br>&#160;&#160;for p in ("l1EGCand", "inputTag", "CandTag",<br>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;"inputCandCollection", "originTag1", ...):<br>&#160;&#160;&#160;&#160;for lab in tag_labels(body, p):<br>&#160;&#160;&#160;&#160;&#160;&#160;if mods[lab][0] == "EDProducer": direct.add(lab)<br>&#160;&#160;&#160;&#160;&#160;&#160;elif mods[lab][0] == "EDFilter": follow.append(lab)<br>&#160;&#160;return direct or union(collections_of(mods, f) for f in follow)<br><br>status = OK if any matched filter's collection passes coll()<br>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;else COLL if filters match but none passes<br>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;else STALE if no module matches the pattern</p>
+</div>
+<div style="width:620px;display:flex;flex-direction:column;gap:12px">
+<div style="background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;font-weight:600;color:#176B7B">Inputs</p><p style="font-size:24px;line-height:1.35;color:#44506A">Configs: master, 15_0_X (v15), 13_3_1_patch1 (v13), 13_0_13 (v12). Menus: frozen 2022 v1.2 and v1.4, 2023 v1.2, 2024 v1.4, 2025 v1.3, 2026 v1.3, plus the GRun development menus of 13_0_X, 14_0_X, 15_0_X and 16_1_X.</p></div>
+<div style="background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;font-weight:600;color:#176B7B">What it emulates</p><p style="font-size:24px;line-height:1.35;color:#44506A">mksel (lists are ORs, tuples ANDs), the anchored star matching of hasAnyName, the collection each matched filter saves (following inputTag chains for combination filters), and the coll() terms of each selection. The type test is not emulated; the Tau selection's coll('*Tau*') is OR-ed with filters and treated as non-restrictive.</p></div>
+<div style="background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;font-weight:600;color:#176B7B">Outputs</p><p style="font-size:24px;line-height:1.35;color:#44506A">Per config, selection, bit and menu: OK, COLL, STALE or UNK (L1-seed modules, accepted by type). Raw outputs are in scan/ of the notes repository.</p></div>
+</div>
+</div>
+<aside>The scanner reads the menu files as text (module definitions parsed with a small bracket matcher), so it works without a CMSSW installation. It reproduces the photon finding and extends the check to the Electron, Muon, Tau, BoostedTau, Jet, FatJet, MET, HT and MHT selections.</aside>
+</section>
+
+<section id="scan-results" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">Scan results: the collection mismatch is unique to the Photon list; stale names are everywhere</h2>
+<table style="font-size:24px;font-family:'IBM Plex Sans', Arial, sans-serif;color:#16213A;background:#FDFCF9;border:1px solid #D9D6CC">
+<tr style="background:#16213A"><th style="width:12%;color:#F6F5F0;text-align:left;padding:8px 14px">object</th><th style="width:6%;color:#F6F5F0;text-align:left">bits</th><th style="width:26%;color:#F6F5F0;text-align:left">never settable (collection or type)</th><th style="width:14%;color:#F6F5F0;text-align:left">fine / stale, 2024 menu</th><th style="width:14%;color:#F6F5F0;text-align:left">fine / stale, 2025 menu</th><th style="width:28%;color:#F6F5F0;text-align:left">stale in 2025, why</th></tr>
+<tr><td>Electron</td><td>20</td><td>none</td><td>19 / 1</td><td>18 / 2</td><td>WPLoose (gone 2023), triple-electron (gone 2025)</td></tr>
+<tr style="background:#F8E3D7"><td>Photon</td><td>21</td><td style="color:#C2410C">bits 16, 17, 19 (unseeded) and 8 (hltHtEcal800)</td><td>15 / 3</td><td>15 / 3</td><td>bit 12 (gone 2022), 18 and 19 (renamed 2023)</td></tr>
+<tr><td>Muon</td><td>14</td><td>none</td><td>14 / 0</td><td>12 / 2</td><td>mu-tau DeepTau overlaps (gone 2025)</td></tr>
+<tr><td>Tau</td><td>31</td><td>none</td><td>31 / 0</td><td>30 / 1</td><td>DeepTau (gone 2025)</td></tr>
+<tr><td>BoostedTau</td><td>3</td><td>v12 to v14: the whole selection (next slide)</td><td>2 / 1</td><td>2 / 1</td><td>2022 ParticleNetTauTau name</td></tr>
+<tr><td>Jet</td><td>46</td><td>none</td><td>37 (+2 L1) / 7</td><td>34 (+2 L1) / 10</td><td>pixel-only HH4b filters (gone 2024), DeepCSV and DeepJet (gone 2025), 3-jet pt40 and pt45</td></tr>
+<tr><td>FatJet</td><td>7</td><td>none</td><td>4 / 3</td><td>4 / 3</td><td>2022 and 2023 soft-drop and ParticleNet names</td></tr>
+<tr><td>HT, MHT</td><td>6, 2</td><td>none</td><td>3 (+1 L1) / 2, 2 / 0</td><td>same</td><td>two Run 2 L1 seed names, never in Run 3 menus</td></tr>
+<tr><td>MET</td><td>0</td><td>no bits with the skip flag on: never written</td><td>none</td><td>none</td><td>all versions since v9</td></tr>
+</table>
+<div style="display:flex;gap:24px">
+<div style="flex:1;background:#F8E3D7;border:1px solid #D9D6CC;border-radius:12px;padding:16px 24px"><p style="font-size:24px;line-height:1.35;color:#44506A"><b>Same mechanism as the diphoton bits:</b> only Photon bit 8, whose filter saves HT objects. Electron and Muon have no collection mismatch in any version or menu.</p></div>
+<div style="flex:1;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:16px 24px"><p style="font-size:24px;line-height:1.35;color:#44506A"><b>Stale names are a documentation problem:</b> one bit list serves the 2022 to 2026 menus, so bits for renamed or retired filters stay documented but silently empty for later years.</p></div>
+</div>
+<aside>Numbers are for the master configuration against the frozen 2024 v1.4 and 2025 v1.3 menus; the v12, v13 and v15 configurations give the same picture for their own bit lists. L1-seed entries (HLTL1TSeed modules) exist in every menu and are counted as fine.</aside>
+</section>
+
+<section id="other-dead" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">Three more entries that can never be filled, found by the same scan</h2>
+<div style="display:flex;gap:20px;align-items:stretch">
+<div style="flex:1;display:flex;flex-direction:column;gap:10px;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 22px">
+<p style="font-size:26px;font-weight:600;color:#C2410C">Photon bit 8: hltHtEcal800</p>
+<div style="display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:10px;padding:16px 18px"><p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">fragment.hltHtEcal800 = cms.EDFilter(<br>&#160;&#160;"HLTHtMhtFilter",<br>&#160;&#160;saveTags = cms.bool( True ),<br>&#160;&#160;htLabels = cms.VInputTag(<br>&#160;&#160;&#160;&#160;<span style="color:#F28C4B">'hltHtMhtEcal'</span> ),<br>&#160;&#160;minHt = cms.vdouble( 800.0 ), ... )<br><br>// HLTHtMhtFilter.cc, 104 to 105<br>addObject(trigger::TriggerTHT, htref);<br>addObject(trigger::TriggerMHT, mhtref);</p></div>
+<p style="font-size:24px;line-height:1.35;color:#44506A">HT objects (types 89, 90) from hltHtMhtEcal: never type 92, never an e/gamma collection. Dead since the bit appeared in the 12_4_X list (v10); the v9 photon list had no bits at all.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:10px;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 22px">
+<p style="font-size:26px;font-weight:600;color:#C2410C">MET: no bits, skip flag on</p>
+<div style="display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:10px;padding:16px 18px"><p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">MET = cms.PSet(<br>&#160;&#160;id = cms.int32(2),<br>&#160;&#160;sel = cms.string("type(87) &amp;&amp; pt &gt; 30<br>&#160;&#160;&#160;&#160;&amp;&amp; coll('hltPFMETProducer')"),<br>&#160;&#160;<span style="color:#F28C4B">skipObjectsNotPassingQualityBits</span><br>&#160;&#160;&#160;&#160;<span style="color:#F28C4B">= cms.bool(True),</span><br>&#160;&#160;<span style="color:#F28C4B">qualityBits = cms.VPSet()</span><br>)</p></div>
+<p style="font-size:24px;line-height:1.35;color:#44506A">With no entries the bit function is the constant "0"; with the skip flag every MET object is dropped. Identical in 10_6_X (qualityBits "0"), 12_4_X, v12 to v15 and master: TrigObj has never contained MET entries although the documentation lists id 2.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:10px;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 22px">
+<p style="font-size:26px;font-weight:600;color:#C2410C">BoostedTau in v12 to v14: empty table</p>
+<div style="display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:10px;padding:16px 18px"><p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace"># 13_0_X to 15_0_1<br>sel = "type(85) &amp;&amp; pt &gt; 120<br>&#160;&#160;&amp;&amp; coll('hltAK8PFJetsCorrected')<br>&#160;&#160;&amp;&amp; filter('hltAK8SinglePFJets*<br>&#160;&#160;&#160;&#160;&#160;SoftDropMass40*<span style="color:#F28C4B">ParticleNetTauTau</span>')"<br><br># menus: 2022 ...ParticleNetTauTau<span style="color:#F28C4B">0p30</span><br>#&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;2023+ ...PNetTauTauTag0p03<br># 15_0_2: filter('*TauTau*')</p></div>
+<p style="font-size:24px;line-height:1.35;color:#44506A">The pattern is anchored at its end, so no menu name ever matched, and the jets come from hltAK8PFJets230SoftDropMass40, not hltAK8PFJetsCorrected. Relaxed in CMSSW_15_0_2.</p>
+</div>
+</div>
+<aside>These are side findings of the breadth scan, reported for completeness and for XPOG; none of them changes the one-line photon fix. The HT bit could be moved to the HT selection or dropped; MET and BoostedTau are configuration choices that may or may not have been intended.</aside>
+</section>
+
+<section id="stale" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">Stale bits by year: documented filters that no longer exist in the menu of that year</h2>
+<table style="font-size:24px;font-family:'IBM Plex Sans', Arial, sans-serif;color:#16213A;background:#FDFCF9;border:1px solid #D9D6CC">
+<tr style="background:#16213A"><th style="width:11%;color:#F6F5F0;text-align:left;padding:8px 14px">object</th><th style="width:8%;color:#F6F5F0;text-align:left">bit</th><th style="width:47%;color:#F6F5F0;text-align:left">filter pattern (master list)</th><th style="width:16%;color:#F6F5F0;text-align:left">exists in menus</th><th style="width:18%;color:#F6F5F0;text-align:left">empty for data of</th></tr>
+<tr><td>Electron</td><td>2</td><td>hltEle*WPLoose*TrackIsoFilter</td><td>2022</td><td>2023 onward</td></tr>
+<tr><td>Electron</td><td>8</td><td>hltEle*Ele*Ele*CaloIdLTrackIdLDphiLeg*Filter (3e)</td><td>2022 to 2024</td><td>2025 onward</td></tr>
+<tr style="background:#F8E3D7"><td>Photon</td><td>12</td><td>hltEG120EBTightIDTightIsoTrackIsoFilter</td><td>2018, early 2022</td><td>2022 v1.4 onward</td></tr>
+<tr style="background:#F8E3D7"><td>Photon</td><td>18, 19</td><td>hltEG30Iso60CaloId15b35eR9Id50b90eHE12b10e... and hltEG18TrackIso60... (Diphoton30_18)</td><td>2018, 2022</td><td>2023 onward (renamed)</td></tr>
+<tr><td>Muon</td><td>2, 6</td><td>*OverlapFilterIsoMu*PFTau* (DeepTau mu-tau overlap)</td><td>2022 to 2024</td><td>2025 onward (bit 13 PNet replaces)</td></tr>
+<tr><td>Tau</td><td>3</td><td>*DeepTau*</td><td>2022 to 2024</td><td>2025 onward (bit 4 PNet replaces)</td></tr>
+<tr><td>BoostedTau</td><td>0</td><td>hltAK8SinglePFJets*SoftDropMass*ParticleNetTauTau0p30</td><td>2022</td><td>2023 onward (bits 1, 2 replace)</td></tr>
+<tr><td>Jet</td><td>0, 1, 6, 22, 27</td><td>hlt{4,3,2,1}PixelOnlyPFCentralJetTightIDPt{20,30,40,60} (HH to 4b)</td><td>2022, 2023</td><td>2024 onward</td></tr>
+<tr><td>Jet</td><td>8, 9, 11, 24, 25</td><td>hlt3PFCentralJetTightIDPt40/45, hltBTagCaloDeepCSVp17Double, hltBTagPFDeepJet1p5Single/4p5Triple</td><td>2022 to 2023/2024</td><td>2023, 2024 or 2025 onward</td></tr>
+<tr><td>FatJet</td><td>3, 4, 5</td><td>...SoftDropMass40BTagParticleNetBB0p35, hltAK8DoublePFJetSDModMass30/50</td><td>2022 (and 2023 for 4, 5)</td><td>2023 or 2024 onward</td></tr>
+<tr><td>HT</td><td>0, 1</td><td>hltL1sTripleJetVBFIorHTTIorDoubleJetCIorSingleJet, hltL1sQuadJetC50Ior... (Run 2 L1 seeds)</td><td>Run 2 only</td><td>all Run 3</td></tr>
+</table>
+<p style="font-size:24px;line-height:1.35;color:#44506A">Bits added for newer filters (for example Photon 9, 10, 20; Electron 17, 19; Tau PNet entries; Jet 28 to 41) are empty for the earlier years in the same way. None of this is a code defect; it is the price of one bit list for five years of menus, and the documentation string does not say which years a bit covers.</p>
+<aside>The table is read off the scanner output for the master configuration against the frozen 2022 v1.2, 2022 v1.4, 2023, 2024, 2025 and 2026 menus and the development GRun menus. It is included to put the photon defect in context: the photon bits are the only ones that a menu cannot cure.</aside>
+</section>
+
+<section id="impact" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">What analyses see: every Run 3 NanoAOD file, and no sub-leading match for the diphoton triggers</h2>
+<div style="display:flex;gap:24px;align-items:stretch">
+<div style="flex:1;display:flex;flex-direction:column;gap:12px">
+<div style="background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:26px;font-weight:600;color:#176B7B">Datasets</p><p style="font-size:24px;line-height:1.35;color:#44506A">Data: 2022 (PromptNano v10/v11, 22Sep2023 v12, 16Dec2023 v13), 2023 (22Sep2023 v12), 2024 (prompt v14), 2025 (prompt v15) and the v15 re-NANO of 2022 to 2024. MC: Run3Summer22, 22EE, 23, 23BPix at v12 and v13, Summer24 at v15, and the v15 re-NANO of all of them. Any Run 2 input re-processed with v12 or later.</p></div>
+<div style="background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:26px;font-weight:600;color:#176B7B">Frameworks</p><p style="font-size:24px;line-height:1.35;color:#44506A">NanoAOD-based photon matching (HiggsDNA-style workflows, the HYgammaRunIII legend that lists bits 16 and 17 as the legs, FLAF configurations, custom NanoAOD setups) finds no object for the sub-leading leg. MiniAOD-based flashgg reads the pat trigger objects directly and is unaffected.</p></div>
+<div style="background:#F8E3D7;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;line-height:1.35;color:#44506A"><b>Existing files cannot be repaired.</b> The unseeded objects were never written; no post-processing can recover them. Only a new NANO pass with the fix restores the information.</p></div>
+</div>
+<div style="width:760px;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace"># schematic TrigObj rows of one diphoton-triggered event</p>
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace"># (illustration of the structure, not real data)</p>
+<p style="font-size:24px;line-height:1.4;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">today (v15):<br>&#160;id&#160;&#160;pt&#160;&#160;&#160;&#160;&#160;filterBits&#160;&#160;&#160;&#160;&#160;&#160;meaning<br>&#160;22&#160;&#160;41.7&#160;&#160;&#160;0x4000 (bit 14)&#160;&#160;leading leg, R9 last<br>&#160;<span style="color:#F28C4B">-- no row for the 26 GeV photon --</span><br><br>with the fix:<br>&#160;22&#160;&#160;41.7&#160;&#160;&#160;0x4000 (bit 14)&#160;&#160;leading leg, R9 last<br>&#160;<span style="color:#5FC2D3">22&#160;&#160;26.3&#160;&#160;&#160;0x20000 (bit 17)&#160;unseeded leg, R9 last</span></p>
+<hr style="border-top:1px solid #3A4766;width:100%">
+<p style="font-size:24px;line-height:1.35;color:#AEB8CC">A leading photon that also passes the unseeded leg merges with its unseeded twin (same direction) and carries both bits; a sub-leading photon appears as a new row.</p>
+</div>
+</div>
+<aside>The schematic rows are made up to show the structure; pT values and the number of rows will differ event by event. GitHub code search finds the unseeded filter names in 16 files outside cms-sw: analysis legends and configurations, custom NanoAOD producers, and flashgg's MiniAOD validation script.</aside>
+</section>
+
+<section id="fix" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">The fix: accept both e/gamma collections in the Photon selection</h2>
+<div style="display:flex;flex-direction:column;gap:6px;background:#16213A;border-radius:12px;padding:22px 28px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace">diff --git a/PhysicsTools/NanoAOD/python/triggerObjects_cff.py b/PhysicsTools/NanoAOD/python/triggerObjects_cff.py</p>
+<p style="font-size:24px;line-height:1.4;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">@@ -87,7 +87,7 @@ triggerObjectTable = triggerObjectTableProducer.clone(<br>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;Photon = cms.PSet(<br>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;id = cms.int32(22),<br><span style="color:#F28C4B">-&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;sel = cms.string("type(92) &amp;&amp; pt &gt; 15 &amp;&amp; coll('hltEgammaCandidates')"),</span><br><span style="color:#5FC2D3">+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;sel = cms.string("type(92) &amp;&amp; pt &gt; 15 &amp;&amp; (coll('hltEgammaCandidates') || coll('hltEgammaCandidatesUnseeded'))"),</span><br>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;l1seed = cms.string("type(-98)"),&#160;&#160;l1deltaR = cms.double(0.3),<br>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;skipObjectsNotPassingQualityBits = cms.bool(True),</p>
+</div>
+<div style="display:flex;gap:24px">
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:20px 24px"><p style="font-size:26px;font-weight:600;color:#176B7B">Why this form</p><p style="font-size:24px;line-height:1.35;color:#44506A">Names exactly the two collections and copies the Electron selection of PR 41827. A wildcard would also match (next slide) but would admit any future collection with that prefix.</p></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:20px 24px"><p style="font-size:26px;font-weight:600;color:#176B7B">What changes</p><p style="font-size:24px;line-height:1.35;color:#44506A">Unseeded objects enter the photon branch; with the skip flag only those that set a photon bit are written, and the only photon-bit filters on the unseeded collection are the three diphoton ones. A seeded twin in the same direction is merged with OR-ed bits.</p></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:20px 24px"><p style="font-size:26px;font-weight:600;color:#176B7B">What does not</p><p style="font-size:24px;line-height:1.35;color:#44506A">Bit numbers, documentation strings, the other object types and the event content. Only events that fired a diphoton trigger gain photon rows.</p></div>
+</div>
+<div style="display:flex;gap:24px;align-items:center;background:#DCEBEE;border-radius:12px;padding:16px 24px"><p style="font-size:24px;line-height:1.35;color:#16213A"><b>Status.</b> Committed as 1699a39f7 on the fork branch claude/fervent-lamport-3oiuh6 and as aebf3eb64 on branch nano-photon-trigobj-unseeded on top of upstream master ed35654b1; applies cleanly to today's master. Nothing pushed, no pull request opened.</p></div>
+<aside>The diff is the entire change: one line of the Photon PSet. The hunk header refers to upstream master; in the NanoAOD v13 release the same line is line 83.</aside>
+</section>
+
+<section id="fix-wildcard" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">Why not a wildcard, and exactly which objects the fix lets through</h2>
+<div style="display:flex;gap:24px;align-items:stretch">
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace">// TriggerObjectStandAlone::hasAnyName, lines 80 to 119 (abridged)</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">boost::split(parts, name, is_any_of("*"), token_compress_on);<br>for (name in nameVec) {<br>&#160;&#160;index = 0;<br>&#160;&#160;for (part in parts) {<br>&#160;&#160;&#160;&#160;if (part.empty()) continue;<br>&#160;&#160;&#160;&#160;index = name.find(part, index);<br>&#160;&#160;&#160;&#160;if (index == npos ||<br>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;(part is first &amp;&amp; index &gt; 0)) { failed; break; }<br>&#160;&#160;&#160;&#160;index += part.length();<br>&#160;&#160;}<br>&#160;&#160;<span style="color:#F28C4B">// Failed, if end of name not reached</span><br>&#160;&#160;if (index &lt; name.length() &amp;&amp; !parts.back().empty())<br>&#160;&#160;&#160;&#160;failed = true;<br>}</p>
+<hr style="border-top:1px solid #3A4766;width:100%">
+<p style="font-size:24px;line-height:1.35;color:#AEB8CC">coll('hltEgammaCandidates*') would match both collections. The anchoring rule is also what kills the v12 to v14 BoostedTau pattern (no trailing star, name continues).</p>
+</div>
+<div style="width:760px;display:flex;flex-direction:column;gap:12px">
+<table style="font-size:24px;font-family:'IBM Plex Sans', Arial, sans-serif;color:#16213A;background:#FDFCF9;border:1px solid #D9D6CC">
+<tr style="background:#16213A"><th style="width:58%;color:#F6F5F0;text-align:left;padding:8px 14px">unseeded filter that is a photon bit</th><th style="width:14%;color:#F6F5F0;text-align:left">bit</th><th style="width:28%;color:#F6F5F0;text-align:left">menus</th></tr>
+<tr><td>hltEG22Iso60CaloId15b35eHE12R9Id50b80e TrackIsoUnseededLastFilter</td><td>16</td><td>2018 to 2026</td></tr>
+<tr><td>hltEG22R9Id85b90eHE12R9Id50b80e R9UnseededLastFilter</td><td>17</td><td>2018 to 2026</td></tr>
+<tr><td>hltEG18TrackIso60Iso60CaloId15b35eR9Id50b90e HE12b10eR9Id50b80eTrackIsoUnseededFilter</td><td>19</td><td>2018, 2022</td></tr>
+</table>
+<div style="background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;line-height:1.35;color:#44506A">These are the only entries of the photon list whose filters run on hltEgammaCandidatesUnseeded (checked in nine menus; the wildcard bit 20 matches only the seeded hltEG22L1VBFLooseIsoEGHEFilter). Every other unseeded e/gamma object, for example from electron pixel-match legs, sets no photon bit and is dropped by the skip flag. The output grows only where these three filters fired.</p></div>
+</div>
+</div>
+<aside>The explicit OR was preferred to the wildcard for readability and because it mirrors the Electron selection line for line; functionally both admit the same objects today.</aside>
+</section>
+
+<section id="validation" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">Validation plan: relval workflows before and after, and a direct count of the new bits</h2>
+<div style="display:flex;gap:24px;align-items:stretch">
+<div style="width:700px;display:flex;flex-direction:column;gap:12px">
+<div style="background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:26px;font-weight:600;color:#176B7B">1. Standard workflows with a NANO step</p><p style="font-size:24px;line-height:1.35;color:#44506A">H to gamma gamma (H125GGgluonfusion_14TeV) 12452.0 (2023) and 12852.0 (2024), TTbar 12434.0 and 12834.0, data 141.046 (RunEGamma2023D, AODNANORUN3 step). Confirm the numbers with runTheMatrix.py -n -e before running; the NanoAOD-only workflows 2500.1001 and 2500.2001 exist only in 15_1_X of May 2025.</p></div>
+<div style="background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:26px;font-weight:600;color:#176B7B">2. Expected differences</p><p style="font-size:24px;line-height:1.35;color:#44506A">Photon TrigObj with bits 16 and 17 appear in events firing the diphoton paths (zero before). nTrigObj and the TrigObj DQM histograms for id 22 (count, pt, eta, phi, filterBits) move; nothing else changes. The same pattern was seen for electrons in PR 41827.</p></div>
+<div style="background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:26px;font-weight:600;color:#176B7B">3. Not possible here</p><p style="font-size:24px;line-height:1.35;color:#44506A">The session container has the repository but no CMSSW runtime (no scram, cmsRun or ROOT), so the workflows have to run in a CMSSW area or through the pull-request bot.</p></div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace"># count photon objects with the unseeded bits, per path</p>
+<p style="font-size:24px;line-height:1.4;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">import uproot, awkward as ak, numpy as np<br>t = uproot.open("nano.root")["Events"]<br>path = "HLT_Diphoton30_22_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass90"<br>a = t.arrays(["TrigObj_id", "TrigObj_filterBits", path])<br>ph&#160;&#160;&#160;&#160;= a["TrigObj_id"] == 22<br>bits&#160;&#160;= ak.values_astype(a["TrigObj_filterBits"][ph], np.uint64)<br>fired = a[path]<br>for bit in (16, 17):&#160;&#160;&#160;<span style="color:#AEB8CC"># 14, 15 for NanoAOD v12 to v14</span><br>&#160;&#160;has = ak.any(((bits &gt;&gt; np.uint64(bit)) &amp; np.uint64(1)) == 1,<br>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;axis=1)<br>&#160;&#160;print(bit, int(np.sum(has &amp; fired)), "of", int(np.sum(fired)))</p>
+<hr style="border-top:1px solid #3A4766;width:100%">
+<p style="font-size:24px;line-height:1.35;color:#AEB8CC">Before the fix both counts are 0 by construction. After it they must be of the order of the number of events that fired the path (every passing event has at least one object past one of the two unseeded last filters).</p>
+</div>
+</div>
+<aside>For an existing v12 to v14 file the loop runs over bits 14 and 15 and filterBits is a 32-bit integer; the uint64 cast is harmless there. The script is also in NOTES.md section 8.1 of the notes repository.</aside>
+</section>
+
+<section id="pr-plan" data-transition="fade" style="background:#16213A;color:#F6F5F0;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:28px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1;color:#F6F5F0">Pull request plan, current status and the follow-ups kept out of the one-line fix</h2>
+<div style="display:flex;gap:32px;align-items:flex-start">
+<div style="flex:1;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;flex-direction:column;gap:4px;background:#0F1729;border:1px solid #3A4766;border-radius:12px;padding:20px 24px"><p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace"># pull request (prepared, not opened)</p><p style="font-size:24px;line-height:1.4;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">title:&#160;&#160;NanoAOD: accept unseeded e/gamma trigger<br>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;objects in the Photon TrigObj selection<br>from:&#160;&#160;&#160;santanumahata:nano-photon-trigobj-unseeded<br>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;(aebf3eb64 on top of master ed35654b1)<br>to:&#160;&#160;&#160;&#160;&#160;cms-sw:master, xpog signature<br>cites:&#160;&#160;PR 40711 (bits added), PR 41827 (electrons fixed)<br>backport: CMSSW_15_0_X if another production is planned</p></div>
+<ul style="font-size:24px;line-height:1.45;color:#D7DCE6">
+<li>Status today: both commits are local (fork branch and PR branch), nothing is pushed, no pull request exists, cms-sw/cmssw is untouched.</li>
+<li>Next action is yours: "push the PR branch" publishes nano-photon-trigobj-unseeded to the fork; the pull request can then be opened from the GitHub web interface.</li>
+</ul>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:14px">
+<p style="font-size:28px;font-weight:600;color:#F28C4B">Follow-ups, each a separate pull request</p>
+<ul style="font-size:24px;line-height:1.45;color:#D7DCE6">
+<li>Add the 2023 names of the Diphoton30_18 filters as OR alternatives inside bits 18 and 19 (keeps the numbering stable; the unseeded one needs this collection fix to work).</li>
+<li>Move bit 8 (hltHtEcal800) out of the Photon list, or drop it: its objects are HT objects.</li>
+<li>State in the documentation string which menus each bit covers, and review the stale bits per year (WPLoose, triple-electron, DeepTau overlaps, pixel-only jet filters, DeepCSV, DeepJet).</li>
+<li>Photon bits for the low-mass eta1p5, DiphotonMVA14p25, Diphoton15_1x EBEB and DoublePhoton paths, with the EGM POG and the Higgs PAG.</li>
+<li>Tell XPOG that MET trigger objects are never written and that the BoostedTau table was empty in v12 to v14.</li>
+</ul>
+</div>
+</div>
+<aside>The PR text is in pr/PR_body.md of the notes repository, in the cms-sw template layout, with the validation section pointing at the standard workflows listed on the previous slide.</aside>
+</section>
+
+<section id="appendix-bits-a" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">Appendix A: photon filter bits 0 to 10 (master numbering) and where their filters exist</h2>
+<table style="font-size:24px;font-family:'IBM Plex Sans', Arial, sans-serif;color:#16213A;background:#FDFCF9;border:1px solid #D9D6CC">
+<tr style="background:#16213A"><th style="width:9%;color:#F6F5F0;text-align:left;padding:8px 14px">bit v15</th><th style="width:11%;color:#F6F5F0;text-align:left">bit v12 to v14</th><th style="width:40%;color:#F6F5F0;text-align:left">filter</th><th style="width:22%;color:#F6F5F0;text-align:left">objects come from</th><th style="width:18%;color:#F6F5F0;text-align:left">filter exists in menus</th></tr>
+<tr><td>0</td><td>0</td><td>hltEG33L1EG26HEFilter</td><td>hltEgammaCandidates</td><td>2018 to 2026</td></tr>
+<tr><td>1</td><td>1</td><td>hltEG50HEFilter</td><td>hltEgammaCandidates</td><td>2018 to 2026</td></tr>
+<tr><td>2</td><td>2</td><td>hltEG75HEFilter</td><td>hltEgammaCandidates</td><td>2018 to 2026</td></tr>
+<tr><td>3</td><td>3</td><td>hltEG90HEFilter</td><td>hltEgammaCandidates</td><td>2018 to 2026</td></tr>
+<tr><td>4</td><td>4</td><td>hltEG120HEFilter</td><td>hltEgammaCandidates</td><td>2018 to 2026</td></tr>
+<tr><td>5</td><td>5</td><td>hltEG150HEFilter</td><td>hltEgammaCandidates</td><td>2018 to 2026</td></tr>
+<tr><td>6</td><td>6</td><td>hltEG175HEFilter</td><td>hltEgammaCandidates</td><td>2018 to 2026</td></tr>
+<tr><td>7</td><td>7</td><td>hltEG200HEFilter</td><td>hltEgammaCandidates</td><td>2018 to 2026</td></tr>
+<tr style="background:#F8E3D7"><td>8</td><td>8</td><td>hltHtEcal800</td><td>hltHtMhtEcal (HT object, type 89): never a photon</td><td>2018 to 2026</td></tr>
+<tr><td>9</td><td>none</td><td>hltEG45EBTightIDTightIsoTrackIsoFilter</td><td>hltEgammaCandidates</td><td>2024 to 2026</td></tr>
+<tr><td>10</td><td>none</td><td>hltEG50EBTightIDTightIsoTrackIsoFilter</td><td>hltEgammaCandidates</td><td>2023 to 2026</td></tr>
+</table>
+<p style="font-size:24px;line-height:1.35;color:#44506A">Source: PhysicsTools/NanoAOD/python/triggerObjects_cff.py at master ed35654b1 (21 entries) and CMSSW_13_3_1_patch1 (18 entries); menu presence from the frozen 2018 to 2026 menus listed on the menus slide. "Objects come from" is the l1EGCand (or htLabels) of the module in the menu.</p>
+<aside>Bits 0 to 7 are the single-photon H/E filters of the HLT_Photon paths; 9 to 12 the barrel tight-ID isolated photon filters; 13 the photon leg of Mu17_Photon30. Only bit 8 is misplaced in this half of the list.</aside>
+</section>
+
+<section id="appendix-bits-b" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">Appendix B: photon filter bits 11 to 20, with the three dead unseeded entries</h2>
+<div style="display:flex;flex-direction:column;gap:0px;font-size:24px">
+<div style="display:flex;gap:14px;padding:10px 16px;background:#16213A;color:#F6F5F0;border-radius:12px 12px 0 0"><p style="width:90px;font-weight:600">v15</p><p style="width:110px;font-weight:600">v12 to v14</p><p style="flex:1;font-weight:600">filter</p><p style="width:250px;font-weight:600">objects come from</p><p style="width:230px;font-weight:600">filter exists in</p></div>
+<div style="display:flex;gap:14px;padding:9px 16px;background:#FDFCF9;border:1px solid #D9D6CC;border-top:none;align-items:center"><p style="width:90px">11</p><p style="width:110px">9</p><p style="flex:1;font-family:'JetBrains Mono', 'Courier New', monospace;line-height:1.2">hltEG110EBTightIDTightIsoTrackIsoFilter</p><p style="width:250px">hltEgammaCandidates</p><p style="width:230px">2018 to 2026</p></div>
+<div style="display:flex;gap:14px;padding:9px 16px;background:#FDFCF9;border:1px solid #D9D6CC;border-top:none;align-items:center"><p style="width:90px">12</p><p style="width:110px">10</p><p style="flex:1;font-family:'JetBrains Mono', 'Courier New', monospace;line-height:1.2">hltEG120EBTightIDTightIsoTrackIsoFilter</p><p style="width:250px">hltEgammaCandidates</p><p style="width:230px">2018, 2022 v1.2 only</p></div>
+<div style="display:flex;gap:14px;padding:9px 16px;background:#FDFCF9;border:1px solid #D9D6CC;border-top:none;align-items:center"><p style="width:90px">13</p><p style="width:110px">11</p><p style="flex:1;font-family:'JetBrains Mono', 'Courier New', monospace;line-height:1.2">hltMu17Photon30IsoCaloIdPhotonlegTrackIsoFilter</p><p style="width:250px">hltEgammaCandidates</p><p style="width:230px">2018 to 2026</p></div>
+<div style="display:flex;gap:14px;padding:9px 16px;background:#FDFCF9;border:1px solid #D9D6CC;border-top:none;align-items:center"><p style="width:90px">14</p><p style="width:110px">12</p><p style="flex:1;font-family:'JetBrains Mono', 'Courier New', monospace;line-height:1.2">hltEG30LR9Id85b90eHE12R9Id50b80eR9IdLastFilter</p><p style="width:250px">hltEgammaCandidates</p><p style="width:230px">2018 to 2026</p></div>
+<div style="display:flex;gap:14px;padding:9px 16px;background:#FDFCF9;border:1px solid #D9D6CC;border-top:none;align-items:center"><p style="width:90px">15</p><p style="width:110px">13</p><p style="flex:1;font-family:'JetBrains Mono', 'Courier New', monospace;line-height:1.2">hltEG30LIso60CaloId15b35eHE12R9Id50b80e<br>EcalIsoLastFilter</p><p style="width:250px">hltEgammaCandidates</p><p style="width:230px">2018 to 2026</p></div>
+<div style="display:flex;gap:14px;padding:9px 16px;background:#F8E3D7;border:1px solid #D9D6CC;border-top:none;align-items:center"><p style="width:90px">16</p><p style="width:110px">14</p><p style="flex:1;font-family:'JetBrains Mono', 'Courier New', monospace;line-height:1.2">hltEG22Iso60CaloId15b35eHE12R9Id50b80e<br>TrackIsoUnseededLastFilter</p><p style="width:250px;color:#C2410C">hltEgammaCandidatesUnseeded, never set</p><p style="width:230px">2018 to 2026</p></div>
+<div style="display:flex;gap:14px;padding:9px 16px;background:#F8E3D7;border:1px solid #D9D6CC;border-top:none;align-items:center"><p style="width:90px">17</p><p style="width:110px">15</p><p style="flex:1;font-family:'JetBrains Mono', 'Courier New', monospace;line-height:1.2">hltEG22R9Id85b90eHE12R9Id50b80e<br>R9UnseededLastFilter</p><p style="width:250px;color:#C2410C">hltEgammaCandidatesUnseeded, never set</p><p style="width:230px">2018 to 2026</p></div>
+<div style="display:flex;gap:14px;padding:9px 16px;background:#FDFCF9;border:1px solid #D9D6CC;border-top:none;align-items:center"><p style="width:90px">18</p><p style="width:110px">16</p><p style="flex:1;font-family:'JetBrains Mono', 'Courier New', monospace;line-height:1.2">hltEG30Iso60CaloId15b35eR9Id50b90e<br>HE12b10eR9Id50b80eEcalIsoFilter</p><p style="width:250px">hltEgammaCandidates</p><p style="width:230px">2018, 2022 (renamed 2023)</p></div>
+<div style="display:flex;gap:14px;padding:9px 16px;background:#F8E3D7;border:1px solid #D9D6CC;border-top:none;align-items:center"><p style="width:90px">19</p><p style="width:110px">17</p><p style="flex:1;font-family:'JetBrains Mono', 'Courier New', monospace;line-height:1.2">hltEG18TrackIso60Iso60CaloId15b35eR9Id50b90e<br>HE12b10eR9Id50b80eTrackIsoUnseededFilter</p><p style="width:250px;color:#C2410C">hltEgammaCandidatesUnseeded, never set</p><p style="width:230px">2018, 2022 (renamed 2023)</p></div>
+<div style="display:flex;gap:14px;padding:9px 16px;background:#FDFCF9;border:1px solid #D9D6CC;border-top:none;border-radius:0 0 12px 12px;align-items:center"><p style="width:90px">20</p><p style="width:110px">none</p><p style="flex:1;font-family:'JetBrains Mono', 'Courier New', monospace;line-height:1.2">hltEG*L1VBFLooseIsoEGHEFilter<br>(only hltEG22L1VBFLooseIsoEGHEFilter)</p><p style="width:250px">hltEgammaCandidates</p><p style="width:230px">2023 to 2026</p></div>
+</div>
+<p style="font-size:24px;line-height:1.3;color:#44506A">Long module names are broken over two lines for display only. Decimal values of the dead bits: 65536, 131072, 524288 (v15 and master); 16384, 32768, 131072 (v12 to v14).</p>
+<aside>Bits 18 and 19 name the 2018 and 2022 filters of the Diphoton30_18 paths; from 2023 those filters are called hltEG30Iso60b40eCaloId11b32eHE10b9eR9Id50b90eEcalIsoFilter and hltDiEG18TrackIso60Iso60b40eCaloId11b32eHE10b9eR9Id50b90eTrackIsoUnseededFilter, so the two bits match nothing for 2023 and later data.</aside>
+</section>
+
+<section id="history" data-transition="fade" style="background:#16213A;color:#F6F5F0;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:32px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1;color:#F6F5F0">Appendix C: how the defect was born, survived and was found</h2>
+<div style="display:flex;gap:14px;align-items:stretch">
+<div style="flex:1;display:flex;flex-direction:column;gap:10px;background:#0F1729;border:1px solid #3A4766;border-radius:12px;padding:20px 22px"><p style="font-size:24px;font-weight:600;color:#F28C4B">7 to 8 Feb 2023</p><p style="font-size:24px;line-height:1.35;color:#D7DCE6"><b>PR 40711</b> adds the six diphoton photon bits for the next NanoAOD production. The Photon selection is not touched, so the three unseeded bits are dead from day one. In CMSSW_13_0_0; v12 is made with 13_0_13.</p></div>
+<x-shape kind="arrow-right" style="width:40px;height:20px;background:#5B6475;align-self:center"></x-shape>
+<div style="flex:1;display:flex;flex-direction:column;gap:10px;background:#0F1729;border:1px solid #3A4766;border-radius:12px;padding:20px 22px"><p style="font-size:24px;font-weight:600;color:#5FC2D3">31 May to 8 Jun 2023</p><p style="font-size:24px;line-height:1.35;color:#D7DCE6"><b>PR 41827</b> gives the Electron selection the unseeded collection and the CaloIdL_MW unseeded bit. Photons are not revisited. In CMSSW_13_3_0, so NanoAOD v13 has it for electrons only.</p></div>
+<x-shape kind="arrow-right" style="width:40px;height:20px;background:#5B6475;align-self:center"></x-shape>
+<div style="flex:1;display:flex;flex-direction:column;gap:10px;background:#0F1729;border:1px solid #3A4766;border-radius:12px;padding:20px 22px"><p style="font-size:24px;font-weight:600;color:#5FC2D3">Nov to Dec 2023</p><p style="font-size:24px;line-height:1.35;color:#D7DCE6"><b>13_3_X backports</b> for v13 (43292 from 43247, 43286, 43470 and others); CMSSW_13_3_1_patch1 produces NanoAOD v13 for Summer22, 22EE, 23, 23BPix MC and the 16Dec2023 2022 data.</p></div>
+<x-shape kind="arrow-right" style="width:40px;height:20px;background:#5B6475;align-self:center"></x-shape>
+<div style="flex:1;display:flex;flex-direction:column;gap:10px;background:#0F1729;border:1px solid #3A4766;border-radius:12px;padding:20px 22px"><p style="font-size:24px;font-weight:600;color:#5FC2D3">13 to 18 Mar 2025</p><p style="font-size:24px;line-height:1.35;color:#D7DCE6"><b>PR 47594 / 47601</b>: hltEG45 and hltEG50 EB bits and the VBF wildcard are added and filterBits becomes 64-bit (CMSSW_15_0_2). The unseeded bits move to 16, 17 and 19, still dead. v15 inherits them.</p></div>
+<x-shape kind="arrow-right" style="width:40px;height:20px;background:#5B6475;align-self:center"></x-shape>
+<div style="flex:1;display:flex;flex-direction:column;gap:10px;background:#0F1729;border:1px solid #F28C4B;border-radius:12px;padding:20px 22px"><p style="font-size:24px;font-weight:600;color:#F28C4B">4 Nov 2026</p><p style="font-size:24px;line-height:1.35;color:#D7DCE6"><b>This investigation</b>: cause located, confirmed on master ed35654b1 and the 16_x branches, whole-table scan done, one-line fix committed on top of upstream master, pull request text ready. No open upstream PR or issue on the subject.</p></div>
+</div>
+<p style="font-size:24px;line-height:1.35;color:#AEB8CC">Dates are the creation and merge dates returned by the GitHub search API. Between CMSSW_13_0_0 and 13_0_1 the photon pt threshold moved from 20 to 15 GeV; that change did not touch the collection test either.</p>
+<aside>The electron fix of June 2023 is the moment the photon defect could have been caught: the same author added the unseeded collection to one selection and wrote in the pull request that it was the collection on which the unseeded leg is selected. The photon list, four months old at that point, kept its single collection.</aside>
+</section>
+
+<script>
+document.querySelectorAll('section').forEach(function (sec) {
+  var cons = sec.querySelectorAll(':scope > x-connector');
+  if (!cons.length) return;
+  var ns = 'http://www.w3.org/2000/svg';
+  var svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('width', '1920'); svg.setAttribute('height', '1080');
+  svg.setAttribute('style', 'position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-events:none;overflow:visible');
+  var defs = document.createElementNS(ns, 'defs'); svg.appendChild(defs);
+  var n = 0;
+  cons.forEach(function (c) {
+    var st = c.getAttribute('style') || '';
+    var color = (st.match(/color:\s*([^;]+)/) || [, '#5B6475'])[1].trim();
+    var w = parseFloat((st.match(/border-width:\s*([0-9.]+)/) || [, '2'])[1]);
+    var dashed = /dashed/.test(st);
+    var head = c.getAttribute('head') || 'end';
+    var x1 = +c.getAttribute('x1'), y1 = +c.getAttribute('y1'), x2 = +c.getAttribute('x2'), y2 = +c.getAttribute('y2');
+    var id = 'm' + (n++);
+    var marker = document.createElementNS(ns, 'marker');
+    marker.setAttribute('id', id); marker.setAttribute('orient', 'auto'); marker.setAttribute('markerUnits', 'strokeWidth');
+    marker.setAttribute('markerWidth', '5'); marker.setAttribute('markerHeight', '5'); marker.setAttribute('refX', '4'); marker.setAttribute('refY', '2');
+    var mp = document.createElementNS(ns, 'path'); mp.setAttribute('d', 'M0 0 L4 2 L0 4 Z'); mp.setAttribute('fill', color);
+    marker.appendChild(mp); defs.appendChild(marker);
+    var line = document.createElementNS(ns, 'line');
+    var dx = x2 - x1, dy = y2 - y1, len = Math.sqrt(dx * dx + dy * dy) || 1;
+    var cut = head === 'none' ? 0 : 2 * w;
+    line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2 - dx / len * cut); line.setAttribute('y2', y2 - dy / len * cut);
+    line.setAttribute('stroke', color); line.setAttribute('stroke-width', w); line.setAttribute('stroke-linecap', 'round');
+    if (dashed) line.setAttribute('stroke-dasharray', '12 10');
+    if (head !== 'none') line.setAttribute('marker-end', 'url(#' + id + ')');
+    svg.appendChild(line);
+  });
+  sec.appendChild(svg);
+});
+</script>
+</body></html>

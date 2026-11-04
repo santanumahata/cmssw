@@ -1,0 +1,21 @@
+<section id="fix-wildcard" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">Why not a wildcard, and exactly which objects the fix lets through</h2>
+<div style="display:flex;gap:24px;align-items:stretch">
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#16213A;border-radius:12px;padding:22px 26px">
+<p style="font-size:24px;color:#AEB8CC;font-family:'JetBrains Mono', 'Courier New', monospace">// TriggerObjectStandAlone::hasAnyName, lines 80 to 119 (abridged)</p>
+<p style="font-size:24px;line-height:1.35;color:#F6F5F0;font-family:'JetBrains Mono', 'Courier New', monospace">boost::split(parts, name, is_any_of("*"), token_compress_on);<br>for (name in nameVec) {<br>&#160;&#160;index = 0;<br>&#160;&#160;for (part in parts) {<br>&#160;&#160;&#160;&#160;if (part.empty()) continue;<br>&#160;&#160;&#160;&#160;index = name.find(part, index);<br>&#160;&#160;&#160;&#160;if (index == npos ||<br>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;(part is first &amp;&amp; index &gt; 0)) { failed; break; }<br>&#160;&#160;&#160;&#160;index += part.length();<br>&#160;&#160;}<br>&#160;&#160;<span style="color:#F28C4B">// Failed, if end of name not reached</span><br>&#160;&#160;if (index &lt; name.length() &amp;&amp; !parts.back().empty())<br>&#160;&#160;&#160;&#160;failed = true;<br>}</p>
+<hr style="border-top:1px solid #3A4766;width:100%">
+<p style="font-size:24px;line-height:1.35;color:#AEB8CC">coll('hltEgammaCandidates*') would match both collections. The anchoring rule is also what kills the v12 to v14 BoostedTau pattern (no trailing star, name continues).</p>
+</div>
+<div style="width:760px;display:flex;flex-direction:column;gap:12px">
+<table style="font-size:24px;font-family:'IBM Plex Sans', Arial, sans-serif;color:#16213A;background:#FDFCF9;border:1px solid #D9D6CC">
+<tr style="background:#16213A"><th style="width:58%;color:#F6F5F0;text-align:left;padding:8px 14px">unseeded filter that is a photon bit</th><th style="width:14%;color:#F6F5F0;text-align:left">bit</th><th style="width:28%;color:#F6F5F0;text-align:left">menus</th></tr>
+<tr><td>hltEG22Iso60CaloId15b35eHE12R9Id50b80e TrackIsoUnseededLastFilter</td><td>16</td><td>2018 to 2026</td></tr>
+<tr><td>hltEG22R9Id85b90eHE12R9Id50b80e R9UnseededLastFilter</td><td>17</td><td>2018 to 2026</td></tr>
+<tr><td>hltEG18TrackIso60Iso60CaloId15b35eR9Id50b90e HE12b10eR9Id50b80eTrackIsoUnseededFilter</td><td>19</td><td>2018, 2022</td></tr>
+</table>
+<div style="background:#FDFCF9;border:1px solid #D9D6CC;border-radius:12px;padding:18px 24px"><p style="font-size:24px;line-height:1.35;color:#44506A">These are the only entries of the photon list whose filters run on hltEgammaCandidatesUnseeded (checked in nine menus; the wildcard bit 20 matches only the seeded hltEG22L1VBFLooseIsoEGHEFilter). Every other unseeded e/gamma object, for example from electron pixel-match legs, sets no photon bit and is dropped by the skip flag. The output grows only where these three filters fired.</p></div>
+</div>
+</div>
+<aside>The explicit OR was preferred to the wildcard for readability and because it mirrors the Electron selection line for line; functionally both admit the same objects today.</aside>
+</section>
