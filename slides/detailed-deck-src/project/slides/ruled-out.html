@@ -1,6 +1,6 @@
 <section id="ruled-out" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:28px">
 <h2 style="font-size:56px;font-weight:600;line-height:1.1">Six other explanations, and the evidence that rules each one out</h2>
-<table style="font-size:24px;font-family:'IBM Plex Sans', Arial, sans-serif;color:#16213A;background:#FDFCF9;border:1px solid #D9D6CC">
+<table style="font-size:23px;font-family:'IBM Plex Sans', Arial, sans-serif;color:#16213A;background:#FDFCF9;border:1px solid #D9D6CC">
 <tr style="background:#16213A"><th style="width:26%;color:#F6F5F0;text-align:left;padding:10px 14px">hypothesis</th><th style="width:58%;color:#F6F5F0;text-align:left">what the code and the menus show</th><th style="width:16%;color:#F6F5F0;text-align:left">verdict</th></tr>
 <tr><td>The filter names in NanoAOD are misspelt or outdated</td><td>All four Diphoton30_22 names are defined with saveTags = True in the 2018 GRun, 2022 v1.2/v1.4/v1.5, 2023, 2024, 2025 and 2026 menus and in every development menu checked (19 files); the chain is identical everywhere</td><td style="color:#176B7B">ruled out</td></tr>
 <tr><td>The unseeded objects never reach MiniAOD</td><td>patTrigger excludes no collection; selectedPatTrigger keeps objects with any filter label; the Electron selection has consumed coll('hltEgammaCandidatesUnseeded') in production since June 2023</td><td style="color:#176B7B">ruled out</td></tr>
@@ -10,6 +10,6 @@
 <tr><td>Something specific to the v13 release</td><td>CMSSW_13_3_1_patch1 and the 13_3_X tip have byte-identical NanoAOD configuration; 13_0_X, 14_0_X, 15_0_X, 16_x and master carry the same Photon selection</td><td style="color:#176B7B">ruled out</td></tr>
 <tr style="background:#F8E3D7"><td>The Photon selection rejects the collection</td><td>sel = type(92) &amp;&amp; pt &gt; 15 &amp;&amp; coll('hltEgammaCandidates'), exact comparison, evaluated before the bits</td><td style="color:#C2410C">the cause</td></tr>
 </table>
-<p style="font-size:24px;line-height:1.35;color:#44506A">Each row was checked in the source: menu files (filter definitions and saveTags), PhysicsTools/PatAlgos (patTrigger, selectedPatTrigger, slimmedPatTrigger), the HLT plugins (HLTSinglet, HLTGenericFilter), the era modifiers at the end of triggerObjects_cff.py, and the configuration at the tags and branch tips named on the next slide.</p>
+<p style="font-size:23px;line-height:1.35;color:#44506A">Each row was checked in the source: menu files (filter definitions and saveTags), PhysicsTools/PatAlgos (patTrigger, selectedPatTrigger, slimmedPatTrigger), the HLT plugins (HLTSinglet, HLTGenericFilter), the era modifiers at the end of triggerObjects_cff.py, and the configuration at the tags and branch tips named on the next slide.</p>
 <aside>The observation that started this was that NanoAOD v13 documents the unseeded last-filter bits but no photon object ever has them. The table lists the alternatives considered during the investigation and why each one fails.</aside>
 </section>
