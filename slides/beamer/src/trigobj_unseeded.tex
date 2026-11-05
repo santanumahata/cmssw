@@ -29,7 +29,7 @@
     {\large\color{white} Santanu Mahata}\\[4pt]
     {\footnotesize\color{cmsgold} 5 November 2026}\\[10pt]
     {\tiny\color{lightgrey} Checked against cms-sw/cmssw master ed35654b1, release branches 13\_0\_X to 16\_1\_X,
-     HLT menus 2018 to 2026, twelve NanoAOD files and a NANO re-run with the fix}
+     HLT menus 2018 to 2026, thirteen NanoAOD files and NANO re-runs with the fix}
   \end{center}
 \end{frame}
 }
@@ -38,7 +38,7 @@
 \begin{frame}{Outline}
   \begin{enumerate}
     \item \hl{The problem} --- what a NanoAOD trigger object is, the diphoton path, where the object is dropped.
-    \item \hl{Scope} --- every NanoAOD version since v12, every menu since 2018, twelve files measured,
+    \item \hl{Scope} --- every NanoAOD version since v12, every menu since 2018, thirteen files measured,
           a scan of the whole trigger-object table.
     \item \hl{Fix and validation} --- the one-line fix, the fix test on real MiniAOD input, the relval in
           CMSSW\_16\_1\_3, impact on analyses, pull-request status.
@@ -59,7 +59,7 @@
     \end{column}
     \begin{column}{0.24\linewidth}\centering
       {\Huge\bfseries\color{cmsgold}4+}\par\vspace{2pt}
-      {\scriptsize NanoAOD versions affected: v12, v13, v14, v15 and master}
+      {\scriptsize NanoAOD versions affected: v12, v13, v14, v15, 2026 data (16\_0\_X) and master}
     \end{column}
     \begin{column}{0.24\linewidth}\centering
       {\Huge\bfseries\color{cmsaccent}19}\par\vspace{2pt}
@@ -76,9 +76,9 @@
           \code{hltEgammaCandidates}; the sub-leading leg of the Diphoton30\_22 Mass90/Mass95 paths is built on
           \code{hltEgammaCandidatesUnseeded}. The collection test runs before the bits are computed, so those
           objects are dropped and their bits can never appear.
-    \item \gold{Measured}: twelve NanoAOD files, v9 to v15: not one photon object with an unseeded bit.
+    \item \gold{Measured}: thirteen NanoAOD files, v9 to v15 and 2026 data (16\_0\_X): not one photon object with an unseeded bit.
     \item \hl{Fix}: accept both collections in the Photon selection. NANO re-made with the fix sets the unseeded
-          bits in all 10453 Mass90 events of the test file and changes nothing else.
+          bits in all 10453 Mass90 events of the MC test file and in all 308 of a 2026 data test file (16\_0\_4\_patch2).
   \end{itemize}
   \src{NOTES.md sections 1, 7, 14, 15; results/REPORT.md.}
 \end{frame}
@@ -298,7 +298,7 @@ sel = "type(92) && pt > 7
   2024v14 (Summer24), as reported by the production configurations.}
 \end{frame}
 
-\begin{frame}{Measured on twelve NanoAOD files: not one photon object with an unseeded bit since v12}
+\begin{frame}{Measured on thirteen NanoAOD files: not one photon object with an unseeded bit since v12}
   \vspace{0pt}\par
   {\tiny
   \begin{tabularx}{\linewidth}{@{}lYrrllrrr@{}}
@@ -315,16 +315,17 @@ sel = "type(92) && pt > 7
     \rowdead v15 & GluGluH-Hto2G M125 RunIII2024Summer24 & 4180 & 2406 & 4815 / 5588 & \dead{0 / 0 / 0} & 205 & 0 & 22\\
     \rowdead v15 & EGamma 2022D NanoAODv15 & 300000 & 48687 & 212270 / 258546 & \dead{0 / 0 / 0} & 30451 & 0 & 430\\
     \rowdead v15 & EGamma0 2024D MINIv6NANOv15 & 300000 & 30945 & 201628 / 248974 & \dead{0 / 0 / 0} & 22980 & 0 & 254\\
-    \rowdead 133X & GluGluHToGG M125 powheg Run3Winter24NanoAOD & 175654 & 101598 & 205090 / 239250 & \dead{0 / 0 / 0} & 9860 & 0 & 0\\\bottomrule
+    \rowdead 133X & GluGluHToGG M125 powheg Run3Winter24NanoAOD & 175654 & 101598 & 205090 / 239250 & \dead{0 / 0 / 0} & 9860 & 0 & 0\\
+    \rowdead 16\_0\_X & EGamma0 2026C PromptReco (CMSSW\_16\_0\_X) & 300000 & 1511 & 124972 / 145161 & \dead{0 / 0 / 0} & 1034 & 0 & 42\\\bottomrule
   \end{tabularx}}
   \par\vspace{5pt}
   \begin{itemize}\scriptsize
     \item \hl{Controls}: v9 has no photon objects; v10, v11 document no diphoton bits; the electron unseeded bit is
           absent in v12 and populated from v13.
-    \item \gold{Affected}: unseeded bits 0 in all 1.7 million events of v12 to v15 and Winter24, while the seeded bits
+    \item \gold{Affected}: unseeded bits 0 in all 2.0 million events of v12 to v15, Winter24 and 2026 data, while the seeded bits
           are set on more objects than there are Mass90 events. No MET objects anywhere; BoostedTau only in v15.
   \end{itemize}
-  \src{Counts are photon objects (id 22) with the bit set, all events read. Seeded bits 12, 13 (v12--v14) / 14, 15 (v15);
+  \src{Counts are photon objects (id 22) with the bit set, all events read. Seeded bits 12, 13 (v12--v14) / 14, 15 (v15, 16\_0\_X);
   unseeded 14, 15, 17 / 16, 17, 19. lxplus, uproot (LCG\_107), bit numbers parsed from each file. results/REPORT.md.}
 \end{frame}
 
@@ -393,15 +394,17 @@ sel = "type(92) && pt > 7
 
 \begin{frame}{Fix test on real input: every Mass90 event gets its sub-leading-leg bits}
   \vspace{0pt}\par
-  {\scriptsize
+  {\tiny
   \begin{tabularx}{\linewidth}{@{}Yrp{1.9cm}p{2.2cm}p{2.2cm}rr@{}}
     \toprule
-    \thead{NANO file (17760 events each)} & \thead{Mass90} & \thead{photons: seeded bits} & \thead{photons: unseeded bits} & \thead{Mass90 events with an unseeded bit} & \thead{nTrigObj} & \thead{size (bytes)}\\\midrule
+    \thead{NANO file} & \thead{Mass90} & \thead{photons: seeded bits} & \thead{photons: unseeded bits} & \thead{Mass90 events with an unseeded bit} & \thead{nTrigObj} & \thead{size (bytes)}\\\midrule
     central v13 file & 10453 & 20865 / 24170 & 0 / 0 / 0 & 0 & 5.287 & 29333713\\
     v13 re-made, no fix & 10453 & 20865 / 24170 & 0 / 0 / 0 & 0 & 5.287 & 29339920\\
     \rowdead v13 re-made, \hl{with fix} & 10453 & 20865 / 24170 & \hl{20461 / 18365 / 0} & \hl{10453 (all)} & 5.388 & 29363499\\
     v15 re-made, no fix & 10453 & 20865 / 24170 & 0 / 0 / 0 & 0 & 38.134 & 39947152\\
-    \rowdead v15 re-made, \hl{with fix} & 10453 & 20865 / 24170 & \hl{20461 / 18365 / 0} & \hl{10453 (all)} & 38.225 & 39959608\\\bottomrule
+    \rowdead v15 re-made, \hl{with fix} & 10453 & 20865 / 24170 & \hl{20461 / 18365 / 0} & \hl{10453 (all)} & 38.225 & 39959608\\
+    16\_0\_X 2026C data, no fix & 308 & 8909 / 10760 & 0 / 0 / 0 & 0 & 2.100 & 26190407\\
+    \rowdead 16\_0\_X 2026C data, \hl{with fix} & 308 & 8909 / 10760 & \hl{671 / 1010 / 0} & \hl{308 (all)} & 2.118 & 26206694\\\bottomrule
   \end{tabularx}}
   \par\vspace{6pt}
   \begin{itemize}\scriptsize
@@ -411,10 +414,12 @@ sel = "type(92) && pt > 7
           none below the 22\,GeV leg threshold.
     \item Every object type other than photons is unchanged in 17760 of 17760 events. Photon objects
           24835 $\to$ 26639 (v13), 25188 $\to$ 26807 (v15); file size $+0.08\%$ (v13).
-    \item The Diphoton30\_18 unseeded bit stays 0: its filter name does not exist in the 2023 menu.
+    \item The Diphoton30\_18 unseeded bit stays 0: its filter name does not exist in the 2023 menu; also 0 in 2026 data (not investigated).
+    \item \hl{2026 data}, CMSSW\_16\_0\_4\_patch2: 20000 events of a Run2026C MINIAOD file; unseeded-bit photons from
+          \gold{22.01\,GeV} (median 37.06\,GeV). Not compared event by event with a central file.
   \end{itemize}
   \src{Unseeded bits 14 / 15 / 17 in v13, 16 / 17 / 19 in v15. Input: the MiniAOD parent of the central Run3Summer23 v13
-  GluGluHto2G M125 file. results/REPORT.md "Fix test"; commands in scripts/make\_fixed\_nano.sh.}
+  GluGluHto2G M125 file (17760 events); 2026: run 402536 MINIAOD. NOTES.md 15, 18; scripts/make\_fixed\_nano.sh.}
 \end{frame}
 
 \begin{frame}{Relval in CMSSW\_16\_1\_3: the fix builds and runs; these workflows have no TrigObj}
@@ -498,10 +503,10 @@ sel = "type(92) && pt > 7
     \item The Photon trigger-object selection accepts only \code{hltEgammaCandidates}; the sub-leading leg of the
           Diphoton30\_22 Mass90/Mass95 paths lives on \code{hltEgammaCandidatesUnseeded}. Its bits are
           \gold{documented but can never be set}.
-    \item Affects \gold{NanoAOD v12, v13, v14, v15 and master}; all HLT menus 2018--2026. Measured on twelve files:
-          0 photon objects with an unseeded bit in 1.7 million events.
+    \item Affects \gold{NanoAOD v12, v13, v14, v15 and master}; all HLT menus 2018--2026. Measured on thirteen files
+          (incl. 2026 data, 16\_0\_X): 0 photon objects with an unseeded bit in 2.0 million events.
     \item \hl{One-line fix}, the Electron construct of PR 41827. On real MiniAOD input it sets the unseeded bits in
-          \hl{all 10453} Mass90 events (\pT\ $\geq$ 22.04\,GeV) and changes no other object.
+          \hl{all 10453} Mass90 events (\pT\ $\geq$ 22.04\,GeV) and changes no other object; in 2026 data (16\_0\_X) in \hl{all 308}.
     \item Relval in 16\_1\_3: builds and runs cleanly, outputs unchanged; those workflows carry no trigger objects.
     \item Next: open the pull request against cms-sw:master; four follow-ups kept separate.
   \end{itemize}
@@ -1092,8 +1097,8 @@ sel = "type(85) && pt > 120
           becomes 64-bit (CMSSW\_15\_0\_2). The unseeded bits move to 16, 17, 19, still dead. v15 inherits them.
     \item \gold{4 Nov 2026}: cause located, confirmed on master and the 16\_x branches, whole-table scan, fix committed,
           ten files measured on lxplus.
-    \item \gold{5 Nov 2026}: two more files, fix test on real MiniAOD input in 13\_3\_1\_patch1 and 15\_0\_15\_patch4,
-          relval in 16\_1\_3.
+    \item \gold{5 Nov 2026}: three more files (one 2026, 16\_0\_X); fix test on real MiniAOD input in 13\_3\_1\_patch1,
+          15\_0\_15\_patch4 and 16\_0\_4\_patch2; relval in 16\_1\_3.
   \end{itemize}
   \src{Dates are the creation and merge dates from the GitHub search API. Between CMSSW\_13\_0\_0 and 13\_0\_1 the photon
   pt threshold moved from 20 to 15 GeV; that change did not touch the collection test.}
@@ -1112,7 +1117,8 @@ sel = "type(85) && pt > 120
         v12 & CMSSW\_13\_0\_X, production 13\_0\_13 (reported)\\
         v13 & CMSSW\_13\_3\_X, production 13\_3\_1\_patch1\\
         v14 & CMSSW\_14\_0\_X (reported)\\
-        v15 & CMSSW\_15\_0\_X: $\geq$15\_0\_2 for 2024; 15\_0\_15\_patch4 for 2022/2023 inputs (run3\_nanoAOD\_pre142X)\\\bottomrule
+        v15 & CMSSW\_15\_0\_X: $\geq$15\_0\_2 for 2024; 15\_0\_15\_patch4 for 2022/2023 inputs (run3\_nanoAOD\_pre142X)\\
+        (v16) & no dataset named v16 in DAS; 2026 PromptReco is CMSSW\_16\_0\_X (16\_0\_2\_patch1 to 16\_0\_5\_patch1)\\\bottomrule
       \end{tabularx}}
     \end{column}
     \begin{column}{0.50\linewidth}
@@ -1137,7 +1143,7 @@ sel = "type(85) && pt > 120
   \src{NOTES.md sections 3.1 to 3.4; v13 command shape from public configurations that mirror the McM setup.}
 \end{frame}
 
-\begin{frame}{Backup: how the twelve files were measured}
+\begin{frame}{Backup: how the thirteen files were measured}
   \begin{itemize}\small
     \item lxplus, Python with uproot and awkward from LCG\_107, files read through \code{root://cms-xrd-global.cern.ch/};
           one file per dataset, the first \code{dasgoclient} returns; up to 300000 events per file.
@@ -1159,6 +1165,8 @@ INPUT=root://cms-xrd-global.cern.ch//store/mc/Run3Summer23MiniAODv4/GluGluHto2G_
       MINIAODSIM/130X_mcRun3_2023_realistic_v15_ext1-v4/2820000/74338d47-0b38-4e0b-83a2-ad85c7f4e533.root   # parent of central v13 file
 # v13: CMSSW_13_3_1_patch1, era Run3_2023,                        GT 133X_mcRun3_2023_realistic_ForNanov13_v1
 # v15: CMSSW_15_0_15_patch4, era Run3_2023,run3_nanoAOD_pre142X,  GT 150X_mcRun3_2023_realistic_v1
+# v16: CMSSW_16_0_4_patch2, --data, era Run3_2026, GT 160X_dataRun3_Prompt_frozen260223_v1, -n 20000, input below
+#      /store/data/Run2026C/EGamma0/MINIAOD/PromptReco-v1/000/402/536/00000/33c652d5-5e17-456b-9b90-6d8e00734855.root
 scram project CMSSW $RELEASE; cd $RELEASE/src; eval $(scramv1 runtime -sh)
 git cms-addpkg PhysicsTools/NanoAOD; scram b -j 8
 cmsDriver.py nano_nofix --step NANO --mc --scenario pp --nThreads 4 --eventcontent NANOAODSIM --datatier NANOAODSIM \
