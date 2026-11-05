@@ -1,0 +1,34 @@
+<section id="code-deadbits-py-1" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: deadbits.py (1/8)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/deadbits.py, lines 1 to 30</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">&quot;&quot;&quot;Resolve every trigger-object filter bit of a NanoAOD triggerObjects_cff.py against HLT menus.
+usage: deadbits.py &lt;triggerObjects_cff.py&gt; &lt;label=menu.py&gt; [&lt;label=menu.py&gt; ...]
+Status per bit and menu: OK (a matching filter whose objects the selection&#x27;s coll() accepts),
+COLL (matching filters exist but none passes the selection&#x27;s coll()), STALE (no module matches),
+UNK (matching filter, collection could not be determined).&quot;&quot;&quot;
+import re, sys, ast
+
+# ---------- menu ----------
+def parse_modules(text):
+    mods = {}
+    for m in re.finditer(r&#x27;^(?:fragment|process)\.(\w+) = cms\.(\w+)\(&#x27;, text, re.M):
+        k = m.end(); depth = 1; q = None
+        while k &lt; len(text) and depth:
+            c = text[k]
+            if q:
+                if c == q: q = None
+            elif c in &quot;\&quot;&#x27;&quot;: q = c
+            elif c == &quot;(&quot;: depth += 1
+            elif c == &quot;)&quot;: depth -= 1
+            k += 1
+        mods[m.group(1)] = (m.group(2), text[m.end():k-1])
+    return mods
+
+CAND_PARAMS = [&quot;l1EGCand&quot;, &quot;inputTag&quot;, &quot;CandTag&quot;, &quot;inputCandCollection&quot;, &quot;candIsolatedTag&quot;,
+               &quot;candNonIsolatedTag&quot;, &quot;inputTag1&quot;, &quot;inputTag2&quot;, &quot;firstLegLastFilter&quot;, &quot;secondLegLastFilter&quot;,
+               &quot;JetSrc&quot;, &quot;src&quot;, &quot;htLabels&quot;, &quot;mhtLabels&quot;, &quot;inputJetTag&quot;, &quot;originalTag&quot;, &quot;TauSrc&quot;, &quot;jetSrc&quot;,
+               &quot;Jets&quot;, &quot;JetTags&quot;, &quot;inputJets&quot;, &quot;candTag&quot;, &quot;PreviousCandTag&quot;, &quot;previousCandTag&quot;, &quot;metLabels&quot;,
+               &quot;mhtLabel&quot;, &quot;inputMet&quot;, &quot;L1TauTrigger&quot;, &quot;TriggerSrc&quot;, &quot;JetTag&quot;, &quot;MuonTag&quot;, &quot;ElectronTag&quot;,
+               &quot;PhotonTag&quot;, &quot;muonTag&quot;, &quot;electronTag&quot;, &quot;photonTag&quot;, &quot;tauTag&quot;, &quot;jetTag&quot;, &quot;taus&quot;, &quot;originTag1&quot;, &quot;originTag2&quot;, &quot;originTag3&quot;, &quot;originTag&quot;, &quot;jets&quot;]
+</pre>
+</section>

@@ -1,0 +1,38 @@
+<section id="code-verify-nanoaod-files-py-3" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: verify_nanoaod_files.py (3/5)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/verify_nanoaod_files.py, lines 62 to 95</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">def find_bit(docs, needle):
+    for bit, doc in docs.items():
+        if needle in doc:
+            return bit
+    return None
+
+
+def has_bit(bits, bit):
+    return ((bits &gt;&gt; np.uint64(bit)) &amp; np.uint64(1)) == 1
+
+
+def check_file(path, max_events):
+    t0 = time.time()
+    f = uproot.open(path)
+    t = f[&quot;Events&quot;]
+    keys = set(t.keys())
+    title = t[&quot;TrigObj_filterBits&quot;].title
+    dtype = str(t[&quot;TrigObj_filterBits&quot;].interpretation)
+    docs = parse_bitdoc(title)
+    pho, ele = docs.get(&quot;Photon&quot;, {}), docs.get(&quot;Electron&quot;, {})
+    bits_unseeded = {k: find_bit(pho, v) for k, v in UNSEEDED.items()}
+    bits_seeded = {k: find_bit(pho, v) for k, v in SEEDED.items()}
+    bit_ht = find_bit(pho, HT_BIT)
+    bit_ele_unseeded = find_bit(ele, ELE_UNSEEDED_DOC)
+    paths = [p for p in PATHS if p in keys]
+    branches = [&quot;TrigObj_id&quot;, &quot;TrigObj_filterBits&quot;] + paths
+    res = {
+        &quot;file&quot;: path, &quot;events&quot;: 0, &quot;filterBits_dtype&quot;: dtype, &quot;n_photon_bits_documented&quot;: len(pho),
+        &quot;bits_unseeded&quot;: bits_unseeded, &quot;bits_seeded&quot;: bits_seeded, &quot;bit_hltHtEcal800&quot;: bit_ht,
+        &quot;bit_electron_caloIdL_MW_unseeded&quot;: bit_ele_unseeded,
+        &quot;paths_present&quot;: paths, &quot;fired&quot;: {p: 0 for p in paths},
+        &quot;objects_per_id&quot;: {}, &quot;photon_objects_with_bit&quot;: {}, &quot;events_fired_mass90_with_photon_bit&quot;: {},
+        &quot;electron_objects_with_unseeded_bit&quot;: 0,
+    }</pre>
+</section>

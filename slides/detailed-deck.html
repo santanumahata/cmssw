@@ -674,6 +674,1689 @@ x-connector { display: none; }
 <aside>The electron fix of June 2023 is the moment the photon defect could have been caught: the same author added the unseeded collection to one selection and wrote in the pull request that it was the collection on which the unseeded leg is selected. The photon list, four months old at that point, kept its single collection.</aside>
 </section>
 
+<section id="code-verify-nanoaod-files-py-1" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: verify_nanoaod_files.py (1/5)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/verify_nanoaod_files.py, lines 1 to 34</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">#!/usr/bin/env python3
+&quot;&quot;&quot;Empirical check of the dead unseeded-leg photon TrigObj bits in CMS NanoAOD files.
+
+usage:
+  python3 verify_nanoaod_files.py --label v13 --files root://cms-xrd-global.cern.ch//store/... [more files]
+                                  [--max-events 300000] [--out results_v13.json]
+
+For every file it reads the TrigObj_filterBits documentation (branch title) to find the bit numbers
+of the relevant filters in THAT file (so v12 to v14 and v15 numbering are both handled), then counts:
+  - events firing the diphoton paths (and the DoubleEle CaloIdL_MW paths, electron control),
+  - photon trigger objects (id 22) with the seeded last-filter bits (expected &gt; 0),
+  - photon trigger objects with the unseeded last-filter bits (the claim: always 0 before the fix),
+  - photon objects with the hltHtEcal800 bit (claim: always 0),
+  - electron objects (id 11) with the &quot;CaloIdL_MW unseeded&quot; bit (control: &gt; 0 from v13 on),
+  - trigger objects per id (MET id 2 expected 0 in every version; BoostedTau id 1515 expected 0 in v12 to v14).
+Needs python3 with uproot, awkward, numpy (LCG view or a CMSSW environment) and xrootd access for root:// files.
+&quot;&quot;&quot;
+import argparse, json, re, sys, time
+import numpy as np
+import awkward as ak
+import uproot
+
+UNSEEDED = {
+    &quot;TrackIsoUnseededLast&quot;: &quot;hltEG22Iso60CaloId15b35eHE12R9Id50b80eTrackIsoUnseededLastFilter&quot;,
+    &quot;R9UnseededLast&quot;: &quot;hltEG22R9Id85b90eHE12R9Id50b80eR9UnseededLastFilter&quot;,
+    &quot;EG18TrackIsoUnseeded&quot;: &quot;hltEG18TrackIso60Iso60CaloId15b35eR9Id50b90eHE12b10eR9Id50b80eTrackIsoUnseededFilter&quot;,
+}
+SEEDED = {
+    &quot;R9IdLast&quot;: &quot;hltEG30LR9Id85b90eHE12R9Id50b80eR9IdLastFilter&quot;,
+    &quot;EcalIsoLast&quot;: &quot;hltEG30LIso60CaloId15b35eHE12R9Id50b80eEcalIsoLastFilter&quot;,
+    &quot;EG30EcalIso3018&quot;: &quot;hltEG30Iso60CaloId15b35eR9Id50b90eHE12b10eR9Id50b80eEcalIsoFilter&quot;,
+}
+HT_BIT = &quot;hltHtEcal800&quot;
+ELE_UNSEEDED_DOC = &quot;CaloIdL_MW unseeded&quot;</pre>
+</section>
+
+<section id="code-verify-nanoaod-files-py-2" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: verify_nanoaod_files.py (2/5)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/verify_nanoaod_files.py, lines 35 to 61</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">PATHS = [
+    &quot;HLT_Diphoton30_22_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass90&quot;,
+    &quot;HLT_Diphoton30_22_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass95&quot;,
+    &quot;HLT_Diphoton30_18_R9IdL_AND_HE_AND_IsoCaloId&quot;,
+    &quot;HLT_Diphoton30_18_R9IdL_AND_HE_AND_IsoCaloId_Mass55&quot;,
+    &quot;HLT_DoubleEle33_CaloIdL_MW&quot;,
+    &quot;HLT_DoubleEle25_CaloIdL_MW&quot;,
+]
+IDS = {2: &quot;MET&quot;, 11: &quot;Electron&quot;, 22: &quot;Photon&quot;, 13: &quot;Muon&quot;, 15: &quot;Tau&quot;, 1515: &quot;BoostedTau&quot;, 1: &quot;Jet&quot;, 6: &quot;FatJet&quot;, 3: &quot;HT&quot;, 4: &quot;MHT&quot;}
+
+
+def parse_bitdoc(title):
+    &quot;&quot;&quot;&#x27;extra bits ...: 0 =&gt; a, 1 =&gt; b for Electron; 0 =&gt; c for Photon; ...&#x27; -&gt; {object: {bit: doc}}&quot;&quot;&quot;
+    out = {}
+    body = title.split(&quot;:&quot;, 1)[1] if &quot;:&quot; in title else title
+    for chunk in body.split(&quot;; &quot;):
+        m = re.search(r&quot;\s+for\s+(\w+)\s*$&quot;, chunk.strip())
+        if not m:
+            continue
+        obj, entries = m.group(1), chunk.strip()[: m.start()]
+        d = {}
+        for e in re.finditer(r&quot;(\d+)\s*=&gt;\s*(.*?)(?=,\s*\d+\s*=&gt;|$)&quot;, entries):
+            d[int(e.group(1))] = e.group(2).strip()
+        out[obj] = d
+    return out
+
+</pre>
+</section>
+
+<section id="code-verify-nanoaod-files-py-3" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: verify_nanoaod_files.py (3/5)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/verify_nanoaod_files.py, lines 62 to 95</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">def find_bit(docs, needle):
+    for bit, doc in docs.items():
+        if needle in doc:
+            return bit
+    return None
+
+
+def has_bit(bits, bit):
+    return ((bits &gt;&gt; np.uint64(bit)) &amp; np.uint64(1)) == 1
+
+
+def check_file(path, max_events):
+    t0 = time.time()
+    f = uproot.open(path)
+    t = f[&quot;Events&quot;]
+    keys = set(t.keys())
+    title = t[&quot;TrigObj_filterBits&quot;].title
+    dtype = str(t[&quot;TrigObj_filterBits&quot;].interpretation)
+    docs = parse_bitdoc(title)
+    pho, ele = docs.get(&quot;Photon&quot;, {}), docs.get(&quot;Electron&quot;, {})
+    bits_unseeded = {k: find_bit(pho, v) for k, v in UNSEEDED.items()}
+    bits_seeded = {k: find_bit(pho, v) for k, v in SEEDED.items()}
+    bit_ht = find_bit(pho, HT_BIT)
+    bit_ele_unseeded = find_bit(ele, ELE_UNSEEDED_DOC)
+    paths = [p for p in PATHS if p in keys]
+    branches = [&quot;TrigObj_id&quot;, &quot;TrigObj_filterBits&quot;] + paths
+    res = {
+        &quot;file&quot;: path, &quot;events&quot;: 0, &quot;filterBits_dtype&quot;: dtype, &quot;n_photon_bits_documented&quot;: len(pho),
+        &quot;bits_unseeded&quot;: bits_unseeded, &quot;bits_seeded&quot;: bits_seeded, &quot;bit_hltHtEcal800&quot;: bit_ht,
+        &quot;bit_electron_caloIdL_MW_unseeded&quot;: bit_ele_unseeded,
+        &quot;paths_present&quot;: paths, &quot;fired&quot;: {p: 0 for p in paths},
+        &quot;objects_per_id&quot;: {}, &quot;photon_objects_with_bit&quot;: {}, &quot;events_fired_mass90_with_photon_bit&quot;: {},
+        &quot;electron_objects_with_unseeded_bit&quot;: 0,
+    }</pre>
+</section>
+
+<section id="code-verify-nanoaod-files-py-4" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: verify_nanoaod_files.py (4/5)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/verify_nanoaod_files.py, lines 96 to 129</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">    allbits = {**{&quot;unseeded:&quot; + k: v for k, v in bits_unseeded.items()}, **{&quot;seeded:&quot; + k: v for k, v in bits_seeded.items()}, &quot;hltHtEcal800&quot;: bit_ht}
+    for name in allbits:
+        res[&quot;photon_objects_with_bit&quot;][name] = 0
+        res[&quot;events_fired_mass90_with_photon_bit&quot;][name] = 0
+    main = &quot;HLT_Diphoton30_22_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass90&quot;
+    nread = 0
+    for arrays in t.iterate(branches, step_size=&quot;100 MB&quot;, entry_stop=max_events):
+        n = len(arrays[&quot;TrigObj_id&quot;])
+        nread += n
+        ids = arrays[&quot;TrigObj_id&quot;]
+        bits = ak.values_astype(arrays[&quot;TrigObj_filterBits&quot;], np.uint64)
+        flat_ids = ak.to_numpy(ak.flatten(ids))
+        u, c = np.unique(flat_ids, return_counts=True)
+        for i, k in zip(u.tolist(), c.tolist()):
+            res[&quot;objects_per_id&quot;][str(i)] = res[&quot;objects_per_id&quot;].get(str(i), 0) + k
+        for p in paths:
+            res[&quot;fired&quot;][p] += int(ak.sum(arrays[p]))
+        isph = ids == 22
+        fired_main = arrays[main] if main in keys else ak.zeros_like(arrays[&quot;TrigObj_id&quot;][:, 0:0], dtype=bool)
+        for name, bit in allbits.items():
+            if bit is None:
+                continue
+            sel = isph &amp; has_bit(bits, bit)
+            res[&quot;photon_objects_with_bit&quot;][name] += int(ak.sum(sel))
+            if main in keys:
+                res[&quot;events_fired_mass90_with_photon_bit&quot;][name] += int(ak.sum(ak.any(sel, axis=1) &amp; arrays[main]))
+        if bit_ele_unseeded is not None:
+            res[&quot;electron_objects_with_unseeded_bit&quot;] += int(ak.sum((ids == 11) &amp; has_bit(bits, bit_ele_unseeded)))
+    res[&quot;events&quot;] = nread
+    res[&quot;seconds&quot;] = round(time.time() - t0, 1)
+    # verdict
+    uns = [v for k, v in res[&quot;photon_objects_with_bit&quot;].items() if k.startswith(&quot;unseeded:&quot;) and allbits[k] is not None]
+    sed = [v for k, v in res[&quot;photon_objects_with_bit&quot;].items() if k.startswith(&quot;seeded:&quot;) and allbits[k] is not None]
+    if not any(b is not None for b in bits_unseeded.values()):</pre>
+</section>
+
+<section id="code-verify-nanoaod-files-py-5" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: verify_nanoaod_files.py (5/5)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/verify_nanoaod_files.py, lines 130 to 163</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">        res[&quot;verdict&quot;] = &quot;diphoton unseeded bits not documented in this file (NanoAOD v11 or older): not affected&quot;
+    elif sum(sed) &gt; 0 and sum(uns) == 0:
+        res[&quot;verdict&quot;] = &quot;BUG REPRODUCED: seeded last-filter bits set %d times, unseeded last-filter bits never set&quot; % sum(sed)
+    elif sum(uns) &gt; 0:
+        res[&quot;verdict&quot;] = &quot;UNEXPECTED: unseeded bits set %d times (fixed file, or claim wrong: report this)&quot; % sum(uns)
+    else:
+        res[&quot;verdict&quot;] = &quot;INCONCLUSIVE: no object with the seeded diphoton bits either (too few diphoton-triggered events?)&quot;
+    return res
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument(&quot;--label&quot;, required=True, help=&quot;NanoAOD version label, e.g. v13&quot;)
+    ap.add_argument(&quot;--files&quot;, nargs=&quot;+&quot;, required=True)
+    ap.add_argument(&quot;--max-events&quot;, type=int, default=300000)
+    ap.add_argument(&quot;--out&quot;, default=None)
+    a = ap.parse_args()
+    results = []
+    for p in a.files:
+        print(&quot;==&quot;, a.label, p, flush=True)
+        try:
+            r = check_file(p, a.max_events)
+        except Exception as e:  # keep going, record the failure
+            r = {&quot;file&quot;: p, &quot;error&quot;: repr(e)}
+        results.append(r)
+        print(json.dumps({k: v for k, v in r.items() if k not in (&quot;file&quot;,)}, indent=1), flush=True)
+    out = a.out or &quot;results_%s.json&quot; % a.label
+    json.dump({&quot;label&quot;: a.label, &quot;results&quot;: results}, open(out, &quot;w&quot;), indent=1)
+    print(&quot;wrote&quot;, out)
+
+
+if __name__ == &quot;__main__&quot;:
+    main()
+</pre>
+</section>
+
+<section id="code-deadbits-py-1" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: deadbits.py (1/8)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/deadbits.py, lines 1 to 30</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">&quot;&quot;&quot;Resolve every trigger-object filter bit of a NanoAOD triggerObjects_cff.py against HLT menus.
+usage: deadbits.py &lt;triggerObjects_cff.py&gt; &lt;label=menu.py&gt; [&lt;label=menu.py&gt; ...]
+Status per bit and menu: OK (a matching filter whose objects the selection&#x27;s coll() accepts),
+COLL (matching filters exist but none passes the selection&#x27;s coll()), STALE (no module matches),
+UNK (matching filter, collection could not be determined).&quot;&quot;&quot;
+import re, sys, ast
+
+# ---------- menu ----------
+def parse_modules(text):
+    mods = {}
+    for m in re.finditer(r&#x27;^(?:fragment|process)\.(\w+) = cms\.(\w+)\(&#x27;, text, re.M):
+        k = m.end(); depth = 1; q = None
+        while k &lt; len(text) and depth:
+            c = text[k]
+            if q:
+                if c == q: q = None
+            elif c in &quot;\&quot;&#x27;&quot;: q = c
+            elif c == &quot;(&quot;: depth += 1
+            elif c == &quot;)&quot;: depth -= 1
+            k += 1
+        mods[m.group(1)] = (m.group(2), text[m.end():k-1])
+    return mods
+
+CAND_PARAMS = [&quot;l1EGCand&quot;, &quot;inputTag&quot;, &quot;CandTag&quot;, &quot;inputCandCollection&quot;, &quot;candIsolatedTag&quot;,
+               &quot;candNonIsolatedTag&quot;, &quot;inputTag1&quot;, &quot;inputTag2&quot;, &quot;firstLegLastFilter&quot;, &quot;secondLegLastFilter&quot;,
+               &quot;JetSrc&quot;, &quot;src&quot;, &quot;htLabels&quot;, &quot;mhtLabels&quot;, &quot;inputJetTag&quot;, &quot;originalTag&quot;, &quot;TauSrc&quot;, &quot;jetSrc&quot;,
+               &quot;Jets&quot;, &quot;JetTags&quot;, &quot;inputJets&quot;, &quot;candTag&quot;, &quot;PreviousCandTag&quot;, &quot;previousCandTag&quot;, &quot;metLabels&quot;,
+               &quot;mhtLabel&quot;, &quot;inputMet&quot;, &quot;L1TauTrigger&quot;, &quot;TriggerSrc&quot;, &quot;JetTag&quot;, &quot;MuonTag&quot;, &quot;ElectronTag&quot;,
+               &quot;PhotonTag&quot;, &quot;muonTag&quot;, &quot;electronTag&quot;, &quot;photonTag&quot;, &quot;tauTag&quot;, &quot;jetTag&quot;, &quot;taus&quot;, &quot;originTag1&quot;, &quot;originTag2&quot;, &quot;originTag3&quot;, &quot;originTag&quot;, &quot;jets&quot;]
+</pre>
+</section>
+
+<section id="code-deadbits-py-2" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: deadbits.py (2/8)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/deadbits.py, lines 31 to 58</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">def tag_labels(body, name):
+    m = re.search(r&#x27;\b%s = cms\.(VInputTag|InputTag)\(\s*(.*?)\s*\)&#x27; % re.escape(name), body, re.S)
+    if not m: return None
+    kind, inner = m.group(1), m.group(2)
+    toks = [t.strip().strip(&#x27;&quot;\&#x27;&#x27;) for t in inner.replace(&quot;\n&quot;, &quot; &quot;).split(&quot;,&quot;) if t.strip()]
+    if kind == &quot;InputTag&quot;:
+        return [toks[0].split(&quot;:&quot;)[0]] if toks else []
+    return [t.split(&quot;:&quot;)[0] for t in toks]
+
+def collections_of(mods, name, depth=0, seen=None):
+    &quot;&quot;&quot;Collections (EDProducer labels) whose objects a filter saves.&quot;&quot;&quot;
+    if seen is None: seen = set()
+    if name in seen or depth &gt; 8 or name not in mods: return set()
+    seen.add(name)
+    typ, body = mods[name]
+    direct, follow = set(), []
+    for p in CAND_PARAMS:
+        labs = tag_labels(body, p)
+        if not labs: continue
+        for lab in labs:
+            t2 = mods.get(lab, (&quot;?&quot;, &quot;&quot;))[0]
+            if t2 == &quot;EDProducer&quot;: direct.add(lab)
+            elif t2 == &quot;EDFilter&quot;: follow.append(lab)
+    if direct: return direct
+    out = set()
+    for f in follow: out |= collections_of(mods, f, depth + 1, seen)
+    return out
+</pre>
+</section>
+
+<section id="code-deadbits-py-3" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: deadbits.py (3/8)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/deadbits.py, lines 59 to 90</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">def glob_re(pat):
+    parts = pat.split(&quot;*&quot;)
+    return re.compile(&quot;^&quot; + &quot;.*&quot;.join(re.escape(p) for p in parts) + &quot;$&quot;)
+
+# ---------- config ----------
+def block(text, name):
+    lines = text.splitlines(); start = None
+    for i, l in enumerate(lines):
+        if re.match(r&#x27;^\s*%s\s*=\s*cms\.PSet\(&#x27; % name, l): start = i; break
+    if start is None: return None
+    indent = len(lines[start]) - len(lines[start].lstrip()); out = [lines[start]]
+    for l in lines[start+1:]:
+        ind = len(l) - len(l.lstrip())
+        if l.strip() and ind &lt;= indent: break
+        out.append(l)
+    return &quot;\n&quot;.join(out)
+
+def split_args(s):
+    args, depth, q, cur = [], 0, None, &quot;&quot;
+    for c in s:
+        if q:
+            cur += c
+            if c == q: q = None
+            continue
+        if c in &quot;\&quot;&#x27;&quot;: q = c; cur += c; continue
+        if c in &quot;([{&quot;: depth += 1
+        if c in &quot;)]}&quot;: depth -= 1
+        if c == &quot;,&quot; and depth == 0: args.append(cur); cur = &quot;&quot;; continue
+        cur += c
+    if cur.strip(): args.append(cur)
+    return [a.strip() for a in args]
+</pre>
+</section>
+
+<section id="code-deadbits-py-4" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: deadbits.py (4/8)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/deadbits.py, lines 91 to 124</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">def calls(blk, fname=&quot;mksel(&quot;):
+    res, i = [], 0
+    while True:
+        j = blk.find(fname, i)
+        if j &lt; 0: break
+        k = j + len(fname); depth = 1; q = None
+        while k &lt; len(blk) and depth:
+            c = blk[k]
+            if q:
+                if c == q: q = None
+            elif c in &quot;\&quot;&#x27;&quot;: q = c
+            elif c == &quot;(&quot;: depth += 1
+            elif c == &quot;)&quot;: depth -= 1
+            k += 1
+        res.append(blk[j+len(fname):k-1]); i = k
+    return res
+
+def chaintoken(tokens, op):
+    if not isinstance(tokens, (list, tuple)):
+        tokens = [t.strip() for t in tokens.split(op)]
+    return tokens
+
+def alternatives(sel0):
+    &quot;&quot;&quot;Emulate mksel: return list of alternatives; each alternative = list of (kind, pattern) all required.&quot;&quot;&quot;
+    s = sel0
+    if isinstance(s, str) and &quot;OR&quot; in s: s = chaintoken(s, &quot;OR&quot;)
+    if isinstance(s, str) and &quot;AND&quot; in s: s = (&quot;AND&quot;,) + tuple(chaintoken(s, &quot;AND&quot;))
+    if isinstance(s, tuple) and s and s[0] == &quot;AND&quot;: return [[(&quot;filter&quot;, t) for t in s[1:]]]
+    if isinstance(s, list): return [[(&quot;filter&quot;, t)] for t in s]
+    if isinstance(s, tuple): return [[(&quot;filter&quot;, t) for t in s]]
+    toks = re.findall(r&quot;(filter|path|coll)\(&#x27;([^&#x27;]*)&#x27;\)&quot;, s)
+    if not toks: return [[(&quot;raw&quot;, s)]]
+    if &quot;min(&quot; in s or &quot;&amp;&amp;&quot; in s:   # treat as AND of all tokens (approximation)
+        return [toks]</pre>
+</section>
+
+<section id="code-deadbits-py-5" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: deadbits.py (5/8)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/deadbits.py, lines 125 to 158</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">    return [[t] for t in toks]
+
+def parse_config(text):
+    sels = {}
+    for name in (&quot;Electron&quot;, &quot;Photon&quot;, &quot;Muon&quot;, &quot;Tau&quot;, &quot;BoostedTau&quot;, &quot;Jet&quot;, &quot;FatJet&quot;, &quot;MET&quot;, &quot;HT&quot;, &quot;MHT&quot;):
+        blk = block(text, name)
+        if blk is None: continue
+        sel = re.search(r&#x27;sel\s*=\s*cms\.string\(([&quot;\&#x27;])(.*?)\1\)&#x27;, blk)
+        skip = re.search(r&#x27;skipObjectsNotPassingQualityBits\s*=\s*cms\.bool\((\w+)\)&#x27;, blk)
+        colls = re.findall(r&quot;coll\(&#x27;([^&#x27;]*)&#x27;\)&quot;, sel.group(2)) if sel else []
+        if sel and re.search(r&quot;coll\(&#x27;[^&#x27;]*&#x27;\)\s*\|\|\s*filter\(&quot;, sel.group(2)): colls = []  # coll OR-ed with filters: not restrictive
+        bits = []
+        qb = blk[blk.find(&quot;qualityBits&quot;):] if &quot;qualityBits&quot; in blk else &quot;&quot;
+        if &quot;cms.VPSet&quot; in qb:
+            for n, c in enumerate(calls(qb)):
+                args = split_args(c)
+                try: a0 = ast.literal_eval(args[0])
+                except Exception: a0 = args[0].strip(&#x27;&quot;&#x27;)
+                doc = &quot;&quot;
+                if len(args) &gt; 1 and not args[1].startswith(&quot;bit&quot;):
+                    try: doc = ast.literal_eval(args[1])
+                    except Exception: doc = args[1]
+                b = re.search(r&#x27;bit\s*=\s*(\d+)&#x27;, c)
+                bits.append((int(b.group(1)) if b else n, a0, doc))
+        else:  # old string layout: &quot;a*filter(&#x27;x&#x27;) + ...&quot;
+            m = re.search(r&#x27;qualityBits\s*=\s*cms\.string\(\s*(.*?)\)\s*,\s*\n&#x27;, blk, re.S)
+            if m:
+                expr = &quot;&quot;.join(ast.literal_eval(p) for p in re.findall(r&#x27;&quot;(?:[^&quot;\\]|\\.)*&quot;&#x27;, m.group(1)))
+                for term in expr.split(&quot;+&quot;):
+                    w = re.match(r&#x27;\s*(\d+)\*&#x27;, term)
+                    bitno = int(w.group(1)).bit_length() - 1 if w else 0
+                    pats = re.findall(r&quot;filter\(&#x27;([^&#x27;]*)&#x27;\)&quot;, term)
+                    bits.append((bitno, pats if len(pats) &gt; 1 else (pats[0] if pats else term.strip()), &quot;&quot;))
+        sels[name] = dict(sel=sel.group(2) if sel else &quot;&quot;, skip=skip.group(1) if skip else &quot;?&quot;, colls=colls, bits=bits)</pre>
+</section>
+
+<section id="code-deadbits-py-6" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: deadbits.py (6/8)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/deadbits.py, lines 159 to 192</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">    return sels
+
+# ---------- evaluation ----------
+def accepts(colls, label):
+    if not colls: return True
+    return any(glob_re(c).match(label) for c in colls)
+
+def token_status(mods, filters, paths, producers, kind, pat, colls):
+    if kind == &quot;path&quot;:
+        return &quot;OK&quot; if any(glob_re(pat).match(p) for p in paths) else &quot;STALE&quot;
+    if kind == &quot;coll&quot;:
+        return &quot;OK&quot; if any(glob_re(pat).match(p) for p in producers) else &quot;STALE&quot;
+    if kind == &quot;raw&quot;:
+        return &quot;UNK&quot;
+    rx = glob_re(pat)
+    matched = [f for f in filters if rx.match(f)]
+    if not matched: return &quot;STALE&quot;
+    best, info = &quot;COLL&quot;, []
+    for f in matched:
+        cs = collections_of(mods, f)
+        if not cs: best = &quot;UNK&quot; if best != &quot;OK&quot; else best; info.append(&quot;%s[%s:?]&quot; % (f, mods[f][0])); continue
+        if any(accepts(colls, c) for c in cs): return &quot;OK&quot;
+        info.append(&quot;%s[%s:%s]&quot; % (f, mods[f][0], &quot;,&quot;.join(sorted(cs))))
+    return best + &quot;{&quot; + &quot;; &quot;.join(info[:3]) + &quot;}&quot;
+
+RANK = {&quot;OK&quot;: 0, &quot;UNK&quot;: 1, &quot;COLL&quot;: 2, &quot;STALE&quot;: 3}
+def bit_status(mods, filters, paths, producers, alts, colls):
+    results = []
+    for alt in alts:
+        sts = [token_status(mods, filters, paths, producers, k, p, colls) for k, p in alt]
+        worst = max(sts, key=lambda s: RANK[s.split(&quot;{&quot;)[0]])
+        results.append(worst)
+    return min(results, key=lambda s: RANK[s.split(&quot;{&quot;)[0]])
+</pre>
+</section>
+
+<section id="code-deadbits-py-7" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: deadbits.py (7/8)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/deadbits.py, lines 193 to 224</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">def main():
+    cfg = open(sys.argv[1]).read()
+    sels = parse_config(cfg)
+    menus = []
+    for arg in sys.argv[2:]:
+        label, path = arg.split(&quot;=&quot;, 1)
+        mods = parse_modules(open(path).read())
+        filters = [n for n, (t, b) in mods.items() if t == &quot;EDFilter&quot;]
+        paths = [n for n, (t, b) in mods.items() if t == &quot;Path&quot;]
+        producers = [n for n, (t, b) in mods.items() if t == &quot;EDProducer&quot;]
+        menus.append((label, mods, filters, paths, producers))
+    print(&quot;config:&quot;, sys.argv[1]); print(&quot;menus:&quot;, &quot; &quot;.join(l for l, *_ in menus))
+    for name, s in sels.items():
+        print(&quot;\n== %s (sel colls: %s; skip=%s; %d bits)&quot; % (name, s[&quot;colls&quot;] or &quot;any&quot;, s[&quot;skip&quot;], len(s[&quot;bits&quot;])))
+        if not s[&quot;bits&quot;] and s[&quot;skip&quot;] == &quot;True&quot;:
+            print(&quot;   !! no quality bits and skipObjectsNotPassingQualityBits=True: this object type is never written&quot;)
+        counts = {l: {&quot;OK&quot;: 0, &quot;UNK&quot;: 0, &quot;COLL&quot;: 0, &quot;STALE&quot;: 0} for l, *_ in menus}
+        for bitno, a0, doc in s[&quot;bits&quot;]:
+            alts = alternatives(a0)
+            row = []
+            for label, mods, filters, paths, producers in menus:
+                st = bit_status(mods, filters, paths, producers, alts, s[&quot;colls&quot;])
+                counts[label][st.split(&quot;{&quot;)[0]] += 1
+                row.append((label, st))
+            if any(st.split(&quot;{&quot;)[0] != &quot;OK&quot; for l, st in row):
+                desc = a0 if isinstance(a0, str) else &quot;|&quot;.join(a0)
+                print(&quot;   bit %2d %-70s %s&quot; % (bitno, (desc[:68] + (&quot;..&quot; if len(desc) &gt; 68 else &quot;&quot;)), &quot; &quot;.join(&quot;%s:%s&quot; % (l, st.split(&quot;{&quot;)[0]) for l, st in row)))
+                extra = [st for l, st in row if &quot;{&quot; in st]
+                if extra: print(&quot;          detail: &quot; + extra[0][extra[0].find(&quot;{&quot;):][:260])
+        print(&quot;   summary: &quot; + &quot; | &quot;.join(&quot;%s OK=%d COLL=%d STALE=%d UNK=%d&quot; % (l, c[&quot;OK&quot;], c[&quot;COLL&quot;], c[&quot;STALE&quot;], c[&quot;UNK&quot;]) for l, c in counts.items()))
+
+main()</pre>
+</section>
+
+<section id="code-deadbits-py-8" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: deadbits.py (8/8)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/deadbits.py, lines 225 to 225</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden"></pre>
+</section>
+
+<section id="code-menuscan-py-1" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: menuscan.py (1/3)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/menuscan.py, lines 1 to 33</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">import re, sys
+
+def parse_modules(text):
+    mods = {}
+    pat = re.compile(r&#x27;^(?:fragment|process)\.(\w+) = cms\.(\w+)\(&#x27;, re.M)
+    for m in pat.finditer(text):
+        k = m.end(); depth = 1; q = None
+        while k &lt; len(text) and depth:
+            c = text[k]
+            if q:
+                if c == q: q = None
+            elif c in &quot;\&quot;&#x27;&quot;: q = c
+            elif c == &quot;(&quot;: depth += 1
+            elif c == &quot;)&quot;: depth -= 1
+            k += 1
+        mods[m.group(1)] = (m.group(2), text[m.end():k-1])
+    return mods
+
+def param(body, name):
+    m = re.search(r&#x27;\b%s = cms\.\w+\(\s*(.*?)\s*\)&#x27; % re.escape(name), body, re.S)
+    return m.group(1).replace(&#x27;&quot;&#x27;, &#x27;&#x27;).replace(&quot;&#x27;&quot;, &quot;&quot;).replace(&quot;\n&quot;, &quot; &quot;) if m else None
+
+def members(body):
+    # sequence/path members in order
+    return re.findall(r&#x27;(?:fragment|process)\.(\w+)&#x27;, body)
+
+def describe(mods, name):
+    if name not in mods: return &quot;%s: NOT DEFINED&quot; % name
+    typ, body = mods[name]
+    edtype = re.match(r&#x27;\s*&quot;(\w+)&quot;&#x27;, body)
+    edtype = edtype.group(1) if edtype else &quot;?&quot;
+    bits = []
+    for p in (&quot;saveTags&quot;, &quot;l1EGCand&quot;, &quot;inputTag&quot;, &quot;candTag&quot;, &quot;triggerType&quot;, &quot;varTag&quot;, &quot;lessThan&quot;, &quot;useEt&quot;, &quot;thrRegularEB&quot;, &quot;thrRegularEE&quot;, &quot;thrOverEEB&quot;, &quot;thrOverEEE&quot;, &quot;thrOverE2EB&quot;, &quot;thrOverE2EE&quot;, &quot;ncandcut&quot;, &quot;etcutEB&quot;, &quot;etcutEE&quot;, &quot;lowerMassCut&quot;, &quot;upperMassCut&quot;, &quot;minPt&quot;, &quot;minMass&quot;, &quot;maxMass&quot;):</pre>
+</section>
+
+<section id="code-menuscan-py-2" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: menuscan.py (2/3)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/menuscan.py, lines 34 to 65</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">        v = param(body, p)
+        if v is not None: bits.append(&quot;%s=%s&quot; % (p, v))
+    return &quot;%s [%s] %s&quot; % (name, edtype, &quot; &quot;.join(bits))
+
+def main(path, pathre, maxdepth=2):
+    text = open(path).read()
+    m = re.search(r&#x27;tableName = cms\.string\(\s*&quot;([^&quot;]+)&quot;&#x27;, text)
+    print(&quot;#&quot; * 110); print(path, &quot;menu:&quot;, m.group(1) if m else &quot;?&quot;)
+    mods = parse_modules(text)
+    names = sorted(n for n, (t, b) in mods.items() if t == &quot;Path&quot; and re.search(pathre, n))
+    print(&quot;paths:&quot;, &quot;, &quot;.join(names))
+    for n in names:
+        if not re.search(r&#x27;Diphoton30_(22|18)&#x27;, n): continue
+        print(&quot;-&quot; * 100); print(&quot;PATH&quot;, n)
+        seen = set()
+        def walk(name, depth):
+            typ, body = mods.get(name, (&quot;?&quot;, &quot;&quot;))
+            for mem in members(body):
+                if mem in seen: continue
+                seen.add(mem)
+                t2 = mods.get(mem, (&quot;?&quot;, &quot;&quot;))[0]
+                if t2 == &quot;Sequence&quot; and depth &lt; maxdepth and not mem.startswith((&quot;HLTBeginSequence&quot;, &quot;HLTEndSequence&quot;, &quot;HLTDoLocalHcal&quot;, &quot;HLTDoFull&quot;, &quot;HLTPFClustering&quot;, &quot;HLTEgamma&quot;, &quot;HLTL1&quot;, &quot;HLTDoLocalPixel&quot;, &quot;HLTRecoPixel&quot;, &quot;HLTElePixel&quot;, &quot;HLTTrackReco&quot;, &quot;HLTPFTrack&quot;, &quot;HLTPFRecoSequence&quot;, &quot;HLTDo&quot;)):
+                    print(&quot;  &quot; * depth + &quot;SEQ &quot; + mem)
+                    walk(mem, depth + 1)
+                elif t2 == &quot;EDFilter&quot;:
+                    print(&quot;  &quot; * depth + describe(mods, mem))
+                elif t2 == &quot;Sequence&quot;:
+                    print(&quot;  &quot; * depth + &quot;seq &quot; + mem + &quot; (not expanded)&quot;)
+        walk(n, 1)
+
+if __name__ == &quot;__main__&quot;:
+    main(sys.argv[1], sys.argv[2] if len(sys.argv) &gt; 2 else r&#x27;HLT_(Diphoton|DoublePhoton)&#x27;)</pre>
+</section>
+
+<section id="code-menuscan-py-3" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: menuscan.py (3/3)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/menuscan.py, lines 66 to 66</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden"></pre>
+</section>
+
+<section id="code-menusummary-py-1" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: menusummary.py (1/3)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/menusummary.py, lines 1 to 34</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">import re, sys, hashlib
+
+def parse_modules(text):
+    mods = {}
+    pat = re.compile(r&#x27;^(?:fragment|process)\.(\w+) = cms\.(\w+)\(&#x27;, re.M)
+    for m in pat.finditer(text):
+        k = m.end(); depth = 1; q = None
+        while k &lt; len(text) and depth:
+            c = text[k]
+            if q:
+                if c == q: q = None
+            elif c in &quot;\&quot;&#x27;&quot;: q = c
+            elif c == &quot;(&quot;: depth += 1
+            elif c == &quot;)&quot;: depth -= 1
+            k += 1
+        mods[m.group(1)] = (m.group(2), text[m.end():k-1])
+    return mods
+
+def param(body, name):
+    m = re.search(r&#x27;\b%s = cms\.\w+\(\s*(.*?)\s*\)&#x27; % re.escape(name), body, re.S)
+    return m.group(1).replace(&#x27;&quot;&#x27;, &#x27;&#x27;).replace(&quot;&#x27;&quot;, &quot;&quot;).replace(&quot;\n&quot;, &quot; &quot;) if m else None
+
+def members(body):
+    return re.findall(r&#x27;(?:fragment|process)\.(\w+)&#x27;, body)
+
+KEY = [&quot;hltDiEG22EtEta2p55UnseededFilter&quot;,
+       &quot;hltEG22R9Id85b90eHE12R9Id50b80eR9UnseededLastFilter&quot;,
+       &quot;hltEG22Iso60CaloId15b35eHE12R9Id50b80eTrackIsoUnseededLastFilter&quot;,
+       &quot;hltEG30LR9Id85b90eHE12R9Id50b80eR9IdLastFilter&quot;,
+       &quot;hltEG30LIso60CaloId15b35eHE12R9Id50b80eEcalIsoLastFilter&quot;,
+       &quot;hltEG30Iso60CaloId15b35eR9Id50b90eHE12b10eR9Id50b80eEcalIsoFilter&quot;,
+       &quot;hltEG18TrackIso60Iso60CaloId15b35eR9Id50b90eHE12b10eR9Id50b80eTrackIsoUnseededFilter&quot;,
+       &quot;hltEG30Iso60b40eCaloId11b32eHE10b9eR9Id50b90eEcalIsoFilter&quot;,
+       &quot;hltDiEG18TrackIso60Iso60b40eCaloId11b32eHE10b9eR9Id50b90eTrackIsoUnseededFilter&quot;,</pre>
+</section>
+
+<section id="code-menusummary-py-2" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: menusummary.py (2/3)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/menusummary.py, lines 35 to 66</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">       &quot;hltDiEG18EtUnseededFilter&quot;]
+
+def leaves(mods, name, seen=None):
+    if seen is None: seen = set()
+    out = []
+    typ, body = mods.get(name, (&quot;?&quot;, &quot;&quot;))
+    for mem in members(body):
+        if mem in seen: continue
+        seen.add(mem)
+        t2 = mods.get(mem, (&quot;?&quot;, &quot;&quot;))[0]
+        if t2 in (&quot;Sequence&quot;, &quot;Path&quot;):
+            out += leaves(mods, mem, seen)
+        elif t2 == &quot;EDFilter&quot;:
+            out.append(mem)
+    return out
+
+for path in sys.argv[1:]:
+    text = open(path).read()
+    m = re.search(r&#x27;tableName = cms\.string\(\s*[&quot;\&#x27;]([^&quot;\&#x27;]+)[&quot;\&#x27;]&#x27;, text)
+    mods = parse_modules(text)
+    print(&quot;#&quot; * 100)
+    print(&quot;%s\n  menu: %s&quot; % (path.split(&quot;/&quot;)[-1], m.group(1) if m else &quot;?&quot;))
+    names = sorted(n for n, (t, b) in mods.items() if t == &quot;Path&quot; and re.search(r&#x27;HLT_(Diphoton|DoublePhoton)&#x27;, n))
+    print(&quot;  paths: &quot; + &quot;, &quot;.join(n.replace(&quot;HLT_&quot;, &quot;&quot;) for n in names))
+    for k in KEY:
+        if k not in mods:
+            print(&quot;  KEY %-88s : not defined&quot; % k); continue
+        typ, body = mods[k]
+        ed = re.match(r&#x27;\s*&quot;(\w+)&quot;&#x27;, body).group(1)
+        print(&quot;  KEY %-88s : %s saveTags=%s l1EGCand=%s inputTag=%s triggerType=%s&quot; % (k, ed, param(body, &quot;saveTags&quot;), param(body, &quot;l1EGCand&quot;), param(body, &quot;inputTag&quot;), param(body, &quot;triggerType&quot;)))
+    for n in names:
+        if not re.search(r&#x27;Diphoton30_(22|18)&#x27;, n): continue</pre>
+</section>
+
+<section id="code-menusummary-py-3" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: menusummary.py (3/3)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/menusummary.py, lines 67 to 78</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">        lv = [f for f in leaves(mods, n) if f.startswith(&quot;hlt&quot;) and not f.startswith(&quot;hltPre&quot;) and mods[f][1].find(&quot;HLTL1TSeed&quot;) &lt; 0 and not re.search(r&#x27;(Trigger|Bool|HLTPrescaler)&#x27;, mods[f][1][:40])]
+        egf = [f for f in lv if re.search(r&#x27;EG|Diphoton|DiEG|DiPhoton|Mass|Photon&#x27;, f)]
+        uns = [f for f in egf if &quot;Unseeded&quot; in f]
+        sed = [f for f in egf if &quot;Unseeded&quot; not in f and not re.search(r&#x27;Comb|Mass&#x27;, f)]
+        comb = [f for f in egf if re.search(r&#x27;Comb|Mass&#x27;, f)]
+        st = set(param(mods[f][1], &quot;saveTags&quot;) for f in egf)
+        h = hashlib.md5(&quot; &quot;.join(egf).encode()).hexdigest()[:8]
+        print(&quot;  PATH %s: nEgFilters=%d chain=%s saveTags=%s&quot; % (n.replace(&quot;HLT_&quot;, &quot;&quot;), len(egf), h, &quot;/&quot;.join(sorted(x or &quot;None&quot; for x in st))))
+        print(&quot;       last seeded   : %s&quot; % (sed[-1] if sed else &quot;-&quot;))
+        print(&quot;       last unseeded : %s&quot; % (uns[-1] if uns else &quot;-&quot;))
+        print(&quot;       comb/mass     : %s&quot; % &quot;, &quot;.join(comb))
+</pre>
+</section>
+
+<section id="code-pathmatrix-py-1" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: pathmatrix.py (1/1)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/pathmatrix.py, lines 1 to 22</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">import re, sys
+def paths(path):
+    text = open(path).read()
+    m = re.search(r&#x27;tableName = cms\.string\(\s*[&quot;\&#x27;]([^&quot;\&#x27;]+)[&quot;\&#x27;]&#x27;, text)
+    res = {}
+    for pm in re.finditer(r&#x27;^(?:fragment|process)\.(HLT_(?:Diphoton|DoublePhoton|DiphotonMVA)\w*?)_v(\d+) = cms\.Path\(&#x27;, text, re.M):
+        res[pm.group(1)] = int(pm.group(2))
+    return (m.group(1) if m else &quot;?&quot;), res
+cols = []
+allp = set()
+for f in sys.argv[1:]:
+    name, res = paths(f)
+    cols.append((f.split(&quot;/&quot;)[-1].replace(&quot;menu_&quot;, &quot;&quot;).replace(&quot;.py&quot;, &quot;&quot;), name, res))
+    allp |= set(res)
+print(&quot;columns:&quot;)
+for i, (f, n, r) in enumerate(cols):
+    print(&quot;  c%-2d %-32s %s&quot; % (i, f, n))
+print()
+print(&quot;%-78s %s&quot; % (&quot;path&quot;, &quot; &quot;.join(&quot;c%-2d&quot; % i for i in range(len(cols)))))
+for p in sorted(allp):
+    print(&quot;%-78s %s&quot; % (p.replace(&quot;HLT_&quot;, &quot;&quot;), &quot; &quot;.join(&quot;%-3s&quot; % (r.get(p, &quot;-&quot;)) for f, n, r in cols)))
+</pre>
+</section>
+
+<section id="code-bits-py-1" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: bits.py (1/2)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/bits.py, lines 1 to 34</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">import re, sys
+
+def block(text, name):
+    lines = text.splitlines()
+    start = None
+    for i, l in enumerate(lines):
+        if re.match(r&#x27;^\s*%s\s*=\s*cms\.PSet\(&#x27; % name, l):
+            start = i; break
+    if start is None:
+        return None
+    indent = len(lines[start]) - len(lines[start].lstrip())
+    out = [lines[start]]
+    for l in lines[start+1:]:
+        ind = len(l) - len(l.lstrip())
+        if l.strip() and ind &lt;= indent:
+            break
+        out.append(l)
+    return &quot;\n&quot;.join(out)
+
+def calls(blk, fname=&quot;mksel(&quot;):
+    res = []
+    i = 0
+    while True:
+        j = blk.find(fname, i)
+        if j &lt; 0: break
+        k = j + len(fname); depth = 1; q = None
+        while k &lt; len(blk) and depth:
+            c = blk[k]
+            if q:
+                if c == q: q = None
+            elif c in &quot;\&quot;&#x27;&quot;: q = c
+            elif c == &quot;(&quot;: depth += 1
+            elif c == &quot;)&quot;: depth -= 1
+            k += 1</pre>
+</section>
+
+<section id="code-bits-py-2" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: bits.py (2/2)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/bits.py, lines 35 to 62</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">        res.append(blk[j+len(fname):k-1])
+        i = k
+    return res
+
+for path in sys.argv[1:]:
+    text = open(path).read()
+    print(&quot;=&quot; * 100); print(path)
+    for name in (&quot;Photon&quot;, &quot;Electron&quot;):
+        blk = block(text, name)
+        if blk is None:
+            print(&quot;  %s: block not found&quot; % name); continue
+        sel = re.search(r&#x27;sel\s*=\s*cms\.string\(([&quot;\&#x27;])(.*?)\1\)&#x27;, blk)
+        print(&quot;  %s sel: %s&quot; % (name, sel.group(2) if sel else &quot;?&quot;))
+        skip = re.search(r&#x27;skipObjectsNotPassingQualityBits\s*=\s*cms\.bool\((\w+)\)&#x27;, blk)
+        print(&quot;  %s skip: %s&quot; % (name, skip.group(1) if skip else &quot;?&quot;))
+        if name == &quot;Electron&quot;:
+            continue
+        cs = calls(blk)
+        if not cs:
+            qb = re.search(r&#x27;qualityBits\s*=\s*cms\.string\(([&quot;\&#x27;])(.*?)\1&#x27;, blk, re.S)
+            print(&quot;  old layout qualityBits string:&quot;, qb.group(2)[:2000] if qb else &quot;none&quot;)
+            continue
+        for n, c in enumerate(cs):
+            b = re.search(r&#x27;bit\s*=\s*(\d+)&#x27;, c)
+            flag = &quot;&quot;
+            if &quot;Unseeded&quot; in c: flag = &quot;  &lt;-- unseeded&quot;
+            print(&quot;   %2d%s %s%s&quot; % (n, (&quot; (bit=%s)&quot; % b.group(1)) if b else &quot;&quot;, c.strip()[:150], flag))
+</pre>
+</section>
+
+<section id="code-bitfilters-py-1" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: bitfilters.py (1/2)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/bitfilters.py, lines 1 to 29</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">import re, sys
+def parse_modules(text):
+    mods = {}
+    for m in re.finditer(r&#x27;^(?:fragment|process)\.(\w+) = cms\.(\w+)\(&#x27;, text, re.M):
+        k = m.end(); depth = 1; q = None
+        while k &lt; len(text) and depth:
+            c = text[k]
+            if q:
+                if c == q: q = None
+            elif c in &quot;\&quot;&#x27;&quot;: q = c
+            elif c == &quot;(&quot;: depth += 1
+            elif c == &quot;)&quot;: depth -= 1
+            k += 1
+        mods[m.group(1)] = (m.group(2), text[m.end():k-1])
+    return mods
+def param(body, name):
+    m = re.search(r&#x27;\b%s = cms\.\w+\(\s*(.*?)\s*\)&#x27; % re.escape(name), body, re.S)
+    return m.group(1).replace(&#x27;&quot;&#x27;, &#x27;&#x27;).replace(&quot;&#x27;&quot;, &quot;&quot;).strip() if m else None
+FILTERS = [&quot;hltEG33L1EG26HEFilter&quot;,&quot;hltEG50HEFilter&quot;,&quot;hltEG75HEFilter&quot;,&quot;hltEG90HEFilter&quot;,&quot;hltEG120HEFilter&quot;,&quot;hltEG150HEFilter&quot;,&quot;hltEG175HEFilter&quot;,&quot;hltEG200HEFilter&quot;,&quot;hltHtEcal800&quot;,&quot;hltEG45EBTightIDTightIsoTrackIsoFilter&quot;,&quot;hltEG50EBTightIDTightIsoTrackIsoFilter&quot;,&quot;hltEG110EBTightIDTightIsoTrackIsoFilter&quot;,&quot;hltEG120EBTightIDTightIsoTrackIsoFilter&quot;,&quot;hltMu17Photon30IsoCaloIdPhotonlegTrackIsoFilter&quot;,&quot;hltEG30LR9Id85b90eHE12R9Id50b80eR9IdLastFilter&quot;,&quot;hltEG30LIso60CaloId15b35eHE12R9Id50b80eEcalIsoLastFilter&quot;,&quot;hltEG22Iso60CaloId15b35eHE12R9Id50b80eTrackIsoUnseededLastFilter&quot;,&quot;hltEG22R9Id85b90eHE12R9Id50b80eR9UnseededLastFilter&quot;,&quot;hltEG30Iso60CaloId15b35eR9Id50b90eHE12b10eR9Id50b80eEcalIsoFilter&quot;,&quot;hltEG18TrackIso60Iso60CaloId15b35eR9Id50b90eHE12b10eR9Id50b80eTrackIsoUnseededFilter&quot;,&quot;hltEG22L1VBFLooseIsoEGHEFilter&quot;]
+menus = []
+for f in sys.argv[1:]:
+    text = open(f).read()
+    mods = parse_modules(text)
+    row = {}
+    for name in FILTERS:
+        if name not in mods: row[name] = &quot;-&quot;; continue
+        typ, body = mods[name]
+        coll = param(body, &quot;l1EGCand&quot;) or param(body, &quot;inputTag&quot;) or &quot;?&quot;
+        if &quot;,&quot; in coll: coll = coll.split(&quot;,&quot;)[0]</pre>
+</section>
+
+<section id="code-bitfilters-py-2" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: bitfilters.py (2/2)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/bitfilters.py, lines 30 to 36</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">        row[name] = {&quot;hltEgammaCandidates&quot;: &quot;S&quot;, &quot;hltEgammaCandidatesUnseeded&quot;: &quot;U&quot;}.get(coll, coll)
+    menus.append((f.split(&quot;/&quot;)[-1].replace(&quot;menu_&quot;,&quot;&quot;).replace(&quot;.py&quot;,&quot;&quot;), row))
+print(&quot;%-82s %s&quot; % (&quot;filter&quot;, &quot; &quot;.join(&quot;%-3s&quot; % (&quot;c%d&quot; % i) for i in range(len(menus)))))
+for i, (n, r) in enumerate(menus): print(&quot;  c%-2d %s&quot; % (i, n))
+for name in FILTERS:
+    print(&quot;%-82s %s&quot; % (name, &quot; &quot;.join(&quot;%-3s&quot; % r[name] for n, r in menus)))
+</pre>
+</section>
+
+<section id="code-wfn-py-1" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: wfn.py (1/1)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/wfn.py, lines 1 to 27</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">import re, sys
+class WFN:
+    def __init__(self, offset):
+        self.offset = offset; self.index = 1; self.thousands = 0; self.hundreds = 0
+    def __call__(self):
+        v = float(f&quot;{self.offset}.{self.thousands}{self.hundreds}{self.index:02d}&quot;); self.index += 1; return v
+    def subnext(self):
+        self.hundreds += 1; self.index = 1
+    def next(self, index=None):
+        if index is None: self.thousands += 1; self.hundreds = 0
+        else: self.thousands = index; self.hundreds = 0
+        self.index = 1
+src = open(sys.argv[1]).read()
+m = re.search(r&#x27;_wfn\s*=\s*WFN\((\d+)\)&#x27;, src)
+w = WFN(int(m.group(1))) if m else None
+print(&quot;counter init:&quot;, m.group(0) if m else &quot;none (old scheme?)&quot;)
+for i, line in enumerate(src.splitlines(), 1):
+    s = line.strip()
+    if s.startswith(&quot;#&quot;): continue
+    if re.match(r&#x27;_wfn\.next\(\s*\)&#x27;, s): w.next()
+    elif re.match(r&#x27;_wfn\.next\((\d+)\)&#x27;, s): w.next(int(re.match(r&#x27;_wfn\.next\((\d+)\)&#x27;, s).group(1)))
+    elif re.match(r&#x27;_wfn\.subnext\(\)&#x27;, s): w.subnext()
+    elif &quot;workflows[_wfn()]&quot; in s:
+        print(&quot;%-10s %s&quot; % (w(), s.split(&quot;=&quot;, 1)[1].strip()[:110]))
+    elif re.match(r&#x27;workflows\[([\d.]+)\]&#x27;, s):
+        print(&quot;%-10s %s&quot; % (re.match(r&#x27;workflows\[([\d.]+)\]&#x27;, s).group(1), s.split(&quot;=&quot;, 1)[1].strip()[:110]))
+</pre>
+</section>
+
+<section id="code-measure-trigobj-py-1" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: measure_trigobj.py (1/7)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/measure_trigobj.py, lines 1 to 33</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">#!/usr/bin/env python3
+&quot;&quot;&quot;Count TrigObj filter bits of the Diphoton30_22 photon legs in one NanoAOD file.
+
+Bit numbers are parsed from the TrigObj_filterBits branch documentation, never hardcoded.
+Usage: python3 measure_trigobj.py &lt;version&gt; &lt;dataset&gt; &lt;file&gt; &lt;out.json&gt; [&lt;reference file&gt;]
+With a reference file, events are matched by (run, lumi, event) and their TrigObj content compared.
+&quot;&quot;&quot;
+import json
+import re
+import sys
+
+import awkward as ak
+import numpy as np
+import uproot
+
+MAX_EVENTS = 300000
+PATH_MASS90 = &quot;HLT_Diphoton30_22_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass90&quot;
+PATH_DIELE = &quot;HLT_DoubleEle33_CaloIdL_MW&quot;
+PHOTON_FILTERS = {
+    &quot;R9UnseededLast&quot;: &quot;hltEG22R9Id85b90eHE12R9Id50b80eR9UnseededLastFilter&quot;,
+    &quot;TrackIsoUnseededLast&quot;: &quot;hltEG22Iso60CaloId15b35eHE12R9Id50b80eTrackIsoUnseededLastFilter&quot;,
+    &quot;EG18Unseeded&quot;: &quot;hltEG18TrackIso60Iso60CaloId15b35eR9Id50b90eHE12b10eR9Id50b80eTrackIsoUnseededFilter&quot;,
+    &quot;seeded_R9IdLast&quot;: &quot;hltEG30LR9Id85b90eHE12R9Id50b80eR9IdLastFilter&quot;,
+    &quot;seeded_EcalIsoLast&quot;: &quot;hltEG30LIso60CaloId15b35eHE12R9Id50b80eEcalIsoLastFilter&quot;,
+    &quot;hltHtEcal800&quot;: &quot;hltHtEcal800&quot;,
+}
+SEEDED = (&quot;seeded_R9IdLast&quot;, &quot;seeded_EcalIsoLast&quot;)
+UNSEEDED = (&quot;R9UnseededLast&quot;, &quot;TrackIsoUnseededLast&quot;, &quot;EG18Unseeded&quot;)
+EXPECTED_PHOTON_BIT_COUNTS = (0, 12, 18, 21)
+BIT_ENTRY = re.compile(r&quot;(\d+)\s*=&gt;\s*(.*?)(?=,\s*\d+\s*=&gt;|\s+for\s+\w+\s*$)&quot;)
+EVENT_COLUMNS = [&quot;run&quot;, &quot;luminosityBlock&quot;, &quot;event&quot;, &quot;TrigObj_id&quot;, &quot;TrigObj_filterBits&quot;, &quot;TrigObj_pt&quot;]
+
+</pre>
+</section>
+
+<section id="code-measure-trigobj-py-2" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: measure_trigobj.py (2/7)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/measure_trigobj.py, lines 34 to 67</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">def bits_of(doc, obj):
+    # Total: time O(len(doc)), space O(n_bits)
+    bits = {}
+    for chunk in doc.split(&quot;; &quot;):                               # list scan O(len) | each per-object chunk
+        if not chunk.strip().endswith(&quot; for &quot; + obj):          # -                | keep only this object&#x27;s chunk
+            continue
+        for match in BIT_ENTRY.finditer(chunk):                # regex O(len)     | each &quot;N =&gt; description&quot;
+            bits[int(match.group(1))] = match.group(2).strip()  # dict insert O(1) | bit -&gt; description
+    return bits
+
+
+def find_bit(bits, name):
+    # Total: time O(n_bits), space O(1)
+    for bit, description in bits.items():                      # dict scan O(n)   | first bit naming the filter
+        if name in description:                                # substring O(len) | description contains name
+            return bit
+    return None
+
+
+def has_bit(filter_bits, bit):
+    # Total: time O(n_obj), space O(n_obj)
+    shifted = filter_bits &gt;&gt; np.uint64(bit)                    # jagged op O(n)   | move bit to position 0
+    return (shifted &amp; np.uint64(1)) == 1                       # jagged op O(n)   | per-object bit set?
+
+
+def count_objects(ids, filter_bits, object_id, bit, event_mask=None):
+    # Total: time O(n_obj), space O(n_obj)
+    if bit is None:
+        return None
+    selected = (ids == object_id) &amp; has_bit(filter_bits, bit)  # jagged mask O(n) | objects of this id with bit
+    if event_mask is not None:
+        selected = selected &amp; event_mask                       # broadcast O(n)   | only in chosen events
+    return int(ak.sum(selected))                               # reduction O(n)   | number of objects
+</pre>
+</section>
+
+<section id="code-measure-trigobj-py-3" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: measure_trigobj.py (3/7)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/measure_trigobj.py, lines 68 to 94</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">
+def bit_counts_per_id(ids, filter_bits, n_bits, skip_id):
+    # Total: time O(n_obj * n_bits), space O(n_obj)
+    flat_ids = ak.to_numpy(ak.flatten(ids))                    # array O(n)       | all object ids
+    flat_bits = ak.to_numpy(ak.flatten(filter_bits))           # array O(n)       | all object bit words
+    counts = {}
+    for object_id in np.unique(flat_ids):                      # sort O(n log n)  | each object type
+        if object_id == skip_id:
+            continue
+        words = flat_bits[flat_ids == object_id]               # mask O(n)        | bit words of this type
+        per_bit = [int(((words &gt;&gt; np.uint64(b)) &amp; np.uint64(1)).sum()) for b in range(n_bits)]
+        counts[str(int(object_id))] = {str(b): c for b, c in enumerate(per_bit) if c &gt; 0}
+    return counts
+
+
+def event_contents(arrays, skip_id=None):
+    # Total: time O(n_obj log n_obj), space O(n_obj)
+    contents = {}
+    rows = zip(arrays[&quot;run&quot;], arrays[&quot;luminosityBlock&quot;], arrays[&quot;event&quot;],
+               ak.to_list(arrays[&quot;TrigObj_id&quot;]), ak.to_list(arrays[&quot;TrigObj_filterBits&quot;]),
+               ak.to_list(arrays[&quot;TrigObj_pt&quot;]))
+    for run, lumi, event, ids, words, pts in rows:             # loop O(n_events) | one event at a time
+        objects = [(i, int(w) &amp; 0xFFFFFFFFFFFFFFFF, p) for i, w, p in zip(ids, words, pts) if i != skip_id]
+        contents[(int(run), int(lumi), int(event))] = sorted(objects)  # dict O(1)  | key -&gt; sorted objects
+    return contents
+
+</pre>
+</section>
+
+<section id="code-measure-trigobj-py-4" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: measure_trigobj.py (4/7)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/measure_trigobj.py, lines 95 to 128</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">def compare_with_reference(arrays, reference_url):
+    # Total: time O(n_obj log n_obj), space O(n_obj)
+    reference = uproot.open(reference_url)[&quot;Events&quot;].arrays(EVENT_COLUMNS, entry_stop=MAX_EVENTS)
+    this_all, ref_all = event_contents(arrays), event_contents(reference)
+    this_other, ref_other = event_contents(arrays, skip_id=22), event_contents(reference, skip_id=22)
+    common = set(this_all) &amp; set(ref_all)                      # set join O(n)    | events in both files
+    identical_all = sum(1 for k in common if this_all[k] == ref_all[k])
+    identical_other = sum(1 for k in common if this_other[k] == ref_other[k])
+    return {
+        &quot;reference_file&quot;: reference_url,
+        &quot;events_in_reference&quot;: len(ref_all),
+        &quot;events_in_common&quot;: len(common),
+        &quot;events_identical_all_TrigObj&quot;: identical_all,
+        &quot;events_identical_TrigObj_without_id22&quot;: identical_other,
+    }
+
+
+def main():
+    # Total: time O(n_events * n_obj), space O(n_events * n_obj)
+    version, dataset, url, out_path = sys.argv[1:5]
+    reference_url = sys.argv[5] if len(sys.argv) &gt; 5 else None
+    root_file = uproot.open(url)
+    tree = root_file[&quot;Events&quot;]
+    branch = tree[&quot;TrigObj_filterBits&quot;]
+    doc = branch.title
+    photon_bits = bits_of(doc, &quot;Photon&quot;)                       # dict             | photon bit -&gt; name
+    electron_bits = bits_of(doc, &quot;Electron&quot;)                   # dict             | electron bit -&gt; name
+    bit = {key: find_bit(photon_bits, name) for key, name in PHOTON_FILTERS.items()}
+    electron_bit = find_bit(electron_bits, &quot;CaloIdL_MW unseeded&quot;)
+    n_bits = 64 if &quot;u8&quot; in str(branch.interpretation) else 32
+
+    paths = [p for p in (PATH_MASS90, PATH_DIELE) if p in tree.keys()]
+    arrays = tree.arrays(EVENT_COLUMNS + paths, entry_stop=MAX_EVENTS)  # columnar read | up to 300k events
+    ids = arrays[&quot;TrigObj_id&quot;]</pre>
+</section>
+
+<section id="code-measure-trigobj-py-5" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: measure_trigobj.py (5/7)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/measure_trigobj.py, lines 129 to 162</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">    filter_bits = ak.values_astype(arrays[&quot;TrigObj_filterBits&quot;], np.uint64)
+    n_events = len(ids)
+    assert n_events &gt; 0, &quot;no events read&quot;
+
+    fired = arrays[PATH_MASS90] if PATH_MASS90 in paths else None
+    n_fired = int(ak.sum(fired)) if fired is not None else None
+
+    photons_with_bit = {key: count_objects(ids, filter_bits, 22, b) for key, b in bit.items()}
+    photons_with_bit_fired = {key: count_objects(ids, filter_bits, 22, b, fired) if fired is not None else None
+                              for key, b in bit.items()}
+
+    unseeded_any = ak.zeros_like(ids, dtype=bool)              # jagged bool O(n) | photon has any unseeded bit
+    for key in UNSEEDED:
+        if bit[key] is not None:
+            unseeded_any = unseeded_any | ((ids == 22) &amp; has_bit(filter_bits, bit[key]))
+    offending = ak.any(unseeded_any, axis=1)                   # reduction O(n)   | events with such a photon
+    offending_events = [[int(r), int(l), int(e)] for r, l, e in zip(arrays[&quot;run&quot;][offending][:50],
+                        arrays[&quot;luminosityBlock&quot;][offending][:50], arrays[&quot;event&quot;][offending][:50])]
+
+    unseeded_pt = ak.to_numpy(ak.flatten(arrays[&quot;TrigObj_pt&quot;][unseeded_any]))  # array O(n) | pt of those objects
+    photons_per_event = ak.sum(ids == 22, axis=1)              # reduction O(n)   | photon objects per event
+    n_fired_with_unseeded = int(ak.sum(offending &amp; fired)) if fired is not None else None
+
+    flat_ids = ak.to_numpy(ak.flatten(ids))
+    unique_ids, counts = np.unique(flat_ids, return_counts=True)  # sort O(n log n) | objects per id
+    objects_per_id = {int(i): int(c) for i, c in zip(unique_ids, counts)}
+
+    result = {
+        &quot;version&quot;: version,
+        &quot;dataset&quot;: dataset,
+        &quot;file&quot;: url,
+        &quot;file_size_bytes&quot;: getattr(root_file.file.source, &quot;num_bytes&quot;, None),
+        &quot;events_in_file&quot;: int(tree.num_entries),
+        &quot;events_read&quot;: n_events,</pre>
+</section>
+
+<section id="code-measure-trigobj-py-6" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: measure_trigobj.py (6/7)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/measure_trigobj.py, lines 163 to 196</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">        &quot;filterBits_interpretation&quot;: str(branch.interpretation),
+        &quot;n_photon_bits_documented&quot;: len(photon_bits),
+        &quot;n_electron_bits_documented&quot;: len(electron_bits),
+        &quot;photon_bit_numbers&quot;: bit,
+        &quot;electron_CaloIdL_MW_unseeded_bit&quot;: electron_bit,
+        &quot;paths_present&quot;: paths,
+        &quot;fired_Mass90&quot;: n_fired,
+        &quot;fired_DoubleEle33_CaloIdL_MW&quot;: int(ak.sum(arrays[PATH_DIELE])) if PATH_DIELE in paths else None,
+        &quot;photons_with_bit&quot;: photons_with_bit,
+        &quot;photons_with_bit_in_Mass90_events&quot;: photons_with_bit_fired,
+        &quot;electrons_with_CaloIdL_MW_unseeded_bit&quot;: count_objects(ids, filter_bits, 11, electron_bit),
+        &quot;objects_per_id&quot;: objects_per_id,
+        &quot;n_id2_MET&quot;: objects_per_id.get(2, 0),
+        &quot;n_id1515_BoostedTau&quot;: objects_per_id.get(1515, 0),
+        &quot;n_id22_Photon&quot;: objects_per_id.get(22, 0),
+        &quot;events_with_unseeded_photon_bit&quot;: int(ak.sum(offending)),
+        &quot;first_offending_run_lumi_event&quot;: offending_events,
+        &quot;Mass90_events_with_unseeded_photon_bit&quot;: n_fired_with_unseeded,
+        &quot;fraction_Mass90_events_with_unseeded_photon_bit&quot;:
+            n_fired_with_unseeded / n_fired if n_fired else None,
+        &quot;photons_per_Mass90_event_mean&quot;: float(ak.mean(photons_per_event[fired])) if n_fired else None,
+        &quot;unseeded_photon_pt&quot;: {
+            &quot;n&quot;: int(len(unseeded_pt)),
+            &quot;min&quot;: float(unseeded_pt.min()) if len(unseeded_pt) else None,
+            &quot;median&quot;: float(np.median(unseeded_pt)) if len(unseeded_pt) else None,
+            &quot;n_below_22&quot;: int((unseeded_pt &lt; 22).sum()),
+        },
+        &quot;nTrigObj_mean&quot;: float(ak.mean(ak.num(ids))),
+        &quot;bit_counts_per_id_without_22&quot;: bit_counts_per_id(ids, filter_bits, n_bits, skip_id=22),
+        &quot;photon_bits_documented&quot;: {str(k): v for k, v in sorted(photon_bits.items())},
+    }
+    if reference_url:
+        result[&quot;reference_comparison&quot;] = compare_with_reference(arrays, reference_url)
+</pre>
+</section>
+
+<section id="code-measure-trigobj-py-7" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: measure_trigobj.py (7/7)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/measure_trigobj.py, lines 197 to 210</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">    if len(photon_bits) not in EXPECTED_PHOTON_BIT_COUNTS:
+        print(&quot;WARNING: unexpected number of documented photon bits:&quot;, len(photon_bits))
+    if result[&quot;events_with_unseeded_photon_bit&quot;] &gt; 0:
+        print(&quot;NOTE: photon objects WITH an unseeded bit found:&quot;, result[&quot;events_with_unseeded_photon_bit&quot;], &quot;events&quot;)
+
+    with open(out_path, &quot;w&quot;) as out:
+        json.dump(result, out, indent=1)
+    skip = (&quot;photon_bits_documented&quot;, &quot;bit_counts_per_id_without_22&quot;)
+    print(json.dumps({k: v for k, v in result.items() if k not in skip}, indent=1))
+
+
+if __name__ == &quot;__main__&quot;:
+    main()
+</pre>
+</section>
+
+<section id="code-make-fixed-nano-sh-1" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: make_fixed_nano.sh (1/3)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/make_fixed_nano.sh, lines 1 to 33</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">#!/bin/bash
+# Reproduce NanoAOD from one MiniAOD file twice, without and with the photon TrigObj fix.
+# Usage: bash make_fixed_nano.sh v13|v15
+set -eo pipefail
+
+export X509_USER_PROXY=/afs/cern.ch/user/s/smahata/private/x509up_cms
+source /cvmfs/cms.cern.ch/cmsset_default.sh
+
+WORK=/eos/user/s/smahata/trigobj_check/cmssw
+# parent MiniAOD of the central v13 file 4f45fe87-a958-4c8f-b88f-c322fec857f3.root
+INPUT=root://cms-xrd-global.cern.ch//store/mc/Run3Summer23MiniAODv4/GluGluHto2G_M-125_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/MINIAODSIM/130X_mcRun3_2023_realistic_v15_ext1-v4/2820000/74338d47-0b38-4e0b-83a2-ad85c7f4e533.root
+CFF=PhysicsTools/NanoAOD/python/triggerObjects_cff.py
+
+case &quot;$1&quot; in
+    v13)
+        RELEASE=CMSSW_13_3_1_patch1
+        ERA=Run3_2023
+        GT=133X_mcRun3_2023_realistic_ForNanov13_v1
+        ;;
+    v15)
+        RELEASE=CMSSW_15_0_15_patch4
+        ERA=Run3_2023,run3_nanoAOD_pre142X
+        GT=150X_mcRun3_2023_realistic_v1    # processing string of Run3Summer23NanoAODv15 in DAS
+        ;;
+    *)
+        echo &quot;usage: $0 v13|v15&quot;; exit 1
+        ;;
+esac
+OUT=$WORK/$1
+mkdir -p &quot;$OUT&quot;
+
+run_nano() {
+    local label=$1</pre>
+</section>
+
+<section id="code-make-fixed-nano-sh-2" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: make_fixed_nano.sh (2/3)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/make_fixed_nano.sh, lines 34 to 66</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">    cmsDriver.py nano_$label --step NANO --mc --scenario pp --nThreads 4 \
+        --eventcontent NANOAODSIM --datatier NANOAODSIM \
+        --conditions $GT --era $ERA \
+        --filein $INPUT --fileout file:$OUT/nano_$label.root \
+        --python_filename $OUT/nano_${label}_cfg.py -n -1
+}
+
+echo &quot;=== step 1: release area $RELEASE&quot;
+cd $WORK
+if [ ! -d $RELEASE ]; then
+    scram project CMSSW $RELEASE
+fi
+cd $RELEASE/src
+eval $(scramv1 runtime -sh)
+
+echo &quot;=== step 2: check out PhysicsTools/NanoAOD and build&quot;
+if [ ! -d PhysicsTools/NanoAOD ]; then
+    git cms-addpkg PhysicsTools/NanoAOD
+fi
+git checkout -- $CFF
+scram b -j 8
+
+echo &quot;=== step 3: NANO without the fix&quot;
+grep -n &quot;coll(&#x27;hltEgammaCandidates&#x27;)\&quot;&quot; $CFF
+cd $OUT
+run_nano nofix
+cd $CMSSW_BASE/src
+
+echo &quot;=== step 4: apply the one-line fix&quot;
+sed -i &quot;s#type(92) &amp;&amp; pt &gt; 15 &amp;&amp; coll(&#x27;hltEgammaCandidates&#x27;)\&quot;#type(92) \&amp;\&amp; pt &gt; 15 \&amp;\&amp; (coll(&#x27;hltEgammaCandidates&#x27;) || coll(&#x27;hltEgammaCandidatesUnseeded&#x27;))\&quot;#&quot; $CFF
+git diff $CFF
+CHANGED=$(git diff --numstat | awk &#x27;{print $1, $2}&#x27;)
+if [ &quot;$CHANGED&quot; != &quot;1 1&quot; ]; then</pre>
+</section>
+
+<section id="code-make-fixed-nano-sh-3" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: make_fixed_nano.sh (3/3)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/make_fixed_nano.sh, lines 67 to 76</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">    echo &quot;ERROR: expected exactly one changed line, got: $CHANGED&quot;; exit 1
+fi
+scram b -j 8
+
+echo &quot;=== step 5: NANO with the fix&quot;
+cd $OUT
+run_nano fix
+ls -l $OUT/nano_nofix.root $OUT/nano_fix.root
+echo &quot;=== done $1&quot;
+</pre>
+</section>
+
+<section id="code-relval-fix-check-sh-1" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: relval_fix_check.sh (1/3)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/relval_fix_check.sh, lines 1 to 34</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">#!/bin/bash
+# Relval check of the photon TrigObj fix in CMSSW_16_1_3: clean area vs area with commit aebf3eb64.
+# Steps 1-2 of each workflow run once (clean area); steps 3-4 run in both areas on the same step-2 output.
+# Usage: bash relval_fix_check.sh
+set -eo pipefail
+
+export X509_USER_PROXY=/afs/cern.ch/user/s/smahata/private/x509up_cms
+source /cvmfs/cms.cern.ch/cmsset_default.sh
+
+RELEASE=CMSSW_16_1_3
+WORK=/eos/user/s/smahata/trigobj_check/relval_16_1_3
+FIX_COMMIT=aebf3eb64b9c525e77a99405f8a97aa254b335e9
+CFF=PhysicsTools/NanoAOD/python/triggerObjects_cff.py
+mkdir -p $WORK
+
+echo &quot;=== step 1: clean area and full workflows&quot;
+cd $WORK
+if [ ! -d clean ]; then
+    scram project -n clean CMSSW $RELEASE
+fi
+cd clean/src
+eval $(scramv1 runtime -sh)
+mkdir -p $WORK/run_clean &amp;&amp; cd $WORK/run_clean
+# 12452.0 generates its own GEN-SIM: its RelVal GEN-SIM input is not found at T2_CH_CERN (--ibeos)
+if ! ls 12452.0_*/step3_inNANOEDMAODSIM.root &gt; /dev/null 2&gt;&amp;1; then
+    rm -rf 12452.0_*
+    runTheMatrix.py -w upgrade -l 12452.0 -j 4
+fi
+# 141.046 RAW is on tape only in DAS; the IB EOS cache (--ibeos) has the file
+if ! ls 141.046_*/step3_inNANOEDMAOD.root &gt; /dev/null 2&gt;&amp;1; then
+    if ! ls -d 141.046_* &gt; /dev/null 2&gt;&amp;1; then
+        runTheMatrix.py -l 141.046 -i all --ibeos -j 4 || true
+    fi
+    cd 141.046_*</pre>
+</section>
+
+<section id="code-relval-fix-check-sh-2" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: relval_fix_check.sh (2/3)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/relval_fix_check.sh, lines 35 to 67</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">    # of the 321 RAW files DAS lists for run 369978 (tape only), only this one is in the IB EOS cache
+    echo &quot;root://eoscms.cern.ch//eos/cms/store/user/cmsbuild/store/data/Run2023D/EGamma0/RAW/v1/000/369/978/00000/0068cd83-0af4-4efc-9155-b2521e558ebb.root&quot; &gt; step1_dasquery.log
+    grep -E &quot;cmsDriver.py step[234] &quot; cmdLog &gt; steps234.sh
+    cat steps234.sh
+    bash steps234.sh
+    ls -l step3_inNANOEDMAOD.root
+    cd $WORK/run_clean
+fi
+
+echo &quot;=== step 2: fix area with the cherry-picked commit&quot;
+cd $WORK
+if [ ! -d fix ]; then
+    scram project -n fix CMSSW $RELEASE
+fi
+cd fix/src
+eval $(scramv1 runtime -sh)
+if [ ! -d PhysicsTools/NanoAOD ]; then
+    git cms-addpkg PhysicsTools/NanoAOD
+    git fetch https://github.com/santanumahata/cmssw.git nano-photon-trigobj-unseeded
+    git cherry-pick $FIX_COMMIT
+fi
+git diff $RELEASE --numstat
+CHANGED=$(git diff $RELEASE --numstat | awk &#x27;{print $1, $2, $3}&#x27;)
+if [ &quot;$CHANGED&quot; != &quot;1 1 $CFF&quot; ]; then
+    echo &quot;ERROR: expected exactly one changed line in $CFF, got: $CHANGED&quot;; exit 1
+fi
+git diff $RELEASE
+scram b -j 8
+
+echo &quot;=== step 3: rerun steps 3 and 4 in the fix area on the clean step-2 output&quot;
+for CLEAN_DIR in $WORK/run_clean/12452.0_* $WORK/run_clean/141.046_*; do
+    FIX_DIR=$WORK/run_fix/$(basename $CLEAN_DIR)
+    mkdir -p $FIX_DIR &amp;&amp; cd $FIX_DIR</pre>
+</section>
+
+<section id="code-relval-fix-check-sh-3" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: relval_fix_check.sh (3/3)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/relval_fix_check.sh, lines 68 to 99</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">    ln -sf $CLEAN_DIR/step2.root step2.root
+    grep -E &quot;cmsDriver.py step[34] &quot; $CLEAN_DIR/cmdLog &gt; steps34.sh
+    cat steps34.sh
+    if [ ! -s steps34.sh ]; then
+        echo &quot;ERROR: no step3/step4 command in $CLEAN_DIR/cmdLog&quot;; exit 1
+    fi
+    bash steps34.sh
+done
+
+echo &quot;=== step 4: flat NANO from the EDM NANO of both workflows (both areas)&quot;
+for AREA in clean fix; do
+    cd $WORK/$AREA/src &amp;&amp; eval $(scramv1 runtime -sh)
+    cd $WORK/run_$AREA/12452.0_*
+    cmsDriver.py flat --step NONE --mc --conditions auto:phase1_2023_realistic --era Run3_2023 \
+        --filein file:step3_inNANOEDMAODSIM.root --fileout file:step3_flatNANOAODSIM.root \
+        --eventcontent NANOAODSIM --datatier NANOAODSIM -n -1 &gt; flat_nano.log 2&gt;&amp;1
+    cd $WORK/run_$AREA/141.046_*
+    cmsDriver.py flat --step NONE --data --conditions auto:run3_data_relval --era Run3_2023 \
+        --filein file:step3_inNANOEDMAOD.root --fileout file:step3_flatNANOAOD.root \
+        --eventcontent NANOAOD --datatier NANOAOD -n -1 &gt; flat_nano.log 2&gt;&amp;1
+done
+
+echo &quot;=== step 5: log check&quot;
+for AREA in clean fix; do
+    for LOG in $WORK/run_$AREA/*/step3_*.log; do
+        echo &quot;$LOG: exceptions $(grep -c &quot;Exception&quot; $LOG || true),&quot; \
+             &quot;triggerObjectTable lines $(grep -c &quot;triggerObjectTable&quot; $LOG || true)&quot;
+        grep &quot;triggerObjectTable&quot; $LOG | head -5 || true
+    done
+done
+echo &quot;=== done&quot;
+</pre>
+</section>
+
+<section id="code-compare-dqm-py-1" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: compare_dqm.py (1/2)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/compare_dqm.py, lines 1 to 34</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">#!/usr/bin/env python3
+&quot;&quot;&quot;List the histograms that differ between two harvested DQM files.
+
+Usage: python3 compare_dqm.py &lt;clean DQM_V0001_*.root&gt; &lt;fix DQM_V0001_*.root&gt; &lt;out.json&gt;
+&quot;&quot;&quot;
+import json
+import sys
+
+import numpy as np
+import uproot
+
+
+def histograms(path):
+    # Total: time O(n_hist * n_bins), space O(n_hist * n_bins)
+    found = {}
+    with uproot.open(path) as root_file:
+        for name, classname in root_file.classnames().items():  # dict scan O(n)   | every stored object
+            if not classname.startswith((&quot;TH1&quot;, &quot;TH2&quot;, &quot;TH3&quot;, &quot;TProfile&quot;)):
+                continue
+            found[name.split(&quot;;&quot;)[0]] = root_file[name].values(flow=True)  # array O(bins) | bin contents
+    return found
+
+
+def main():
+    # Total: time O(n_hist * n_bins), space O(n_hist * n_bins)
+    clean_path, fix_path, out_path = sys.argv[1:4]
+    clean, fix = histograms(clean_path), histograms(fix_path)
+    only_clean = sorted(set(clean) - set(fix))                 # set diff O(n)    | histograms lost by the fix
+    only_fix = sorted(set(fix) - set(clean))                   # set diff O(n)    | histograms added by the fix
+    differing = sorted(name for name in set(clean) &amp; set(fix)  # set join O(n)    | same name, different bins
+                       if clean[name].shape != fix[name].shape or not np.array_equal(clean[name], fix[name]))
+    result = {
+        &quot;clean&quot;: clean_path,
+        &quot;fix&quot;: fix_path,</pre>
+</section>
+
+<section id="code-compare-dqm-py-2" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: compare_dqm.py (2/2)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/compare_dqm.py, lines 35 to 48</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">        &quot;n_histograms_clean&quot;: len(clean),
+        &quot;n_histograms_fix&quot;: len(fix),
+        &quot;only_in_clean&quot;: only_clean,
+        &quot;only_in_fix&quot;: only_fix,
+        &quot;differing&quot;: differing,
+    }
+    with open(out_path, &quot;w&quot;) as out:
+        json.dump(result, out, indent=1)
+    print(json.dumps({k: v for k, v in result.items()}, indent=1)[:6000])
+
+
+if __name__ == &quot;__main__&quot;:
+    main()
+</pre>
+</section>
+
+<section id="code-commands-as-run-1" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: commands as run:  (1/13)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">slides/code/commands_as_run.sh, lines 1 to 32</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden"># Shell commands I ran by hand for the 5 November 2026 checks, copied verbatim from the session log.
+# They ran from my laptop; the work happened on lxplus over ssh. Not a script to execute as a whole.
+
+# ===== 1. DAS lookups
+
+# --- Query DAS for NanoAOD datasets per version pattern
+ssh -o BatchMode=yes lxplus.cern.ch &#x27;
+  export X509_USER_PROXY=/afs/cern.ch/user/s/smahata/private/x509up_cms
+  for p in \
+    &quot;/EGamma/Run2018*-UL2018_MiniAODv2_NanoAODv9*/NANOAOD&quot; \
+    &quot;/EGamma/Run2022*-PromptNanoAODv10*/NANOAOD&quot; \
+    &quot;/EGamma/Run2022*-PromptNanoAODv11*/NANOAOD&quot; \
+    &quot;/EGamma/Run2022*-22Sep2023-v*/NANOAOD&quot; \
+    &quot;/GluGluHtoGG*/Run3Summer22*NanoAODv12*/NANOAODSIM&quot; \
+    &quot;/EGamma/Run2022*-16Dec2023-v*/NANOAOD&quot; \
+    &quot;/GluGluHto*G*/Run3Summer23NanoAODv13*/NANOAODSIM&quot; \
+    &quot;/EGamma*/Run2024*-PromptReco-v*/NANOAOD&quot; \
+    &quot;/GluGluHto*G*/*NanoAODv14*/NANOAODSIM&quot; \
+    &quot;/GluGluHto*G*/Run3Summer2*NanoAODv15*/NANOAODSIM&quot; \
+    &quot;/EGamma*/Run202*NanoAODv15*/NANOAOD&quot;
+  do echo &quot;== $p&quot;; dasgoclient -query=&quot;dataset=$p&quot; 2&gt;&amp;1 | head -8; done&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27;
+
+# --- Query DAS with wider v14/v15 patterns
+ssh -o BatchMode=yes lxplus.cern.ch &#x27;
+  export X509_USER_PROXY=/afs/cern.ch/user/s/smahata/private/x509up_cms
+  for p in \
+    &quot;/GluGluH*G*/*NanoAODv14*/NANOAODSIM&quot; \
+    &quot;/GluGluH*G*/Run3Summer24*/NANOAODSIM&quot; \
+    &quot;/GluGluH*G*/*NanoAODv15*/NANOAODSIM&quot; \
+    &quot;/EGamma*/Run2024*NanoAODv15*/NANOAOD&quot;
+  do echo &quot;== $p&quot;; dasgoclient -query=&quot;dataset=$p&quot; 2&gt;&amp;1 | head -8; done&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27;
+</pre>
+</section>
+
+<section id="code-commands-as-run-2" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: commands as run: 1. DAS lookups (2/13)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">slides/code/commands_as_run.sh, lines 33 to 60</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden"># --- Get first file LFN for each chosen dataset
+ssh -o BatchMode=yes lxplus.cern.ch &#x27;
+  export X509_USER_PROXY=/afs/cern.ch/user/s/smahata/private/x509up_cms
+  for d in \
+    /EGamma/Run2018D-UL2018_MiniAODv2_NanoAODv9-v3/NANOAOD \
+    /EGamma/Run2022D-PromptNanoAODv10_v2-v1/NANOAOD \
+    /EGamma/Run2022F-PromptNanoAODv11_v1-v2/NANOAOD \
+    /GluGluHtoGG_M-125_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer22NanoAODv12-130X_mcRun3_2022_realistic_v5-v2/NANOAODSIM \
+    /EGamma/Run2022D-22Sep2023-v1/NANOAOD \
+    /GluGluHto2G_M-125_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer23NanoAODv13-133X_mcRun3_2023_realistic_ForNanov13_v1_ext1-v4/NANOAODSIM \
+    /EGamma/Run2022D-16Dec2023-v1/NANOAOD \
+    /EGamma0/Run2024D-PromptReco-v1/NANOAOD \
+    /GluGluH-Hto2G_Par-M-125_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM \
+    /EGamma/Run2022D-NanoAODv15-v1/NANOAOD
+  do echo &quot;== $d&quot;; dasgoclient -query=&quot;file dataset=$d&quot; 2&gt;&amp;1 | head -1; done&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27;
+
+# --- Look up DAS datasets needed for tasks A, B, C
+ssh -o BatchMode=yes lxplus.cern.ch &#x27;
+  export X509_USER_PROXY=/afs/cern.ch/user/s/smahata/private/x509up_cms
+  for p in \
+    &quot;/GluGluHto2G_M-125_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer23MiniAODv4-130X_mcRun3_2023_realistic_v14-v2/MINIAODSIM&quot; \
+    &quot;/GluGluHto2G_M-125_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer23MiniAODv4*/MINIAODSIM&quot; \
+    &quot;/GluGluHto2G_M-125_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer23NanoAODv1*/NANOAODSIM&quot; \
+    &quot;/GluGluHto*G*/Run3Summer23NanoAODv15*/NANOAODSIM&quot; \
+    &quot;/EGamma0/Run2024*-MINIv6NANOv15-v*/NANOAOD&quot; \
+    &quot;/GluGluHtoGG*/*Winter24*NanoAOD*/NANOAODSIM&quot;
+  do echo &quot;== $p&quot;; dasgoclient -query=&quot;dataset=$p&quot; 2&gt;&amp;1 | head -6; done&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27;
+</pre>
+</section>
+
+<section id="code-commands-as-run-3" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: commands as run: 1. DAS lookups (3/13)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">slides/code/commands_as_run.sh, lines 61 to 81</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden"># --- Check MiniAOD dataset status, central-file parent, wider patterns
+ssh -o BatchMode=yes lxplus.cern.ch &#x27;
+  export X509_USER_PROXY=/afs/cern.ch/user/s/smahata/private/x509up_cms
+  for d in /GluGluHto2G_M-125_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer23MiniAODv4-130X_mcRun3_2023_realistic_v14-v2/MINIAODSIM /GluGluHto2G_M-125_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer23MiniAODv4-130X_mcRun3_2023_realistic_v15_ext1-v4/MINIAODSIM; do
+    echo &quot;== $d&quot;; dasgoclient -query=&quot;dataset dataset=$d status=*&quot; -json 2&gt;/dev/null | grep -o &quot;\&quot;dataset_access_type\&quot;:\&quot;[A-Z]*\&quot;&quot; | head -1; dasgoclient -query=&quot;summary dataset=$d&quot; 2&gt;&amp;1 | head -2; done
+  echo &quot;== parent of central v13 file&quot;
+  dasgoclient -query=&quot;parent file=/store/mc/Run3Summer23NanoAODv13/GluGluHto2G_M-125_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/NANOAODSIM/133X_mcRun3_2023_realistic_ForNanov13_v1_ext1-v4/2820000/4f45fe87-a958-4c8f-b88f-c322fec857f3.root&quot;
+  for p in &quot;/*/Run3Summer23NanoAODv15*/NANOAODSIM&quot; &quot;/GluGluH*/*Winter24*/NANOAODSIM&quot; &quot;/*/RunIII2024Winter24NanoAOD*/NANOAODSIM&quot;; do echo &quot;== $p&quot;; dasgoclient -query=&quot;dataset=$p&quot; 2&gt;&amp;1 | head -4; done&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27;
+
+# --- Get first file of 2024D MINIv6NANOv15 and Winter24 datasets
+ssh -o BatchMode=yes -o ConnectTimeout=30 lxplus.cern.ch &#x27;
+  export X509_USER_PROXY=/afs/cern.ch/user/s/smahata/private/x509up_cms
+  for d in /EGamma0/Run2024D-MINIv6NANOv15-v1/NANOAOD /GluGluHToGG_M-125_TuneCP5_13p6TeV_powheg-pythia8/Run3Winter24NanoAOD-133X_mcRun3_2024_realistic_v9-v2/NANOAODSIM; do
+    echo &quot;== $d&quot;; dasgoclient -query=&quot;file dataset=$d&quot; | head -1; done&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27;
+
+# --- Check DAS sites and IB EOS cache for the RAW file
+timeout 120 ssh -o BatchMode=yes -o ConnectTimeout=30 lxplus.cern.ch &#x27;export X509_USER_PROXY=/afs/cern.ch/user/s/smahata/private/x509up_cms; F=/store/data/Run2023D/EGamma0/RAW/v1/000/369/978/00000/0068cd83-0af4-4efc-9155-b2521e558ebb.root; echo &quot;== DAS sites&quot;; dasgoclient -query=&quot;site file=$F&quot;; echo &quot;== ibeos cache&quot;; ls -la /eos/cms/store/user/cmsbuild$F 2&gt;&amp;1 | head -2; ls /eos/cms/store/user/cmsbuild/store/data/Run2023D/EGamma0/RAW/v1/000/369/978/00000/ 2&gt;&amp;1 | head -3&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27;
+
+# --- Check which 141.046 input files exist in IB EOS cache
+timeout 120 ssh -o BatchMode=yes -o HostKeyAlias=lxplus.cern.ch -o ConnectTimeout=30 smahata@lxplus967.cern.ch &#x27;cd /eos/user/s/smahata/trigobj_check/relval_16_1_3/run_clean/141.046_*; wc -l &lt; step1_dasquery.log; cat step1_lumiRanges.log | head -c 300; echo; for f in $(cat step1_dasquery.log); do if [ -f /eos/cms/store/user/cmsbuild$f ]; then echo &quot;cached $f&quot;; else echo &quot;missing $f&quot;; fi; done | sort | uniq -c -w 7 | head; ls /eos/cms/store/user/cmsbuild/store/data/Run2023D/EGamma0/RAW/v1/000/369/978/00000/ | wc -l&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27;
+</pre>
+</section>
+
+<section id="code-commands-as-run-4" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: commands as run: 2. Measuring the NanoAOD files (4/13)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">slides/code/commands_as_run.sh, lines 82 to 105</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden"># ===== 2. Measuring the NanoAOD files
+
+# --- Copy script to lxplus and run v13 smoke test
+cd &lt;session folder&gt; &amp;&amp; scp -q -o BatchMode=yes measure_trigobj.py lxplus.cern.ch:/eos/user/s/smahata/trigobj_check/ 2&gt;&amp;1 | grep -v &#x27;^\*&#x27;; ssh -o BatchMode=yes lxplus.cern.ch &#x27;
+  export X509_USER_PROXY=/afs/cern.ch/user/s/smahata/private/x509up_cms
+  source /cvmfs/sft.cern.ch/lcg/views/LCG_107/x86_64-el9-gcc13-opt/setup.sh
+  cd /eos/user/s/smahata/trigobj_check
+  mkdir -p nanoaod-trigobj-notes/results
+  python3 measure_trigobj.py v13 \
+    /GluGluHto2G_M-125_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer23NanoAODv13-133X_mcRun3_2023_realistic_ForNanov13_v1_ext1-v4/NANOAODSIM \
+    root://cms-xrd-global.cern.ch//store/mc/Run3Summer23NanoAODv13/GluGluHto2G_M-125_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/NANOAODSIM/133X_mcRun3_2023_realistic_ForNanov13_v1_ext1-v4/2820000/4f45fe87-a958-4c8f-b88f-c322fec857f3.root \
+    nanoaod-trigobj-notes/results/v13_GluGluHto2G_M125_Run3Summer23.json&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27;
+
+# --- Run measurement on the remaining 9 NanoAOD files
+ssh -o BatchMode=yes lxplus.cern.ch &#x27;
+  export X509_USER_PROXY=/afs/cern.ch/user/s/smahata/private/x509up_cms
+  source /cvmfs/sft.cern.ch/lcg/views/LCG_107/x86_64-el9-gcc13-opt/setup.sh
+  cd /eos/user/s/smahata/trigobj_check
+  R=root://cms-xrd-global.cern.ch/
+  run() { echo &quot;##### $1 $4&quot;; python3 measure_trigobj.py &quot;$1&quot; &quot;$2&quot; &quot;$R$3&quot; &quot;nanoaod-trigobj-notes/results/$4.json&quot; 2&gt;&amp;1 | grep -E &quot;WARNING|Error|error|\&quot;(events_read|filterBits_interpretation|n_photon_bits_documented|fired_Mass90|fired_DoubleEle33_CaloIdL_MW|electron_CaloIdL_MW_unseeded_bit|electrons_with_CaloIdL_MW_unseeded_bit|n_id2_MET|n_id1515_BoostedTau|n_id22_Photon|events_with_unseeded_photon_bit)\&quot;&quot;; }
+  run v9  /EGamma/Run2018D-UL2018_MiniAODv2_NanoAODv9-v3/NANOAOD /store/data/Run2018D/EGamma/NANOAOD/UL2018_MiniAODv2_NanoAODv9-v3/250000/566E12C7-CD3E-3F4D-A657-A71FF4CB2637.root v9_EGamma_Run2018D_UL2018NanoAODv9
+  run v10 /EGamma/Run2022D-PromptNanoAODv10_v2-v1/NANOAOD /store/data/Run2022D/EGamma/NANOAOD/PromptNanoAODv10_v2-v1/2520000/3f1fe826-1729-4ba9-83b9-d28a2cfd2b88.root v10_EGamma_Run2022D_PromptNanoAODv10
+  run v11 /EGamma/Run2022F-PromptNanoAODv11_v1-v2/NANOAOD /store/data/Run2022F/EGamma/NANOAOD/PromptNanoAODv11_v1-v2/80000/6d07f113-b587-45b3-8db6-c2928358ae0b.root v11_EGamma_Run2022F_PromptNanoAODv11
+  run v12 /GluGluHtoGG_M-125_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer22NanoAODv12-130X_mcRun3_2022_realistic_v5-v2/NANOAODSIM /store/mc/Run3Summer22NanoAODv12/GluGluHtoGG_M-125_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/2530000/fd1a30c4-ac59-4c33-8245-719b82fad9f0.root v12_GluGluHtoGG_M125_Run3Summer22</pre>
+</section>
+
+<section id="code-commands-as-run-5" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: commands as run: 2. Measuring the NanoAOD files (5/13)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">slides/code/commands_as_run.sh, lines 106 to 123</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">  run v12 /EGamma/Run2022D-22Sep2023-v1/NANOAOD /store/data/Run2022D/EGamma/NANOAOD/22Sep2023-v1/2530000/e5762711-8726-4523-8891-32efa9ddb381.root v12_EGamma_Run2022D_22Sep2023
+  run v13 /EGamma/Run2022D-16Dec2023-v1/NANOAOD /store/data/Run2022D/EGamma/NANOAOD/16Dec2023-v1/2550000/499b6a69-bd7e-4bce-bd6d-4ab4f250ea2d.root v13_EGamma_Run2022D_16Dec2023
+  run v14 /EGamma0/Run2024D-PromptReco-v1/NANOAOD /store/data/Run2024D/EGamma0/NANOAOD/PromptReco-v1/000/380/306/00000/9bfae790-c112-48bf-bc54-ef1feaa74a96.root v14_EGamma0_Run2024D_PromptReco
+  run v15 /GluGluH-Hto2G_Par-M-125_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM /store/mc/RunIII2024Summer24NanoAODv15/GluGluH-Hto2G_Par-M-125_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/NANOAODSIM/150X_mcRun3_2024_realistic_v2-v2/120000/acebfb52-a25b-48bc-b9f6-80fe54a98d56.root v15_GluGluHHto2G_M125_RunIII2024Summer24
+  run v15 /EGamma/Run2022D-NanoAODv15-v1/NANOAOD /store/data/Run2022D/EGamma/NANOAOD/NanoAODv15-v1/2820000/41628bc7-c70f-4bf7-b2a4-e755aea819fd.root v15_EGamma_Run2022D_NanoAODv15
+  echo ALLDONE&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27;
+
+# --- Measure 2024D MINIv6NANOv15 and Winter24 files
+ssh -o BatchMode=yes -o ServerAliveInterval=15 lxplus.cern.ch &#x27;
+  export X509_USER_PROXY=/afs/cern.ch/user/s/smahata/private/x509up_cms
+  source /cvmfs/sft.cern.ch/lcg/views/LCG_107/x86_64-el9-gcc13-opt/setup.sh
+  cd /eos/user/s/smahata/trigobj_check
+  R=root://cms-xrd-global.cern.ch/
+  K=&quot;events_read|events_in_file|filterBits_interpretation|n_photon_bits_documented|fired_Mass90|photons_with_bit|R9|TrackIso|EG18|seeded|hltHtEcal|electron_CaloIdL|electrons_with|n_id2|n_id1515|n_id22|events_with_unseeded|nTrigObj_mean|file_size|WARNING|NOTE|Error&quot;
+  python3 measure_trigobj.py v15 /EGamma0/Run2024D-MINIv6NANOv15-v1/NANOAOD $R/store/data/Run2024D/EGamma0/NANOAOD/MINIv6NANOv15-v1/110000/9d4e97c7-f23a-4cff-ac72-58488e544076.root nanoaod-trigobj-notes/results/v15_EGamma0_Run2024D_MINIv6NANOv15.json 2&gt;&amp;1 | grep -E &quot;$K&quot; | head -40
+  echo &quot;#####&quot;
+  python3 measure_trigobj.py Winter24_133X /GluGluHToGG_M-125_TuneCP5_13p6TeV_powheg-pythia8/Run3Winter24NanoAOD-133X_mcRun3_2024_realistic_v9-v2/NANOAODSIM $R/store/mc/Run3Winter24NanoAOD/GluGluHToGG_M-125_TuneCP5_13p6TeV_powheg-pythia8/NANOAODSIM/133X_mcRun3_2024_realistic_v9-v2/80000/68618af9-2d38-4ef7-9aa9-2d0c30a6e3f1.root nanoaod-trigobj-notes/results/Winter24_133X_GluGluHToGG_M125_powheg.json 2&gt;&amp;1 | grep -E &quot;$K&quot; | head -40&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27;
+</pre>
+</section>
+
+<section id="code-commands-as-run-6" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: commands as run: 3. Fix test, v13 and v15 (6/13)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">slides/code/commands_as_run.sh, lines 124 to 149</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden"># ===== 3. Fix test, v13 and v15
+
+# --- Copy scripts and start NANO runs on lxplus967 as smahata
+cd &lt;session folder&gt; &amp;&amp; O=&quot;-o BatchMode=yes -o HostKeyAlias=lxplus.cern.ch -o ServerAliveInterval=15&quot;; scp -q $O make_fixed_nano.sh measure_trigobj.py smahata@lxplus967.cern.ch:/eos/user/s/smahata/trigobj_check/ 2&gt;&amp;1 | grep -v &#x27;^\*&#x27;; ssh $O smahata@lxplus967.cern.ch &#x27;cd /eos/user/s/smahata/trigobj_check &amp;&amp; nohup bash -c &quot;bash make_fixed_nano.sh v13; bash make_fixed_nano.sh v15&quot; &gt; make_fixed_nano.log 2&gt;&amp;1 &lt; /dev/null &amp; sleep 8; hostname; head -5 /eos/user/s/smahata/trigobj_check/make_fixed_nano.log&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27;
+
+# --- Rerun v13 nano_fix cmsRun on lxplus967 in held-open session
+ssh -o BatchMode=yes -o HostKeyAlias=lxplus.cern.ch -o ServerAliveInterval=30 smahata@lxplus967.cern.ch &#x27;
+  source /cvmfs/cms.cern.ch/cmsset_default.sh
+  export X509_USER_PROXY=/afs/cern.ch/user/s/smahata/private/x509up_cms
+  cd /eos/user/s/smahata/trigobj_check/cmssw/CMSSW_13_3_1_patch1/src &amp;&amp; eval $(scramv1 runtime -sh)
+  git diff --numstat
+  cd /eos/user/s/smahata/trigobj_check/cmssw/v13
+  echo &quot;=== v13 nano_fix rerun start $(date)&quot;
+  cmsRun nano_fix_cfg.py &gt; nano_fix_rerun.log 2&gt;&amp;1
+  echo &quot;=== v13 nano_fix rerun exit $? $(date)&quot;
+  ls -l nano_nofix.root nano_fix.root&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27;
+
+# --- Run v15 fix-test NANO pair on another lxplus node
+ssh -o BatchMode=yes -o ServerAliveInterval=30 lxplus.cern.ch &#x27;hostname; cd /eos/user/s/smahata/trigobj_check &amp;&amp; bash make_fixed_nano.sh v15 &gt; make_fixed_nano_v15.log 2&gt;&amp;1; echo &quot;v15 exit $? $(date)&quot;; grep -E &quot;^=== |^ERROR:|^[0-9]+: +sel|^[-+] +sel&quot; make_fixed_nano_v15.log&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27;
+
+# --- Measure central v13 file into fix_test results
+ssh -o BatchMode=yes -o ServerAliveInterval=30 lxplus.cern.ch &#x27;
+  export X509_USER_PROXY=/afs/cern.ch/user/s/smahata/private/x509up_cms
+  source /cvmfs/sft.cern.ch/lcg/views/LCG_107/x86_64-el9-gcc13-opt/setup.sh
+  cd /eos/user/s/smahata/trigobj_check &amp;&amp; mkdir -p nanoaod-trigobj-notes/results/fix_test
+  python3 measure_trigobj.py v13_central /GluGluHto2G_M-125_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer23NanoAODv13-133X_mcRun3_2023_realistic_ForNanov13_v1_ext1-v4/NANOAODSIM root://cms-xrd-global.cern.ch//store/mc/Run3Summer23NanoAODv13/GluGluHto2G_M-125_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/NANOAODSIM/133X_mcRun3_2023_realistic_ForNanov13_v1_ext1-v4/2820000/4f45fe87-a958-4c8f-b88f-c322fec857f3.root nanoaod-trigobj-notes/results/fix_test/central_v13.json 2&gt;&amp;1 | grep -E &quot;events_read|fired_Mass90|nTrigObj_mean|file_size|events_with_unseeded|fraction|photons_per|Error|WARN&quot;&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27;</pre>
+</section>
+
+<section id="code-commands-as-run-7" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: commands as run: 3. Fix test, v13 and v15 (7/13)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">slides/code/commands_as_run.sh, lines 150 to 174</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">
+# --- Measure v13 nano_nofix and nano_fix with references
+ssh -o BatchMode=yes -o ServerAliveInterval=30 lxplus.cern.ch &#x27;
+  export X509_USER_PROXY=/afs/cern.ch/user/s/smahata/private/x509up_cms
+  source /cvmfs/sft.cern.ch/lcg/views/LCG_107/x86_64-el9-gcc13-opt/setup.sh
+  cd /eos/user/s/smahata/trigobj_check; V=cmssw/v13; O=nanoaod-trigobj-notes/results/fix_test
+  CENTRAL=root://cms-xrd-global.cern.ch//store/mc/Run3Summer23NanoAODv13/GluGluHto2G_M-125_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/NANOAODSIM/133X_mcRun3_2023_realistic_ForNanov13_v1_ext1-v4/2820000/4f45fe87-a958-4c8f-b88f-c322fec857f3.root
+  K=&quot;events_read|fired_Mass90|R9|TrackIso|EG18|seeded|hltHtEcal|nTrigObj_mean|file_size|events_with_unseeded|fraction|photons_per|n_id22|\&quot;n\&quot;|min|median|below|reference|events_in|identical|Error|WARN|NOTE&quot;
+  python3 measure_trigobj.py v13_nofix MiniAOD-parent-of-central-v13 $V/nano_nofix.root $O/nano_nofix.json $CENTRAL 2&gt;&amp;1 | grep -E &quot;$K&quot;
+  echo &quot;#####&quot;
+  python3 measure_trigobj.py v13_fix MiniAOD-parent-of-central-v13 $V/nano_fix.root $O/nano_fix.json $V/nano_nofix.root 2&gt;&amp;1 | grep -E &quot;$K&quot;
+  python3 -c &quot;import json; a=json.load(open(\&quot;$O/nano_nofix.json\&quot;)); b=json.load(open(\&quot;$O/nano_fix.json\&quot;)); print(\&quot;objects_per_id nofix\&quot;, a[\&quot;objects_per_id\&quot;]); print(\&quot;objects_per_id fix  \&quot;, b[\&quot;objects_per_id\&quot;]); print(\&quot;id!=22 bit counts identical:\&quot;, a[\&quot;bit_counts_per_id_without_22\&quot;]==b[\&quot;bit_counts_per_id_without_22\&quot;])&quot;&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27;
+
+# --- Measure v15 nano_nofix and nano_fix
+ssh -o BatchMode=yes -o ServerAliveInterval=30 lxplus.cern.ch &#x27;
+  export X509_USER_PROXY=/afs/cern.ch/user/s/smahata/private/x509up_cms
+  source /cvmfs/sft.cern.ch/lcg/views/LCG_107/x86_64-el9-gcc13-opt/setup.sh
+  cd /eos/user/s/smahata/trigobj_check; V=cmssw/v15; O=nanoaod-trigobj-notes/results/fix_test
+  ls -l $V/*.root
+  K=&quot;events_read|events_in_file|interpretation|n_photon_bits|fired_Mass90|R9|TrackIso|EG18|seeded|hltHtEcal|nTrigObj_mean|file_size|events_with_unseeded|fraction|photons_per|n_id22|\&quot;n\&quot;|min|median|below|events_in|identical|Error|WARN|NOTE&quot;
+  python3 measure_trigobj.py v15_nofix MiniAOD-parent-of-central-v13 $V/nano_nofix.root $O/v15_nano_nofix.json 2&gt;&amp;1 | grep -E &quot;$K&quot;
+  echo &quot;#####&quot;
+  python3 measure_trigobj.py v15_fix MiniAOD-parent-of-central-v13 $V/nano_fix.root $O/v15_nano_fix.json $V/nano_nofix.root 2&gt;&amp;1 | grep -E &quot;$K&quot;
+  python3 -c &quot;import json; a=json.load(open(\&quot;$O/v15_nano_nofix.json\&quot;)); b=json.load(open(\&quot;$O/v15_nano_fix.json\&quot;)); print(\&quot;objects_per_id nofix\&quot;, a[\&quot;objects_per_id\&quot;]); print(\&quot;objects_per_id fix  \&quot;, b[\&quot;objects_per_id\&quot;]); print(\&quot;id!=22 bit counts identical:\&quot;, a[\&quot;bit_counts_per_id_without_22\&quot;]==b[\&quot;bit_counts_per_id_without_22\&quot;])&quot;&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27;
+</pre>
+</section>
+
+<section id="code-commands-as-run-8" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: commands as run: 4. Relval in CMSSW_16_1_3 (8/13)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">slides/code/commands_as_run.sh, lines 175 to 199</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden"># ===== 4. Relval in CMSSW_16_1_3
+
+# --- List the five relval workflows in CMSSW_16_1_3
+ssh -o BatchMode=yes -o ConnectTimeout=30 -o ServerAliveInterval=15 lxplus.cern.ch &#x27;source /cvmfs/cms.cern.ch/cmsset_default.sh
+  cd /cvmfs/cms.cern.ch/el9_amd64_gcc13/cms/cmssw/CMSSW_16_1_3/src &amp;&amp; eval $(scramv1 runtime -sh)
+  mkdir -p /tmp/smahata_rtm &amp;&amp; cd /tmp/smahata_rtm &amp;&amp; runTheMatrix.py -n -e -l 12452.0,12852.0,12434.0,12834.0,141.046 2&gt;&amp;1 | grep -v &quot;^$&quot; | cut -c1-400 | head -60&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27;
+
+# --- List relval workflows with upgrade and default matrices
+ssh -o BatchMode=yes -o ConnectTimeout=30 -o ServerAliveInterval=15 lxplus.cern.ch &#x27;source /cvmfs/cms.cern.ch/cmsset_default.sh
+  cd /cvmfs/cms.cern.ch/el9_amd64_gcc13/cms/cmssw/CMSSW_16_1_3/src &amp;&amp; eval $(scramv1 runtime -sh)
+  mkdir -p /tmp/smahata_rtm &amp;&amp; cd /tmp/smahata_rtm
+  echo &quot;##### upgrade 12452/12852&quot;; runTheMatrix.py -n -e -w upgrade -l 12452.0,12852.0 2&gt;&amp;1 | grep -v &quot;^processing\|^ignoring\|^$&quot; | cut -c1-300 | head -30
+  echo &quot;##### default 12434/12834/141.046&quot;; runTheMatrix.py -n -e -l 12434.0,12834.0,141.046 2&gt;&amp;1 | grep -v &quot;^processing\|^ignoring\|^$&quot; | cut -c1-300 | head -40&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27;
+
+# --- Run relval check with cached RAW file for 141.046
+ssh -o BatchMode=yes -o HostKeyAlias=lxplus.cern.ch -o ServerAliveInterval=30 smahata@lxplus967.cern.ch &#x27;cd /eos/user/s/smahata/trigobj_check &amp;&amp; nohup bash relval_fix_check.sh &gt; relval_fix_check.log 2&gt;&amp;1 &lt; /dev/null; echo &quot;relval exit code $?&quot;; grep -E &quot;^=== |^ERROR:|tests passed|Step[0-9]-|^[0-9]+\s+[0-9]+\s+Phys|exceptions|Fatal&quot; relval_fix_check.log | cut -c1-250&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27;
+
+# --- Dry-run 141.046 to get full step3/step4 commands
+timeout 300 ssh -o BatchMode=yes -o HostKeyAlias=lxplus.cern.ch -o ConnectTimeout=30 smahata@lxplus967.cern.ch &#x27;
+  source /cvmfs/cms.cern.ch/cmsset_default.sh; export X509_USER_PROXY=/afs/cern.ch/user/s/smahata/private/x509up_cms
+  cd /eos/user/s/smahata/trigobj_check/relval_16_1_3/clean/src &amp;&amp; eval $(scramv1 runtime -sh)
+  mkdir -p /tmp/smahata_dry &amp;&amp; cd /tmp/smahata_dry &amp;&amp; rm -rf 141.046_*
+  runTheMatrix.py -l 141.046 -i all --ibeos --dryRun &gt; dry.log 2&gt;&amp;1
+  grep -E &quot;cmsDriver.py step[34] &quot; 141.046_*/cmdLog&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27;
+</pre>
+</section>
+
+<section id="code-commands-as-run-9" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: commands as run: 4. Relval in CMSSW_16_1_3 (9/13)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">slides/code/commands_as_run.sh, lines 200 to 233</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden"># --- Run clean 141.046 steps 3-4 then the rest of relval script
+ssh -o BatchMode=yes -o HostKeyAlias=lxplus.cern.ch -o ServerAliveInterval=30 smahata@lxplus967.cern.ch &#x27;
+  source /cvmfs/cms.cern.ch/cmsset_default.sh; export X509_USER_PROXY=/afs/cern.ch/user/s/smahata/private/x509up_cms
+  cd /eos/user/s/smahata/trigobj_check/relval_16_1_3/clean/src &amp;&amp; eval $(scramv1 runtime -sh)
+  cd /eos/user/s/smahata/trigobj_check/relval_16_1_3/run_clean/141.046_*
+  grep -E &quot;cmsDriver.py step[34] &quot; /tmp/smahata_dry/141.046_*/cmdLog &gt; steps34_from_dryrun.sh
+  echo &quot;# steps 3-4 below taken from runTheMatrix --dryRun (aborted run had not written them)&quot; &gt;&gt; cmdLog
+  cat steps34_from_dryrun.sh &gt;&gt; cmdLog
+  echo &quot;=== clean 141.046 steps 3-4 start $(date)&quot;
+  bash steps34_from_dryrun.sh; echo &quot;steps34 exit $?&quot;
+  ls -l step3_inNANOEDMAOD.root step3_inDQM.root DQM_V0001*.root
+  cd /eos/user/s/smahata/trigobj_check
+  bash relval_fix_check.sh &gt; relval_fix_check.log 2&gt;&amp;1; echo &quot;relval exit code $? $(date)&quot;
+  grep -E &quot;^=== |^ERROR:|^[0-9]+\s+[0-9]+\s+Phys|exceptions&quot; relval_fix_check.log | cut -c1-250&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27;
+
+# --- Rerun 141.046 steps 3-4 in the fix area
+ssh -o BatchMode=yes -o HostKeyAlias=lxplus.cern.ch -o ServerAliveInterval=30 smahata@lxplus967.cern.ch &#x27;
+  source /cvmfs/cms.cern.ch/cmsset_default.sh; export X509_USER_PROXY=/afs/cern.ch/user/s/smahata/private/x509up_cms
+  W=/eos/user/s/smahata/trigobj_check/relval_16_1_3
+  cd $W/fix/src &amp;&amp; eval $(scramv1 runtime -sh) &amp;&amp; git diff CMSSW_16_1_3 --numstat
+  cd $W/run_fix/141.046_RunEGamma2023D
+  cp $W/run_clean/141.046_RunEGamma2023D/steps34_from_dryrun.sh .
+  echo &quot;=== fix 141.046 steps 3-4 start $(date)&quot;
+  bash steps34_from_dryrun.sh; echo &quot;=== fix 141.046 steps 3-4 exit $? $(date)&quot;
+  ls -l step3_inNANOEDMAOD.root DQM_V0001*.root&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27;
+
+# --- Convert, measure and compare 12452.0 clean vs fix
+timeout 900 ssh -o BatchMode=yes -o HostKeyAlias=lxplus.cern.ch -o ConnectTimeout=60 -o ServerAliveInterval=30 smahata@lxplus967.cern.ch &#x27;
+  source /cvmfs/cms.cern.ch/cmsset_default.sh; export X509_USER_PROXY=/afs/cern.ch/user/s/smahata/private/x509up_cms
+  W=/eos/user/s/smahata/trigobj_check/relval_16_1_3; T=/eos/user/s/smahata/trigobj_check
+  for AREA in clean fix; do
+    (cd $W/$AREA/src &amp;&amp; eval $(scramv1 runtime -sh) &amp;&amp; cd $W/run_$AREA/12452.0_* &amp;&amp; \
+     cmsDriver.py flat --step NONE --mc --conditions auto:phase1_2023_realistic --era Run3_2023 \
+       --filein file:step3_inNANOEDMAODSIM.root --fileout file:step3_flatNANOAODSIM.root \</pre>
+</section>
+
+<section id="code-commands-as-run-10" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: commands as run: 4. Relval in CMSSW_16_1_3 (10/13)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">slides/code/commands_as_run.sh, lines 234 to 255</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">       --eventcontent NANOAODSIM --datatier NANOAODSIM -n -1 &gt; flat_nano.log 2&gt;&amp;1; echo &quot;$AREA flat exit $?&quot;; ls -l step3_flatNANOAODSIM.root)
+  done
+  source /cvmfs/sft.cern.ch/lcg/views/LCG_107/x86_64-el9-gcc13-opt/setup.sh
+  O=$T/nanoaod-trigobj-notes/results/relval_16_1_3; mkdir -p $O
+  C=$(ls $W/run_clean/12452.0_*/step3_flatNANOAODSIM.root); F=$(ls $W/run_fix/12452.0_*/step3_flatNANOAODSIM.root)
+  cd $T
+  python3 measure_trigobj.py 16_1_3_clean wf12452.0 $C $O/wf12452_clean.json 2&gt;&amp;1 | grep -E &quot;events_read|fired_Mass90|n_photon_bits|n_id22|events_with_unseeded|fraction|nTrigObj_mean|Error&quot;
+  python3 measure_trigobj.py 16_1_3_fix wf12452.0 $F $O/wf12452_fix.json $C 2&gt;&amp;1 | grep -E &quot;events_read|fired_Mass90|R9Unseeded|TrackIsoUnseeded|n_id22|events_with_unseeded|fraction|nTrigObj_mean|min|identical|Error&quot;
+  python3 -c &quot;import json; a=json.load(open(\&quot;$O/wf12452_clean.json\&quot;)); b=json.load(open(\&quot;$O/wf12452_fix.json\&quot;)); print(\&quot;ids clean\&quot;, a[\&quot;objects_per_id\&quot;]); print(\&quot;ids fix  \&quot;, b[\&quot;objects_per_id\&quot;]); print(\&quot;id!=22 bits identical:\&quot;, a[\&quot;bit_counts_per_id_without_22\&quot;]==b[\&quot;bit_counts_per_id_without_22\&quot;]); print(\&quot;photon bits clean\&quot;, a[\&quot;photons_with_bit\&quot;]); print(\&quot;photon bits fix  \&quot;, b[\&quot;photons_with_bit\&quot;])&quot;
+  python3 compare_dqm.py $(ls $W/run_clean/12452.0_*/DQM_V0001*.root) $(ls $W/run_fix/12452.0_*/DQM_V0001*.root) $O/wf12452_dqm_diff.json 2&gt;&amp;1 | head -60
+  echo &quot;--- logs&quot;
+  for A in clean fix; do L=$(ls $W/run_$A/12452.0_*/step3_*.log); echo &quot;$A step3: Exception lines $(grep -c Exception $L), triggerObjectTable lines $(grep -c triggerObjectTable $L)&quot;; grep triggerObjectTable $L | head -3; done
+  L=$(ls $W/run_clean/141.046_*/step3_*.log); echo &quot;clean 141.046 step3: Exception lines $(grep -c Exception $L), triggerObjectTable lines $(grep -c triggerObjectTable $L)&quot;&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27; | cut -c1-300
+
+# --- Rerun 12452.0 DQM comparison without time limit
+ssh -o BatchMode=yes -o HostKeyAlias=lxplus.cern.ch -o ServerAliveInterval=30 smahata@lxplus967.cern.ch &#x27;
+  source /cvmfs/sft.cern.ch/lcg/views/LCG_107/x86_64-el9-gcc13-opt/setup.sh
+  W=/eos/user/s/smahata/trigobj_check/relval_16_1_3; T=/eos/user/s/smahata/trigobj_check
+  cd $T &amp;&amp; echo &quot;start $(date)&quot;
+  python3 compare_dqm.py $(ls $W/run_clean/12452.0_*/DQM_V0001*.root) $(ls $W/run_fix/12452.0_*/DQM_V0001*.root) nanoaod-trigobj-notes/results/relval_16_1_3/wf12452_dqm_diff.json &gt; /dev/null 2&gt;&amp;1; echo &quot;exit $? $(date)&quot;
+  python3 -c &quot;import json; d=json.load(open(\&quot;nanoaod-trigobj-notes/results/relval_16_1_3/wf12452_dqm_diff.json\&quot;)); print(d[\&quot;n_histograms_clean\&quot;], d[\&quot;n_histograms_fix\&quot;], len(d[\&quot;only_in_clean\&quot;]), len(d[\&quot;only_in_fix\&quot;]), len(d[\&quot;differing\&quot;])); print(\&quot;\n\&quot;.join(d[\&quot;differing\&quot;][:40]))&quot;&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27;
+</pre>
+</section>
+
+<section id="code-commands-as-run-11" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: commands as run: 4. Relval in CMSSW_16_1_3 (11/13)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">slides/code/commands_as_run.sh, lines 256 to 279</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden"># --- Convert and measure clean 141.046 NANO
+timeout 1200 ssh -o BatchMode=yes -o HostKeyAlias=lxplus.cern.ch -o ConnectTimeout=60 -o ServerAliveInterval=30 smahata@lxplus967.cern.ch &#x27;
+  source /cvmfs/cms.cern.ch/cmsset_default.sh; W=/eos/user/s/smahata/trigobj_check/relval_16_1_3; T=/eos/user/s/smahata/trigobj_check
+  (cd $W/clean/src &amp;&amp; eval $(scramv1 runtime -sh) &amp;&amp; cd $W/run_clean/141.046_RunEGamma2023D &amp;&amp; \
+   cmsDriver.py flat --step NONE --data --conditions auto:run3_data_relval --era Run3_2023 \
+     --filein file:step3_inNANOEDMAOD.root --fileout file:step3_flatNANOAOD.root \
+     --eventcontent NANOAOD --datatier NANOAOD -n -1 &gt; flat_nano.log 2&gt;&amp;1; echo &quot;flat exit $?&quot;; ls -l step3_flatNANOAOD.root)
+  source /cvmfs/sft.cern.ch/lcg/views/LCG_107/x86_64-el9-gcc13-opt/setup.sh; cd $T
+  python3 measure_trigobj.py 16_1_3_clean wf141.046 $W/run_clean/141.046_RunEGamma2023D/step3_flatNANOAOD.root nanoaod-trigobj-notes/results/relval_16_1_3/wf141046_clean.json 2&gt;&amp;1 | grep -E &quot;events_read|n_photon_bits|fired_Mass90|R9Unseeded|TrackIsoUnseeded|seeded_|n_id22|events_with_unseeded|nTrigObj_mean|Error&quot;&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27;
+
+# --- Convert, measure, check logs and DQM for 141.046 fix
+ssh -o BatchMode=yes -o HostKeyAlias=lxplus.cern.ch -o ServerAliveInterval=30 smahata@lxplus967.cern.ch &#x27;
+  source /cvmfs/cms.cern.ch/cmsset_default.sh; W=/eos/user/s/smahata/trigobj_check/relval_16_1_3; T=/eos/user/s/smahata/trigobj_check; O=$T/nanoaod-trigobj-notes/results/relval_16_1_3
+  (cd $W/fix/src &amp;&amp; eval $(scramv1 runtime -sh) &amp;&amp; cd $W/run_fix/141.046_RunEGamma2023D &amp;&amp; \
+   cmsDriver.py flat --step NONE --data --conditions auto:run3_data_relval --era Run3_2023 \
+     --filein file:step3_inNANOEDMAOD.root --fileout file:step3_flatNANOAOD.root \
+     --eventcontent NANOAOD --datatier NANOAOD -n -1 &gt; flat_nano.log 2&gt;&amp;1; echo &quot;flat exit $?&quot;)
+  L=$W/run_fix/141.046_RunEGamma2023D/step3_RunEGamma2023D.log; echo &quot;fix 141.046 step3: Exception $(grep -c Exception $L), triggerObjectTable $(grep -c triggerObjectTable $L), events $(grep -c &quot;Begin processing&quot; $L)&quot;
+  L=$W/run_clean/141.046_RunEGamma2023D/step3_RunEGamma2023D.log; echo &quot;clean 141.046 step3 events $(grep -c &quot;Begin processing&quot; $L)&quot;
+  source /cvmfs/sft.cern.ch/lcg/views/LCG_107/x86_64-el9-gcc13-opt/setup.sh; cd $T
+  python3 measure_trigobj.py 16_1_3_fix wf141.046 $W/run_fix/141.046_RunEGamma2023D/step3_flatNANOAOD.root $O/wf141046_fix.json $W/run_clean/141.046_RunEGamma2023D/step3_flatNANOAOD.root 2&gt;&amp;1 | grep -E &quot;events_read|fired_Mass90|n_id22|events_with_unseeded|nTrigObj_mean|events_in|identical|Error&quot;
+  python3 compare_dqm.py $W/run_clean/141.046_RunEGamma2023D/DQM_V0001*.root $W/run_fix/141.046_RunEGamma2023D/DQM_V0001*.root $O/wf141046_dqm_diff.json &gt; /dev/null 2&gt;&amp;1; echo &quot;dqm exit $?&quot;
+  python3 -c &quot;import json; d=json.load(open(\&quot;$O/wf141046_dqm_diff.json\&quot;)); print(d[\&quot;n_histograms_clean\&quot;], d[\&quot;n_histograms_fix\&quot;], len(d[\&quot;only_in_clean\&quot;]), len(d[\&quot;only_in_fix\&quot;]), len(d[\&quot;differing\&quot;])); print(\&quot;\n\&quot;.join(x for x in d[\&quot;differing\&quot;] if \&quot;TimerService\&quot; not in x)[:3000])&quot;&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27;
+</pre>
+</section>
+
+<section id="code-commands-as-run-12" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: commands as run: 4. Relval in CMSSW_16_1_3 (12/13)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">slides/code/commands_as_run.sh, lines 280 to 300</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden"># --- Inspect trigger products in 141.046 MINIAOD and NANO
+timeout 600 ssh -o BatchMode=yes -o HostKeyAlias=lxplus.cern.ch -o ConnectTimeout=60 smahata@lxplus967.cern.ch &#x27;
+  source /cvmfs/cms.cern.ch/cmsset_default.sh; W=/eos/user/s/smahata/trigobj_check/relval_16_1_3
+  cd $W/clean/src &amp;&amp; eval $(scramv1 runtime -sh) &amp;&amp; cd $W/run_clean/141.046_RunEGamma2023D
+  echo &quot;== MINIAOD trigger products&quot;; edmEventSize -v step3_inMINIAOD.root 2&gt;/dev/null | grep -iE &quot;trigger|TriggerResults&quot; | head
+  echo &quot;== EDM NANO TrigObj&quot;; edmEventSize -v step3_inNANOEDMAOD.root 2&gt;/dev/null | grep -iE &quot;trig&quot; | head
+  echo &quot;== cfg&quot;; grep -nE &quot;unpackedPatTrigger|patTrigger\b|triggerResults|hltProcess|slimmedPatTrigger&quot; step3_RAW2DIGI*.py 2&gt;/dev/null | head; ls *.py&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27; | cut -c1-200
+
+# --- Check HLT trigger summary products in relval outputs
+timeout 600 ssh -o BatchMode=yes -o HostKeyAlias=lxplus.cern.ch -o ConnectTimeout=60 smahata@lxplus967.cern.ch &#x27;
+  source /cvmfs/cms.cern.ch/cmsset_default.sh; W=/eos/user/s/smahata/trigobj_check/relval_16_1_3
+  cd $W/clean/src &amp;&amp; eval $(scramv1 runtime -sh) &amp;&amp; cd $W/run_clean/141.046_RunEGamma2023D
+  echo &quot;== step2 (reHLT output) trigger summary products&quot;; edmEventSize -v step2.root 2&gt;/dev/null | grep -iE &quot;TriggerEvent|hltTriggerSummary|TriggerResults&quot; | head
+  echo &quot;== step3 AOD&quot;; edmEventSize -v step3.root 2&gt;/dev/null | grep -iE &quot;TriggerEvent|hltTriggerSummary&quot; | head
+  cd $W/run_clean/12452.0_*; echo &quot;== 12452 step2&quot;; edmEventSize -v step2.root 2&gt;/dev/null | grep -iE &quot;TriggerEvent|hltTriggerSummary&quot; | head; echo &quot;== 12452 MINIAOD&quot;; edmEventSize -v step3_inMINIAODSIM.root 2&gt;/dev/null | grep -iE &quot;slimmedPatTrigger&quot; | head -3&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27; | cut -c1-200
+
+# ===== 5. HiggsDNA photon-bit usage
+
+# --- Shallow-clone HiggsDNA repos and grep TrigObj usage
+D=&lt;scratch&gt;/higgsdna_src; mkdir -p $D; cd $D; timeout 200 git clone -q --depth 1 https://gitlab.cern.ch/cms-analysis/general/HiggsDNA.git HiggsDNA 2&gt;&amp;1 | tail -2; timeout 200 git clone -q --depth 1 https://github.com/ZhenyuDongLL/HiggsDNA-bbggrun3.git bbgg 2&gt;&amp;1 | tail -2; git -C HiggsDNA log --oneline -1 | cat; git -C bbgg log --oneline -1 | cat; grep -rn --include=*.py --include=*.json -E &quot;trigger_match|TrigObj|filterBits&quot; HiggsDNA | grep -v &quot;^HiggsDNA/tests/data&quot; | cut -c1-220 | head -60
+</pre>
+</section>
+
+<section id="code-commands-as-run-13" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: commands as run: 5. HiggsDNA photon-bit usage (13/13)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">slides/code/commands_as_run.sh, lines 301 to 306</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden"># --- Read HiggsDNA trigger-matching code and search bbgg fork
+cd &lt;scratch&gt;/higgsdna_src; sed -n 230,262p HiggsDNA/higgs_dna/workflows/dystudies.py; echo ----; sed -n 300,325p HiggsDNA/higgs_dna/utils/misc_utils.py; echo ----; sed -n 630,645p HiggsDNA/higgs_dna/workflows/lowmass.py; echo ---- bbgg; grep -rn --include=*.py -E &quot;trigger_match|TrigObj|filterBits&quot; bbgg | cut -c1-200 | head -20; echo ---- other trig refs; grep -rln --include=*.py -iE &quot;Diphoton30_22|hltEG22|Unseeded&quot; HiggsDNA bbgg | head
+
+# --- Show diphoton-trigger references in HiggsDNA systematics
+cd &lt;scratch&gt;/higgsdna_src; grep -n -iE &quot;Diphoton30_22|hltEG22|Unseeded&quot; HiggsDNA/higgs_dna/systematics/event_weight_systematics.py HiggsDNA/higgs_dna/scripts/pull_files.py | cut -c1-200 | head -12
+</pre>
+</section>
+
 <script>
 document.querySelectorAll('section').forEach(function (sec) {
   var cons = sec.querySelectorAll(':scope > x-connector');

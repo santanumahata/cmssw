@@ -1,0 +1,37 @@
+<section id="code-menuscan-py-1" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: menuscan.py (1/3)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/menuscan.py, lines 1 to 33</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">import re, sys
+
+def parse_modules(text):
+    mods = {}
+    pat = re.compile(r&#x27;^(?:fragment|process)\.(\w+) = cms\.(\w+)\(&#x27;, re.M)
+    for m in pat.finditer(text):
+        k = m.end(); depth = 1; q = None
+        while k &lt; len(text) and depth:
+            c = text[k]
+            if q:
+                if c == q: q = None
+            elif c in &quot;\&quot;&#x27;&quot;: q = c
+            elif c == &quot;(&quot;: depth += 1
+            elif c == &quot;)&quot;: depth -= 1
+            k += 1
+        mods[m.group(1)] = (m.group(2), text[m.end():k-1])
+    return mods
+
+def param(body, name):
+    m = re.search(r&#x27;\b%s = cms\.\w+\(\s*(.*?)\s*\)&#x27; % re.escape(name), body, re.S)
+    return m.group(1).replace(&#x27;&quot;&#x27;, &#x27;&#x27;).replace(&quot;&#x27;&quot;, &quot;&quot;).replace(&quot;\n&quot;, &quot; &quot;) if m else None
+
+def members(body):
+    # sequence/path members in order
+    return re.findall(r&#x27;(?:fragment|process)\.(\w+)&#x27;, body)
+
+def describe(mods, name):
+    if name not in mods: return &quot;%s: NOT DEFINED&quot; % name
+    typ, body = mods[name]
+    edtype = re.match(r&#x27;\s*&quot;(\w+)&quot;&#x27;, body)
+    edtype = edtype.group(1) if edtype else &quot;?&quot;
+    bits = []
+    for p in (&quot;saveTags&quot;, &quot;l1EGCand&quot;, &quot;inputTag&quot;, &quot;candTag&quot;, &quot;triggerType&quot;, &quot;varTag&quot;, &quot;lessThan&quot;, &quot;useEt&quot;, &quot;thrRegularEB&quot;, &quot;thrRegularEE&quot;, &quot;thrOverEEB&quot;, &quot;thrOverEEE&quot;, &quot;thrOverE2EB&quot;, &quot;thrOverE2EE&quot;, &quot;ncandcut&quot;, &quot;etcutEB&quot;, &quot;etcutEE&quot;, &quot;lowerMassCut&quot;, &quot;upperMassCut&quot;, &quot;minPt&quot;, &quot;minMass&quot;, &quot;maxMass&quot;):</pre>
+</section>

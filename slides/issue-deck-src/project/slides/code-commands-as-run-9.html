@@ -1,0 +1,38 @@
+<section id="code-commands-as-run-9" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: commands as run: 4. Relval in CMSSW_16_1_3 (9/13)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">slides/code/commands_as_run.sh, lines 200 to 233</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden"># --- Run clean 141.046 steps 3-4 then the rest of relval script
+ssh -o BatchMode=yes -o HostKeyAlias=lxplus.cern.ch -o ServerAliveInterval=30 smahata@lxplus967.cern.ch &#x27;
+  source /cvmfs/cms.cern.ch/cmsset_default.sh; export X509_USER_PROXY=/afs/cern.ch/user/s/smahata/private/x509up_cms
+  cd /eos/user/s/smahata/trigobj_check/relval_16_1_3/clean/src &amp;&amp; eval $(scramv1 runtime -sh)
+  cd /eos/user/s/smahata/trigobj_check/relval_16_1_3/run_clean/141.046_*
+  grep -E &quot;cmsDriver.py step[34] &quot; /tmp/smahata_dry/141.046_*/cmdLog &gt; steps34_from_dryrun.sh
+  echo &quot;# steps 3-4 below taken from runTheMatrix --dryRun (aborted run had not written them)&quot; &gt;&gt; cmdLog
+  cat steps34_from_dryrun.sh &gt;&gt; cmdLog
+  echo &quot;=== clean 141.046 steps 3-4 start $(date)&quot;
+  bash steps34_from_dryrun.sh; echo &quot;steps34 exit $?&quot;
+  ls -l step3_inNANOEDMAOD.root step3_inDQM.root DQM_V0001*.root
+  cd /eos/user/s/smahata/trigobj_check
+  bash relval_fix_check.sh &gt; relval_fix_check.log 2&gt;&amp;1; echo &quot;relval exit code $? $(date)&quot;
+  grep -E &quot;^=== |^ERROR:|^[0-9]+\s+[0-9]+\s+Phys|exceptions&quot; relval_fix_check.log | cut -c1-250&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27;
+
+# --- Rerun 141.046 steps 3-4 in the fix area
+ssh -o BatchMode=yes -o HostKeyAlias=lxplus.cern.ch -o ServerAliveInterval=30 smahata@lxplus967.cern.ch &#x27;
+  source /cvmfs/cms.cern.ch/cmsset_default.sh; export X509_USER_PROXY=/afs/cern.ch/user/s/smahata/private/x509up_cms
+  W=/eos/user/s/smahata/trigobj_check/relval_16_1_3
+  cd $W/fix/src &amp;&amp; eval $(scramv1 runtime -sh) &amp;&amp; git diff CMSSW_16_1_3 --numstat
+  cd $W/run_fix/141.046_RunEGamma2023D
+  cp $W/run_clean/141.046_RunEGamma2023D/steps34_from_dryrun.sh .
+  echo &quot;=== fix 141.046 steps 3-4 start $(date)&quot;
+  bash steps34_from_dryrun.sh; echo &quot;=== fix 141.046 steps 3-4 exit $? $(date)&quot;
+  ls -l step3_inNANOEDMAOD.root DQM_V0001*.root&#x27; 2&gt;&amp;1 | grep -v &#x27;^\*&#x27;
+
+# --- Convert, measure and compare 12452.0 clean vs fix
+timeout 900 ssh -o BatchMode=yes -o HostKeyAlias=lxplus.cern.ch -o ConnectTimeout=60 -o ServerAliveInterval=30 smahata@lxplus967.cern.ch &#x27;
+  source /cvmfs/cms.cern.ch/cmsset_default.sh; export X509_USER_PROXY=/afs/cern.ch/user/s/smahata/private/x509up_cms
+  W=/eos/user/s/smahata/trigobj_check/relval_16_1_3; T=/eos/user/s/smahata/trigobj_check
+  for AREA in clean fix; do
+    (cd $W/$AREA/src &amp;&amp; eval $(scramv1 runtime -sh) &amp;&amp; cd $W/run_$AREA/12452.0_* &amp;&amp; \
+     cmsDriver.py flat --step NONE --mc --conditions auto:phase1_2023_realistic --era Run3_2023 \
+       --filein file:step3_inNANOEDMAODSIM.root --fileout file:step3_flatNANOAODSIM.root \</pre>
+</section>
