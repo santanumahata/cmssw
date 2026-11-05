@@ -795,6 +795,13 @@ for bit in (16, 17):                      # 14, 15 for NanoAOD v12 to v14
 - Any NanoAOD-based trigger matching of the sub-leading photon to its HLT leg finds no candidate
   in v12 to v15. Leg-by-leg trigger efficiency studies can only use the leading leg. HiggsDNA
   workflows that match to `TrigObj` are affected in the same way.
+- HiggsDNA (GitLab master `d179305`, 5 Nov 2026; same in the GitHub fork ZhenyuDongLL/HiggsDNA-bbggrun3
+  `66d76af`): `trigger_match` (`higgs_dna/utils/misc_utils.py:306`) is called only in
+  `workflows/dystudies.py:256`, for electrons (`pdgid=11`, bit 1 or 12); no workflow tests a photon
+  `filterBits` bit or a diphoton filter bit (`workflows/lowmass.py:641-642` only counts id 11 and id 22
+  objects as `nTrigEle`/`nTrigPho`), and the low-mass unseeded-leg efficiency is read from the
+  precomputed `JSONs/TriggerSF_LM/<year>/Lowmass_unseeded_leg_efficinecy.json`
+  (`systematics/event_weight_systematics.py:3920`), whose derivation is not in the repository.
 - Existing files cannot be repaired: the unseeded objects were never written. Only a new NANO
   pass with the fix restores the information.
 - For the user's 2023 low-mass diphoton analysis: the M-65 and M-70 `GluGluHto2G` points exist
@@ -1023,3 +1030,28 @@ Reading of the table:
 
 Decks: the slide "Measured on real files" was added to both decks (issue deck slide 8, detailed deck
 slide 19) and the validation slides were updated.
+
+---
+
+## 15. Fix test and remaining gaps (lxplus, 5 November 2026)
+
+Details and tables: `results/REPORT.md` "Fix test"; JSONs in `results/fix_test/`; commands in
+`scripts/make_fixed_nano.sh`; measurement `scripts/measure_trigobj.py`.
+
+- Input: MiniAOD `.../Run3Summer23MiniAODv4/GluGluHto2G_M-125_.../130X_mcRun3_2023_realistic_v15_ext1-v4/2820000/74338d47-0b38-4e0b-83a2-ad85c7f4e533.root`
+  (DAS parent of the central v13 file `4f45fe87-...`), 17760 events, NANO made without and with the fix.
+- CMSSW_13_3_1_patch1 (v13, line 83 changed): nano_nofix identical to the central v13 file in 17760 / 17760
+  events (TrigObj id, filterBits, pt). nano_fix: bits 14 / 15 on 20461 / 18365 photon objects; 10453 / 10453
+  Mass90-fired events have a photon with an unseeded bit; those objects have pt >= 22.04 GeV (median 58.30);
+  id != 22 identical in 17760 / 17760 events; photon objects 24835 -> 26639; nTrigObj mean 5.287 -> 5.388;
+  file 29339920 -> 29363499 bytes.
+- CMSSW_15_0_15_patch4 (v15, `Run3_2023,run3_nanoAOD_pre142X`, GT `150X_mcRun3_2023_realistic_v1`; the changed
+  line is 86, not 90): bits 16 / 17 on 20461 / 18365 photon objects; 10453 / 10453 Mass90 events; id != 22
+  identical in 17760 / 17760 events; photon objects 25188 -> 26807; nTrigObj mean 38.134 -> 38.225.
+- Bit 17 (v13) / 19 (v15), Diphoton30_18 unseeded, stays 0 after the fix on this 2023 MC (filter renamed in
+  2023, section 13.4).
+- New rows of the file measurement: `/EGamma0/Run2024D-MINIv6NANOv15-v1/NANOAOD` (2024 data at v15):
+  bits 16/17/19 = 0, seeded 14/15 = 201628/248974, 30945 Mass90 events; `/GluGluHToGG_M-125_..._powheg-pythia8/Run3Winter24NanoAOD-133X_mcRun3_2024_realistic_v9-v2/NANOAODSIM`
+  (133X, 18-bit `>i4` layout): bits 14/15/17 = 0, 101598 Mass90 events.
+- Remaining gaps: NanoAOD v14 MC (14_0_X) not found in DAS; the MiniAOD dataset
+  `.../Run3Summer23MiniAODv4-130X_mcRun3_2023_realistic_v14-v2/MINIAODSIM` has 0 files.

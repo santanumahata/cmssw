@@ -20,6 +20,13 @@ Unseeded bits = `hltEG22Iso60...TrackIsoUnseededLastFilter` / `hltEG22R9Id85b90e
 | v14 | /EGamma0/Run2024D-PromptReco-v1/NANOAOD | 9bfae790-c112-48bf-bc54-ef1feaa74a96.root | 300000 | 35892 | 12: 203620, 13: 252039 | 14: 0, 15: 0, 17: 0 | 16: 19444 | 0 | 0 | claim confirmed |
 | v15 | /GluGluH-Hto2G_Par-M-125_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM | acebfb52-a25b-48bc-b9f6-80fe54a98d56.root | 4180 | 2406 | 14: 4815, 15: 5588 | 16: 0, 17: 0, 19: 0 | 16: 205 | 0 | 22 | claim confirmed |
 | v15 | /EGamma/Run2022D-NanoAODv15-v1/NANOAOD | 41628bc7-c70f-4bf7-b2a4-e755aea819fd.root | 300000 | 48687 | 14: 212270, 15: 258546 | 16: 0, 17: 0, 19: 0 | 16: 30451 | 0 | 430 | claim confirmed |
+| v15 | /EGamma0/Run2024D-MINIv6NANOv15-v1/NANOAOD | 9d4e97c7-f23a-4cff-ac72-58488e544076.root | 300000 | 30945 | 14: 201628, 15: 248974 | 16: 0, 17: 0, 19: 0 | 16: 22980 | 0 | 254 | claim confirmed |
+| Run3Winter24NanoAOD (133X) | /GluGluHToGG_M-125_TuneCP5_13p6TeV_powheg-pythia8/Run3Winter24NanoAOD-133X_mcRun3_2024_realistic_v9-v2/NANOAODSIM | 68618af9-2d38-4ef7-9aa9-2d0c30a6e3f1.root | 175654 | 101598 | 12: 205090, 13: 239250 | 14: 0, 15: 0, 17: 0 | 16: 9860 | 0 | 0 | claim confirmed |
+
+The last two rows were added on 5 November 2026 (`v15_EGamma0_Run2024D_MINIv6NANOv15.json`,
+`Winter24_133X_GluGluHToGG_M125_powheg.json`). The Winter24 dataset carries the processing string `133X`
+and its file has the 18-bit, `>i4` layout; it is listed by campaign, not as NanoAOD v14. NanoAOD v14 MC
+(14_0_X) is still not covered: no GluGluH*G* dataset matching `*NanoAODv14*` exists in DAS.
 
 Photon objects with an unseeded bit set: 0 in every file (`events_with_unseeded_photon_bit` = 0 in all JSONs).
 
@@ -46,9 +53,45 @@ In Mass90-fired events, photons with the seeded bits (12/13 in v12-v14, 14/15 in
 v12 MC 12522/14393 vs 7725; v12 data 52464/52006 vs 46407; v13 MC 16614/19213 vs 10453; v13 data 53153/52221 vs 46794;
 v14 data 40085/40157 vs 35892; v15 MC 3778/4383 vs 2406; v15 data 55164/54372 vs 48687.
 
-## Not covered
+## Not covered (first measurement, 4 November 2026)
 
-- Optional step 7 (re-running NANO with the fix) was not done.
+- Optional step 7 (re-running NANO with the fix): done on 5 November, see "Fix test" below.
 - No v14 MC: no GluGluH*G* dataset matching `*NanoAODv14*` or `Run3Summer24*` NANOAODSIM was found in DAS.
-- No 2024 data at v15 (`/EGamma*/Run2024*NanoAODv15*/NANOAOD` returned nothing).
+- No 2024 data at v15 under `NanoAODv15`: it exists under the processing string `MINIv6NANOv15` (row added above).
 - One file per dataset; v12/v13/v15 MC files contain 12979, 17760 and 4180 events.
+
+## Fix test (5 November 2026)
+
+NANO re-made twice from one MiniAOD file, without and with the one-line fix, with
+`scripts/make_fixed_nano.sh` (the exact commands), then measured with `scripts/measure_trigobj.py`.
+
+- Input: `/store/mc/Run3Summer23MiniAODv4/GluGluHto2G_M-125_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/MINIAODSIM/130X_mcRun3_2023_realistic_v15_ext1-v4/2820000/74338d47-0b38-4e0b-83a2-ad85c7f4e533.root`,
+  the DAS parent of the central v13 file `4f45fe87-a958-4c8f-b88f-c322fec857f3.root`; all 17760 events.
+  The MiniAOD dataset named in the request (`...realistic_v14-v2/MINIAODSIM`) has 0 files in DAS.
+- v13: CMSSW_13_3_1_patch1, `--era Run3_2023 --conditions 133X_mcRun3_2023_realistic_ForNanov13_v1`;
+  changed line 83 of `triggerObjects_cff.py`.
+- v15: CMSSW_15_0_15_patch4, `--era Run3_2023,run3_nanoAOD_pre142X --conditions 150X_mcRun3_2023_realistic_v1`
+  (processing string of `/DYto2E_MLL-50to120_.../Run3Summer23NanoAODv15-150X_mcRun3_2023_realistic_v1-v3/NANOAODSIM`;
+  no GluGluH dataset exists in `Run3Summer23NanoAODv15`); the changed line is line **86** in this release.
+- In both releases `git diff --numstat` showed exactly one changed line.
+
+| file | events | fired Mass90 | photons with seeded bits | photons with unseeded bits | Mass90 events with an unseeded bit / fired | photons per Mass90 event | nTrigObj mean | size (bytes) |
+|---|---|---|---|---|---|---|---|---|
+| central v13 (`central_v13.json`) | 17760 | 10453 | 12: 20865, 13: 24170 | 14: 0, 15: 0, 17: 0 | 0 / 10453 | 1.847 | 5.287 | 29333713 |
+| v13 nano_nofix (`nano_nofix.json`) | 17760 | 10453 | 12: 20865, 13: 24170 | 14: 0, 15: 0, 17: 0 | 0 / 10453 | 1.847 | 5.287 | 29339920 |
+| v13 nano_fix (`nano_fix.json`) | 17760 | 10453 | 12: 20865, 13: 24170 | 14: 20461, 15: 18365, 17: 0 | 10453 / 10453 | 2.016 | 5.388 | 29363499 |
+| v15 nano_nofix (`v15_nano_nofix.json`) | 17760 | 10453 | 14: 20865, 15: 24170 | 16: 0, 17: 0, 19: 0 | 0 / 10453 | 1.867 | 38.134 | 39947152 |
+| v15 nano_fix (`v15_nano_fix.json`) | 17760 | 10453 | 14: 20865, 15: 24170 | 16: 20461, 17: 18365, 19: 0 | 10453 / 10453 | 2.019 | 38.225 | 39959608 |
+
+- nano_nofix reproduces the central v13 file: events matched by (run, lumi, event), 17760 / 17760 events
+  with identical TrigObj (id, filterBits, pt).
+- pt of the photon objects carrying an unseeded bit after the fix: 21254 objects (v13 and v15 alike),
+  minimum 22.04 GeV, median 58.30 GeV, 0 below 22 GeV.
+- Bit 17 (v13) / 19 (v15), the Diphoton30_18 unseeded filter, stays 0: that filter name is not in the 2023 menu
+  (NOTES.md section 13.4).
+- id != 22: objects per id and per-bit counts are identical before and after in both releases, and the TrigObj
+  content without id 22 is identical in 17760 / 17760 events. Photon objects: 24835 -> 26639 (v13),
+  25188 -> 26807 (v15).
+- The first `nano_fix` run in CMSSW_13_3_1_patch1 was terminated at 8532 events ("A fatal system signal has
+  occurred: external termination request", cause not found in the log); it was rerun with the same
+  configuration (`nano_fix_cfg.py`) and completed.
