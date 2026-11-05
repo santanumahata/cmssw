@@ -101,7 +101,8 @@ can never be set. This has been true since the bits were added in February 2023 
 NanoAOD v12, v13, v14, v15 and upstream master are affected; v10 and v11 are not, because
 the bits did not exist yet. The same defect was fixed for electrons in June 2023 (PR 41827)
 and missed for photons. The fix is one line: accept both collections in the photon
-selection.
+selection. Confirmed on twelve NanoAOD files (section 14) and by NANO re-made with the fix
+(section 15).
 
 ---
 
@@ -126,7 +127,8 @@ selection.
     (`/frozen/2026/2e34/v1.3/HLT/V1`).
 - 13_3_X release tags: `CMSSW_13_3_0_pre1` to `_pre5`, `CMSSW_13_3_0`, `CMSSW_13_3_1`,
   `CMSSW_13_3_1_patch1`, `CMSSW_13_3_2`, `CMSSW_13_3_2_patch1`, `CMSSW_13_3_3`.
-- Commits made (nothing pushed):
+- Commits made (both branches pushed to the fork `santanumahata/cmssw` later; nothing pushed to
+  `cms-sw/cmssw`):
   - `1699a39f7` on `claude/fervent-lamport-3oiuh6`: the fix on the fork's May 2025 master.
     Author santanumahata, committer Claude (amended on request of a repository hook).
   - `aebf3eb64` on `nano-photon-trigobj-unseeded`: the same change cherry-picked onto
@@ -740,7 +742,7 @@ Mass90 and Mass95 share filters, so one fix restores both; likewise the 30_18 pa
 - Not changed by the fix: the 2023+ names of the 30_18 path (needs new entries), and the paths
   without any photon bits (low-mass eta1p5, DiphotonMVA, Diphoton15_1x EBEB, DoublePhoton).
 
-### 8.1 Validation plan (not executable here: no CMSSW runtime in the session container)
+### 8.1 Validation plan (written on 4 November without a CMSSW runtime; carried out on lxplus on 5 November, sections 15 and 16)
 
 1. Run standard workflows that include the NANO step before and after the change. In upstream
    master today: MC `runTheMatrix.py -l 12452.0,12852.0` (H125GGgluonfusion_14TeV, 2023 and
@@ -772,10 +774,11 @@ for bit in (16, 17):                      # 14, 15 for NanoAOD v12 to v14
 
 - Branch `nano-photon-trigobj-unseeded` = upstream master `ed35654b1` + `aebf3eb64`; the patch is
   `pr/0001-NanoAOD-photon-TrigObj-unseeded-collection.patch`; title and body in `pr/PR_body.md`.
-- Publish: `git push -u origin nano-photon-trigobj-unseeded`, then open the PR from
+- Publish: the branch is on the fork; open the PR from
   `santanumahata:nano-photon-trigobj-unseeded` to `cms-sw:master`. Needs the xpog signature.
-  The bot's RelVal comparison will show the expected `nTrigObj` and DQM differences. Cite PR 40711
-  and PR 41827. Nothing has been pushed and no PR exists (state on 4 November 2026).
+  In CMSSW_16_1_3 the relval workflows 12452.0 and 141.046 show no difference (their NANO has no
+  TrigObj, section 16). Cite PR 40711 and PR 41827. No PR exists; nothing pushed to
+  `cms-sw/cmssw` (state on 5 November 2026).
 - Backport: request `CMSSW_15_0_X` if another NanoAOD production from that branch is planned.
 - Follow-ups, separate from the one-line fix:
   1. Add the 2023+ names of the 30_18 path as alternatives inside the existing two entries so bit
@@ -1024,9 +1027,9 @@ Reading of the table:
   the v11 file names bits 5 and 6 both `hltEG150HEFilter` (a doc typo in the 12_6_X list). The
   script's bit parser does not read the old `1 = ..., 2 = ...` bitmask-value layout of v9 and v10,
   so the hltHtEcal800 count is missing for v10.
-- **Not covered.** The NANO re-run with the fix (step 7 of the handover prompt), which must show
-  the unseeded bits appearing; no v14 MC and no 2024 data at v15 were found in DAS; one file per
-  dataset.
+- **Not covered on 4 November** (done on 5 November, section 15): the NANO re-run with the fix,
+  and 2024 data at v15 (processing string `MINIv6NANOv15`). Still open: NanoAOD v14 (14_0_X) MC is
+  not in DAS; one file per dataset.
 
 Decks: the slide "Measured on real files" was added to both decks (issue deck slide 8, detailed deck
 slide 19) and the validation slides were updated.
@@ -1055,6 +1058,9 @@ Details and tables: `results/REPORT.md` "Fix test"; JSONs in `results/fix_test/`
   (133X, 18-bit `>i4` layout): bits 14/15/17 = 0, 101598 Mass90 events.
 - Remaining gaps: NanoAOD v14 MC (14_0_X) not found in DAS; the MiniAOD dataset
   `.../Run3Summer23MiniAODv4-130X_mcRun3_2023_realistic_v14-v2/MINIAODSIM` has 0 files.
+- Decks and report (5 November): slide "Fix test on real input" added (issue deck slide 9, detailed
+  deck slide 20); measured, validation, summary, next/pr-plan and fix slides updated; report section 9
+  is now "Validation" (9.1 files, 9.2 fix test, 9.3 relval) and section 10 gives the pushed state.
 
 ---
 
