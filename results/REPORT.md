@@ -120,18 +120,25 @@ Script: `scripts/relval_fix_check.sh`; JSONs in `results/relval_16_1_3/`.
 - The NANO of step 3 is EDM (`NANOEDMAODSIM` / `NANOEDMAOD`); it was converted to flat NANO with
   `cmsDriver.py flat --step NONE ... --eventcontent NANOAODSIM` before measuring.
 
-| workflow | area | events | NANO TrigObj objects | photons with bits 16 / 17 | id != 22 vs clean | log: Exception / triggerObjectTable lines | status |
-|---|---|---|---|---|---|---|---|
-| 12452.0 | clean | 10 | 0 (nTrigObj mean 0.0; no HLT path branches) | 0 / 0 | - | 0 / 0 | complete |
-| 12452.0 | fix | 10 | 0 (nTrigObj mean 0.0) | 0 / 0 | identical, 10 / 10 events | 0 / 0 | complete |
-| 141.046 | clean | 100 | not measured (conversion not run) | - | - | 0 / 0 | steps 2-4 complete |
-| 141.046 | fix | - | - | - | - | - | **not completed**: the script process ended during step 3 (log stops after opening `step2.root`, about 01:46); no time to rerun before the deadline |
+| workflow | area | events | fired Mass90 | NANO TrigObj objects | photons with bits 16 / 17 | TrigObj vs clean | log: Exception / triggerObjectTable lines | DQM vs clean |
+|---|---|---|---|---|---|---|---|---|
+| 12452.0 | clean | 10 | no HLT path branches | 0 (nTrigObj mean 0.0) | 0 / 0 | - | 0 / 0 | - |
+| 12452.0 | fix | 10 | no HLT path branches | 0 (nTrigObj mean 0.0) | 0 / 0 | identical, 10 / 10 events | 0 / 0 | 116785 histograms each; 25 differ, all `DQM/TimerService` |
+| 141.046 | clean | 100 | 10 | 0 (nTrigObj mean 0.0) | 0 / 0 | - | 0 / 0 | - |
+| 141.046 | fix | 100 | 10 | 0 (nTrigObj mean 0.0) | 0 / 0 | identical, 100 / 100 events | 0 / 0 | 53846 histograms each; 25 differ, all `DQM/TimerService` |
 
-- Result: 12452.0 in CMSSW_16_1_3 (`RecoNanoFakeHLT`) writes no TrigObj at all, in both areas, so it cannot show
-  the effect of the fix; the clean and fix NANO are identical (10 / 10 events). The relval check of the fix in
-  this release therefore rests on 141.046, which did not complete in the fix area. The effect of the fix on real
-  input is shown by the "Fix test" above (13_3_1_patch1 and 15_0_15_patch4).
-- Logs: the step 3 logs of 12452.0 (clean, fix) and 141.046 (clean) contain 0 lines with `Exception` and 0 lines
-  mentioning `triggerObjectTable`.
-- DQM: `scripts/compare_dqm.py` on the harvested 12452.0 files (clean vs fix) was still running at commit time;
-  its result is not included.
+JSONs: `wf12452_clean.json`, `wf12452_fix.json`, `wf12452_dqm_diff.json`, `wf141046_clean.json`,
+`wf141046_fix.json`, `wf141046_dqm_diff.json`.
+
+- The fix area builds and runs both workflows without exceptions; clean and fix outputs agree in TrigObj and in
+  every DQM histogram except the 25 `DQM/TimerService` timing and memory histograms.
+- The NANO TrigObj table is empty in both workflows and both areas, so this relval does not exercise the photon
+  selection. Upstream of NANO, per-event product sizes (`edmEventSize -v`): 141.046 `step2.root`
+  `hltTriggerSummaryAOD__reHLT` 1427.78 bytes against `hltTriggerSummaryAOD__HLT` (original 2023 HLT) 34558.6 bytes;
+  `step3_inMINIAOD.root` `slimmedPatTrigger__reRECO` 371.96 bytes, with `patTrigger.processName = "reHLT"` in the
+  step 3 configuration; 12452.0 `step2.root` `hltTriggerSummaryAOD__HLT` 1313 bytes. Why the relval HLT step stores
+  so few objects was not investigated.
+- The effect of the fix on real input is shown by the "Fix test" above (13_3_1_patch1 and 15_0_15_patch4).
+- 141.046 fix-area steps 3-4: the first attempt (inside `relval_fix_check.sh`) ended during step 3 at about 01:46
+  with no error in its log; they were rerun by hand with the same commands (`steps34_from_dryrun.sh`) on the same
+  `step2.root` and completed (03:19 to 03:42).
