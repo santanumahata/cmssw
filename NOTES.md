@@ -1055,3 +1055,17 @@ Details and tables: `results/REPORT.md` "Fix test"; JSONs in `results/fix_test/`
   (133X, 18-bit `>i4` layout): bits 14/15/17 = 0, 101598 Mass90 events.
 - Remaining gaps: NanoAOD v14 MC (14_0_X) not found in DAS; the MiniAOD dataset
   `.../Run3Summer23MiniAODv4-130X_mcRun3_2023_realistic_v14-v2/MINIAODSIM` has 0 files.
+
+---
+
+## 16. Build and relval check on the synced master (lxplus, 5 November 2026)
+
+CMSSW_16_1_3 with commit `aebf3eb64` cherry-picked (one changed line, `git diff CMSSW_16_1_3 --numstat`) builds
+cleanly. Relval 12452.0 (H125GGgluonfusion 2023, upgrade matrix, 10 events) ran in the clean area and steps 3-4
+were rerun in the fix area on the same `step2.root`: both NANO outputs contain no TrigObj at all
+(`RecoNanoFakeHLT_2023`, nTrigObj mean 0.0, no HLT path branches), so this workflow cannot show the fix; clean
+and fix are identical in 10 / 10 events, and the step 3 logs have no `Exception` and no `triggerObjectTable`
+lines. 141.046 (EGamma 2023D, 100 events) needed its RAW from the IB EOS cache (tape only in DAS); its clean
+steps 2-4 completed, its fix-area step 3 did not complete before the 5 November deadline, and the DQM comparison
+was still running at commit time. Details: `results/REPORT.md` "Relval in CMSSW_16_1_3"; JSONs in
+`results/relval_16_1_3/`; script `scripts/relval_fix_check.sh`.

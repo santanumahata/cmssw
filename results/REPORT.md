@@ -95,3 +95,43 @@ NANO re-made twice from one MiniAOD file, without and with the one-line fix, wit
 - The first `nano_fix` run in CMSSW_13_3_1_patch1 was terminated at 8532 events ("A fatal system signal has
   occurred: external termination request", cause not found in the log); it was rerun with the same
   configuration (`nano_fix_cfg.py`) and completed.
+
+## Relval in CMSSW_16_1_3 (5 November 2026)
+
+Script: `scripts/relval_fix_check.sh`; JSONs in `results/relval_16_1_3/`.
+
+- Areas: `clean` = CMSSW_16_1_3; `fix` = CMSSW_16_1_3 + `git cms-addpkg PhysicsTools/NanoAOD` +
+  `git cherry-pick aebf3eb64` (fetched from `santanumahata/cmssw` branch `nano-photon-trigobj-unseeded`).
+  `git diff CMSSW_16_1_3 --numstat`: `1 1 PhysicsTools/NanoAOD/python/triggerObjects_cff.py`.
+  The cherry-pick was used instead of `git cms-merge-topic`, because the topic branch is based on master
+  `ed35654b1`, not on the 16_1_X release.
+- Workflows (`runTheMatrix.py -n -e`): 12452.0 = H125GGgluonfusion_14TeV 2023, GEN-SIM / DIGI+HLT `@relval2023` /
+  RECO+PAT+NANO+DQM (`RecoNanoFakeHLT_2023`) / harvesting, 10 events, upgrade matrix (`-w upgrade`; it is not in
+  the default matrix of 16_1_3). 141.046 = `/EGamma0/Run2023D-v1/RAW` run 369978 / reHLT `@relval2023` /
+  RECO+PAT+NANO+DQM / harvesting, 100 events.
+- Steps 1-2 ran once in the clean area; steps 3-4 ran in both areas on the same `step2.root`.
+- 12452.0 ran without `-i all`: its GEN-SIM input dataset returned no file at T2_CH_CERN (`--ibeos`), so step 1
+  generated the 10 events.
+- 141.046: the RAW files of run 369978 are on tape only in DAS (T0_CH_CERN_Tape, T1_US_FNAL_Tape); of the 321
+  files listed, one is in the IB EOS cache
+  (`/eos/cms/store/user/cmsbuild/store/data/Run2023D/EGamma0/RAW/v1/000/369/978/00000/0068cd83-0af4-4efc-9155-b2521e558ebb.root`)
+  and was used as the input of step 2 (100 events). runTheMatrix stopped after the failed first attempt, so the
+  step 3 and step 4 commands were taken from `runTheMatrix.py -l 141.046 -i all --ibeos --dryRun` and run by hand.
+- The NANO of step 3 is EDM (`NANOEDMAODSIM` / `NANOEDMAOD`); it was converted to flat NANO with
+  `cmsDriver.py flat --step NONE ... --eventcontent NANOAODSIM` before measuring.
+
+| workflow | area | events | NANO TrigObj objects | photons with bits 16 / 17 | id != 22 vs clean | log: Exception / triggerObjectTable lines | status |
+|---|---|---|---|---|---|---|---|
+| 12452.0 | clean | 10 | 0 (nTrigObj mean 0.0; no HLT path branches) | 0 / 0 | - | 0 / 0 | complete |
+| 12452.0 | fix | 10 | 0 (nTrigObj mean 0.0) | 0 / 0 | identical, 10 / 10 events | 0 / 0 | complete |
+| 141.046 | clean | 100 | not measured (conversion not run) | - | - | 0 / 0 | steps 2-4 complete |
+| 141.046 | fix | - | - | - | - | - | **not completed**: the script process ended during step 3 (log stops after opening `step2.root`, about 01:46); no time to rerun before the deadline |
+
+- Result: 12452.0 in CMSSW_16_1_3 (`RecoNanoFakeHLT`) writes no TrigObj at all, in both areas, so it cannot show
+  the effect of the fix; the clean and fix NANO are identical (10 / 10 events). The relval check of the fix in
+  this release therefore rests on 141.046, which did not complete in the fix area. The effect of the fix on real
+  input is shown by the "Fix test" above (13_3_1_patch1 and 15_0_15_patch4).
+- Logs: the step 3 logs of 12452.0 (clean, fix) and 141.046 (clean) contain 0 lines with `Exception` and 0 lines
+  mentioning `triggerObjectTable`.
+- DQM: `scripts/compare_dqm.py` on the harvested 12452.0 files (clean vs fix) was still running at commit time;
+  its result is not included.
