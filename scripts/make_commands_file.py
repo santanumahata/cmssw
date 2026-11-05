@@ -1,33 +1,69 @@
-# Copy the result-producing shell commands of this session, verbatim, into one file grouped by step.
-import re, sys
-calls_file, out_file = sys.argv[1], sys.argv[2]
+# Write results/CODE.md: every analysis script in full, then the hand-run shell commands of this session verbatim.
+# usage: python3 make_commands_file.py <dump of the session's shell calls> <repo root>
+import os
+import re
+import sys
+
+calls_file, root = sys.argv[1], sys.argv[2]
 LOCAL = '/home/santanu/.config/Claude/scratch-workspaces/bcb56660-0fde-4131-be70-35a637089569/a7237d23-a55d-46d8-8df5-151d815d0978/scratch-2026-11-04-d4f5dc'
 SCRATCH = re.compile(r'/tmp/claude-1000/[^ ;]*?/scratchpad')
-GROUPS = [
-    ('1. DAS lookups', [11, 13, 14, 37, 38, 61, 86, 90]),
-    ('2. Measuring the NanoAOD files', [16, 17, 63]),
-    ('3. Fix test, v13 and v15', [52, 96, 97, 99, 103, 105]),
-    ('4. Relval in CMSSW_16_1_3', [56, 57, 93, 101, 102, 127, 116, 131, 128, 133, 129, 130]),
-    ('5. HiggsDNA photon-bit usage', [65, 66, 67]),
+SCRIPTS = [                                                   # (path in repo, fence language)
+    ('scripts/verify_nanoaod_files.py', 'python'),
+    ('scripts/deadbits.py', 'python'),
+    ('scripts/menuscan.py', 'python'),
+    ('scripts/menusummary.py', 'python'),
+    ('scripts/pathmatrix.py', 'python'),
+    ('scripts/bits.py', 'python'),
+    ('scripts/bitfilters.py', 'python'),
+    ('scripts/wfn.py', 'python'),
+    ('scripts/measure_trigobj.py', 'python'),
+    ('scripts/make_fixed_nano.sh', 'bash'),
+    ('scripts/relval_fix_check.sh', 'bash'),
+    ('scripts/compare_dqm.py', 'python'),
+]
+GROUPS = [                                                    # (group title, call numbers in the session dump)
+    ('DAS lookups', [11, 13, 14, 37, 38, 61, 86, 90]),
+    ('Measuring the NanoAOD files', [16, 17, 63]),
+    ('Fix test, v13 and v15', [52, 96, 97, 99, 103, 105]),
+    ('Relval in CMSSW_16_1_3', [56, 57, 93, 101, 102, 127, 116, 131, 128, 133, 129, 130]),
+    ('HiggsDNA photon-bit usage', [65, 66, 67]),
 ]
 
-calls = {}                                                     # dict: call number -> (description, command)
-current = None
-for line in open(calls_file):                                  # O(lines) | split the dump at '##### N [desc]'
-    m = re.match(r'^##### (\d+) \[(.*)\]$', line.rstrip('\n'))
-    if m:
-        current = int(m.group(1))
-        calls[current] = [m.group(2), '']
-    elif current is not None:
-        calls[current][1] += line
 
-with open(out_file, 'w') as out:
-    out.write('# Shell commands I ran by hand for the 5 November 2026 checks, copied verbatim from the session log.\n')
-    out.write('# They ran from my laptop; the work happened on lxplus over ssh. Not a script to execute as a whole.\n')
-    for title, numbers in GROUPS:
-        out.write(f'\n# ===== {title}\n')
-        for n in numbers:
-            desc, cmd = calls[n]
-            cmd = cmd.replace(LOCAL, '<session folder>')       # O(len) | hide local machine paths
-            cmd = SCRATCH.sub('<scratch>', cmd)
-            out.write(f'\n# --- {desc}\n{cmd.rstrip()}\n')
+def read_calls(path):
+    # Split the dump at '##### N [description]' headers.
+    # Total: time O(lines), space O(lines)
+    calls, current = {}, None                                 # dict | call number -> [description, command]
+    for line in open(path):                                   # O(lines) | one pass
+        m = re.match(r'^##### (\d+) \[(.*)\]$', line.rstrip('\n'))
+        if m:
+            current = int(m.group(1))
+            calls[current] = [m.group(2), '']
+        elif current is not None:
+            calls[current][1] += line
+    return calls
+
+
+def clean(cmd):
+    # Total: time O(len), space O(len)
+    cmd = cmd.replace(LOCAL, '<session folder>')              # - | hide local machine paths
+    return SCRATCH.sub('<scratch>', cmd).rstrip()
+
+
+calls = read_calls(calls_file)
+out = ['# Code used for the NanoAOD photon TrigObj checks', '',
+       'Part 1: every analysis script in `scripts/`, in full. '
+       'Part 2: the shell commands I ran by hand on 5 November 2026, copied verbatim from the session log, '
+       'in the order they ran. They ran from my laptop; the work happened on lxplus over ssh.', '',
+       '## Part 1: scripts', '']
+for rel, lang in SCRIPTS:                                     # O(files) | one section per script
+    out += [f'### `{rel}`', '', f'```{lang}', open(os.path.join(root, rel)).read().rstrip(), '```', '']
+out += ['## Part 2: commands as run', '']
+for g, (title, numbers) in enumerate(GROUPS, 1):              # O(commands) | one section per group
+    out += [f'### {g}. {title}', '']
+    for n in numbers:
+        desc, cmd = calls[n]
+        out += [f'**{desc}**', '', '```bash', clean(cmd), '```', '']
+os.makedirs(os.path.join(root, 'results'), exist_ok=True)
+open(os.path.join(root, 'results/CODE.md'), 'w').write('\n'.join(out))
+print('scripts', len(SCRIPTS), '| commands', sum(len(n) for _, n in GROUPS))
