@@ -181,7 +181,7 @@ x-connector { display: none; }
 
 <section id="measured" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
 <h2 style="font-size:56px;font-weight:600;line-height:1.1">Measured on real files: not one photon object with an unseeded bit, in any version since v12</h2>
-<table style="font-size:21px;font-family:'IBM Plex Sans', Arial, sans-serif;color:#16213A;background:#FDFCF9;border:1px solid #D9D6CC">
+<table style="font-size:19px;font-family:'IBM Plex Sans', Arial, sans-serif;color:#16213A;background:#FDFCF9;border:1px solid #D9D6CC">
 <tr style="background:#16213A"><th style="width:7%;color:#F6F5F0;text-align:left;padding:8px 14px">NanoAOD</th><th style="width:31%;color:#F6F5F0;text-align:left">file (one per dataset, read on lxplus)</th><th style="width:8%;color:#F6F5F0;text-align:left">events</th><th style="width:9%;color:#F6F5F0;text-align:left">fired Mass90</th><th style="width:15%;color:#F6F5F0;text-align:left">photons: seeded bits</th><th style="width:11%;color:#F6F5F0;text-align:left">unseeded bits</th><th style="width:7%;color:#F6F5F0;text-align:left">e unseeded</th><th style="width:5%;color:#F6F5F0;text-align:left">id 2</th><th style="width:7%;color:#F6F5F0;text-align:left">id 1515</th></tr>
 <tr><td>v9</td><td>UL2018 data, EGamma 2018D</td><td>300000</td><td>31771</td><td>no photon TrigObj</td><td>none defined</td><td>n/a</td><td>0</td><td>0</td></tr>
 <tr><td>v10</td><td>2022 prompt data, EGamma 2022D</td><td>300000</td><td>46707</td><td>bits not defined</td><td>none defined</td><td>n/a</td><td>0</td><td>0</td></tr>
@@ -195,29 +195,33 @@ x-connector { display: none; }
 <tr style="background:#F8E3D7"><td>v15</td><td>2022 data, EGamma 2022D NanoAODv15</td><td>300000</td><td>48687</td><td>212270 / 258546</td><td>0 / 0 / 0</td><td>30451</td><td>0</td><td>430</td></tr>
 <tr style="background:#F8E3D7"><td>v15</td><td>2024 data, EGamma0 2024D MINIv6NANOv15</td><td>300000</td><td>30945</td><td>201628 / 248974</td><td>0 / 0 / 0</td><td>22980</td><td>0</td><td>254</td></tr>
 <tr style="background:#F8E3D7"><td>133X</td><td>Winter24 MC, GluGluHToGG M125 powheg</td><td>175654</td><td>101598</td><td>205090 / 239250</td><td>0 / 0 / 0</td><td>9860</td><td>0</td><td>0</td></tr>
+<tr style="background:#F8E3D7"><td>16_0_X</td><td>2026 data, EGamma0 2026C PromptReco</td><td>300000</td><td>1511</td><td>124972 / 145161</td><td>0 / 0 / 0</td><td>1034</td><td>0</td><td>42</td></tr>
 </table>
-<p style="font-size:21px;line-height:1.35;color:#44506A">Seeded bits are the two leading-leg last filters (12 and 13 up to v14, 14 and 15 in v15); unseeded bits are the three sub-leading-leg filters (14, 15, 17 up to v14; 16, 17, 19 in v15). Every prediction holds: unseeded bits never set, seeded bits present in every diphoton-triggered event, the electron unseeded bit populated from v13, no MET objects (id 2) in any version, no BoostedTau objects (id 1515) before v15. Measurement of 4 November 2026, last two rows 5 November; results/REPORT.md on the notes branch.</p>
-<aside>Twelve files, one per dataset, up to 300000 events each, read through xrootd with uproot; bit numbers were taken from each file's own TrigObj_filterBits documentation. The NANO re-run with the fix is on the next slide. The Winter24 file carries the processing string 133X and the 18-bit layout; it is listed by campaign, not as v14.</aside>
+<p style="font-size:19px;line-height:1.3;color:#44506A">Seeded bits are the two leading-leg last filters (12 and 13 up to v14, 14 and 15 from v15); unseeded bits are the three sub-leading-leg filters (14, 15, 17 up to v14; 16, 17, 19 from v15). Every prediction holds: unseeded bits never set, seeded bits present in every diphoton-triggered event, the electron unseeded bit populated from v13, no MET objects (id 2) in any version, no BoostedTau objects (id 1515) before v15. Measurement of 4 November 2026, last three rows 5 November; results/REPORT.md on the notes branch.</p>
+<aside>Thirteen files, one per dataset, up to 300000 events each, read through xrootd with uproot; bit numbers were taken from each file's own TrigObj_filterBits documentation. The NANO re-run with the fix is on the next slide. The Winter24 file carries the processing string 133X and the 18-bit layout; it is listed by campaign, not as v14. No dataset named v16 exists in DAS; the 2026 PromptReco file was made in CMSSW_16_0_4_patch2 and is listed by release.</aside>
 </section>
 
 <section id="fixtest" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
 <h2 style="font-size:56px;font-weight:600;line-height:1.1">Fix test on real input: every Mass90 event gets its sub-leading-leg bits, nothing else changes</h2>
-<table style="font-size:22px;font-family:'IBM Plex Sans', Arial, sans-serif;color:#16213A;background:#FDFCF9;border:1px solid #D9D6CC">
-<tr style="background:#16213A"><th style="width:22%;color:#F6F5F0;text-align:left;padding:8px 14px">NANO file (17760 events each)</th><th style="width:9%;color:#F6F5F0;text-align:left">fired Mass90</th><th style="width:15%;color:#F6F5F0;text-align:left">photons: seeded bits</th><th style="width:17%;color:#F6F5F0;text-align:left">photons: unseeded bits</th><th style="width:16%;color:#F6F5F0;text-align:left">Mass90 events with an unseeded bit</th><th style="width:9%;color:#F6F5F0;text-align:left">nTrigObj mean</th><th style="width:12%;color:#F6F5F0;text-align:left">size (bytes)</th></tr>
+<table style="font-size:19px;font-family:'IBM Plex Sans', Arial, sans-serif;color:#16213A;background:#FDFCF9;border:1px solid #D9D6CC">
+<tr style="background:#16213A"><th style="width:22%;color:#F6F5F0;text-align:left;padding:8px 14px">NANO file (v13, v15: 17760 events; 16_0_X: 20000)</th><th style="width:9%;color:#F6F5F0;text-align:left">fired Mass90</th><th style="width:15%;color:#F6F5F0;text-align:left">photons: seeded bits</th><th style="width:17%;color:#F6F5F0;text-align:left">photons: unseeded bits</th><th style="width:16%;color:#F6F5F0;text-align:left">Mass90 events with an unseeded bit</th><th style="width:9%;color:#F6F5F0;text-align:left">nTrigObj mean</th><th style="width:12%;color:#F6F5F0;text-align:left">size (bytes)</th></tr>
 <tr><td>central v13 file</td><td>10453</td><td>20865 / 24170</td><td>0 / 0 / 0</td><td>0</td><td>5.287</td><td>29333713</td></tr>
 <tr><td>v13 re-made, no fix</td><td>10453</td><td>20865 / 24170</td><td>0 / 0 / 0</td><td>0</td><td>5.287</td><td>29339920</td></tr>
 <tr style="background:#DCEEF1"><td>v13 re-made, with fix</td><td>10453</td><td>20865 / 24170</td><td>20461 / 18365 / 0</td><td>10453 (all)</td><td>5.388</td><td>29363499</td></tr>
 <tr><td>v15 re-made, no fix</td><td>10453</td><td>20865 / 24170</td><td>0 / 0 / 0</td><td>0</td><td>38.134</td><td>39947152</td></tr>
 <tr style="background:#DCEEF1"><td>v15 re-made, with fix</td><td>10453</td><td>20865 / 24170</td><td>20461 / 18365 / 0</td><td>10453 (all)</td><td>38.225</td><td>39959608</td></tr>
+<tr><td>16_0_X 2026C data, no fix</td><td>308</td><td>8909 / 10760</td><td>0 / 0 / 0</td><td>0</td><td>2.100</td><td>26190407</td></tr>
+<tr style="background:#DCEEF1"><td>16_0_X 2026C data, with fix</td><td>308</td><td>8909 / 10760</td><td>671 / 1010 / 0</td><td>308 (all)</td><td>2.118</td><td>26206694</td></tr>
 </table>
-<ul style="font-size:24px;line-height:1.45;color:#16213A">
+<ul style="font-size:21px;line-height:1.35;color:#16213A">
 <li>Re-made without the fix, the file is identical to the central v13 file: same TrigObj (id, bits, pt) in 17760 of 17760 events.</li>
 <li>The 21254 photon objects that gain an unseeded bit have pt from 22.04 GeV (median 58.30 GeV), none below the 22 GeV leg threshold.</li>
 <li>Every object type other than photons is unchanged in 17760 of 17760 events; photon objects 24835 to 26639 (v13), 25188 to 26807 (v15).</li>
-<li>The third unseeded bit (Diphoton30_18 leg) stays 0: that filter name does not exist in the 2023 menu.</li>
+<li>The third unseeded bit (Diphoton30_18 leg) stays 0: that filter name does not exist in the 2023 menu; also 0 in 2026 data (not investigated).</li>
+<li>2026 data, CMSSW_16_0_4_patch2, 20000 events of a Run2026C MINIAOD file: unseeded bits in all 308 Mass90 events, none before; pt from 22.01 GeV (median 37.06 GeV). Not compared event by event with a central file.</li>
 <li>Relval in CMSSW_16_1_3 with the fix (12452.0, 141.046): builds and runs without exceptions; outputs identical to the clean release except 25 DQM TimerService histograms per workflow. Its NANO TrigObj table is empty in both areas, so it does not exercise the photon selection.</li>
 </ul>
-<p style="font-size:22px;line-height:1.35;color:#44506A">Seeded / unseeded bits: 12, 13 / 14, 15, 17 in v13; 14, 15 / 16, 17, 19 in v15. Input: the MiniAOD parent of the central Run3Summer23 v13 GluGluHto2G M125 file; CMSSW_13_3_1_patch1 (v13) and CMSSW_15_0_15_patch4 (v15). 5 November 2026, results/REPORT.md "Fix test" and "Relval in CMSSW_16_1_3".</p>
+<p style="font-size:19px;line-height:1.3;color:#44506A">Seeded / unseeded bits: 12, 13 / 14, 15, 17 in v13; 14, 15 / 16, 17, 19 in v15. Input: the MiniAOD parent of the central Run3Summer23 v13 GluGluHto2G M125 file; CMSSW_13_3_1_patch1 (v13) and CMSSW_15_0_15_patch4 (v15). 5 November 2026, results/REPORT.md "Fix test" and "Relval in CMSSW_16_1_3".</p>
 <aside>v13: era Run3_2023, GT 133X_mcRun3_2023_realistic_ForNanov13_v1, changed line 83. v15: era Run3_2023,run3_nanoAOD_pre142X, GT 150X_mcRun3_2023_realistic_v1 (processing string of Run3Summer23NanoAODv15 in DAS), changed line 86. Commands in scripts/make_fixed_nano.sh. Relval: the 141.046 reHLT trigger summary is 1.4 kB per event against 34.6 kB for the original 2023 HLT summary.</aside>
 </section>
 
@@ -243,8 +247,8 @@ x-connector { display: none; }
 <div style="flex:1;display:flex;flex-direction:column;gap:18px">
 <p style="font-size:28px;font-weight:600;color:#5FC2D3">Validation</p>
 <ul style="font-size:24px;line-height:1.45;color:#D7DCE6">
-<li>Done 4-5 November: twelve NanoAOD files, v9 to v15, data and MC; unseeded photon bits 0 in every file.</li>
-<li>Done 5 November: NANO re-made with the fix (13_3_1_patch1, 15_0_15_patch4): unseeded bits in all 10453 Mass90 events, nothing else changed.</li>
+<li>Done 4-5 November: thirteen NanoAOD files, v9 to v15 and 2026 data (16_0_X), data and MC; unseeded photon bits 0 in every file.</li>
+<li>Done 5 November: NANO re-made with the fix (13_3_1_patch1, 15_0_15_patch4): unseeded bits in all 10453 Mass90 events, nothing else changed; 2026 data in 16_0_4_patch2: all 308 Mass90 events.</li>
 <li>Done 5 November: relval 12452.0 and 141.046 in CMSSW_16_1_3: no exceptions, outputs identical except DQM timing; relval NANO has no TrigObj.</li>
 </ul>
 <p style="font-size:28px;font-weight:600;color:#5FC2D3">Pull request</p>
