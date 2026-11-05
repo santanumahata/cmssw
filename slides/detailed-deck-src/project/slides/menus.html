@@ -1,6 +1,6 @@
 <section id="menus" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
 <h2 style="font-size:56px;font-weight:600;line-height:1.1">Scope by HLT menu: nine years of menus, the same four filters on the same collections</h2>
-<table style="font-size:24px;font-family:'IBM Plex Sans', Arial, sans-serif;color:#16213A;background:#FDFCF9;border:1px solid #D9D6CC">
+<table style="font-size:23px;font-family:'IBM Plex Sans', Arial, sans-serif;color:#16213A;background:#FDFCF9;border:1px solid #D9D6CC">
 <tr style="background:#16213A"><th style="width:34%;color:#F6F5F0;text-align:left;padding:8px 14px">menu (table name)</th><th style="width:12%;color:#F6F5F0;text-align:left">Mass90/95</th><th style="width:14%;color:#F6F5F0;text-align:left">Diphoton30_18</th><th style="width:40%;color:#F6F5F0;text-align:left">unseeded photon bits dead (v12 to v14 / v15 numbering)</th></tr>
 <tr><td>2018 GRun, /dev/CMSSW_10_6_0/GRun/V3</td><td>v13</td><td>NoPixelVeto v2</td><td>14, 15, 17 / 16, 17, 19</td></tr>
 <tr><td>2022 frozen v1.2 (HLT_2022v12, Run3Summer22 MC)</td><td>v13</td><td>v2</td><td>14, 15, 17 / 16, 17, 19</td></tr>
@@ -13,6 +13,6 @@
 <tr><td>2026 frozen v1.3 (HLT_2026v13, in master)</td><td>v29</td><td>v17</td><td>16, 17</td></tr>
 <tr><td>2026 development, GRun 16_1 V16 (master)</td><td>v30</td><td>v18</td><td>16, 17</td></tr>
 </table>
-<p style="font-size:24px;line-height:1.35;color:#44506A">In all of these the two unseeded last filters of the Mass90/Mass95 sequence carry l1EGCand = hltEgammaCandidatesUnseeded and saveTags = True, and the ordered list of the sixteen e/gamma filters of the sequence is identical (same MD5). From 2023 the Diphoton30_18 filters were renamed, so its two NanoAOD bits (18, 19) match nothing in those menus, a separate stale-name problem.</p>
+<p style="font-size:23px;line-height:1.35;color:#44506A">In all of these the two unseeded last filters of the Mass90/Mass95 sequence carry l1EGCand = hltEgammaCandidatesUnseeded and saveTags = True, and the ordered list of the sixteen e/gamma filters of the sequence is identical (same MD5). From 2023 the Diphoton30_18 filters were renamed, so its two NanoAOD bits (18, 19) match nothing in those menus, a separate stale-name problem.</p>
 <aside>The frozen menus are the ones used for Monte Carlo (2022v12 and 2022v14 for Summer22 and Summer22EE, 2023v12 for Summer23 and Summer23BPix, 2024v14 for Summer24, as reported by the production configurations); online data menus evolve during a year but keep the filter names.</aside>
 </section>
