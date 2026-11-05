@@ -31,12 +31,12 @@ Fix in one line, `PhysicsTools/NanoAOD/python/triggerObjects_cff.py`, Photon sel
 
 ## Slides
 
-Two decks, built on 4 November 2026 (private Claude artifacts; the files below are viewable without them):
+Two decks, built on 4 November 2026 and updated on 5 November with the fix test and the relval (the files below are current; the private Claude artifacts still show the 4 November version):
 
 | Deck | Slides | PDF | Standalone HTML | Source (Slides format) | Claude artifact |
 |---|---|---|---|---|---|
-| Issue deck (problem, scope, measurement, fix) | 10 | `slides/issue-deck.pdf` | `slides/issue-deck.html` | `slides/issue-deck-src/project/` | https://claude.ai/artifact/CnPtNgvGdp6PAAh9xfizof |
-| Detailed walkthrough (code at every step, breadth scan, measurement, appendices) | 32 | `slides/detailed-deck.pdf` | `slides/detailed-deck.html` | `slides/detailed-deck-src/project/` | https://claude.ai/artifact/Qx2HzCEjougjAQmaH6P2Qc |
+| Issue deck (problem, scope, measurement, fix test, fix) | 11 | `slides/issue-deck.pdf` | `slides/issue-deck.html` | `slides/issue-deck-src/project/` | https://claude.ai/artifact/CnPtNgvGdp6PAAh9xfizof |
+| Detailed walkthrough (code at every step, breadth scan, measurement, fix test, appendices) | 33 | `slides/detailed-deck.pdf` | `slides/detailed-deck.html` | `slides/detailed-deck-src/project/` | https://claude.ai/artifact/Qx2HzCEjougjAQmaH6P2Qc |
 
 `scripts/render_deck.js <deck root> <output base>` turns a deck's `project/` folder into the standalone HTML
 and the PDF (Node + Playwright with Chromium; Google Fonts are used when reachable, otherwise the

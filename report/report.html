@@ -33,7 +33,7 @@
 <body>
 
 <h1>NanoAOD photon trigger objects: the unseeded-leg filter bits of HLT_Diphoton30_22_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass90 can never be set</h1>
-<p class="meta">Issue report prepared for Santanu Mahata, 4 November 2026 (revised the same day after a second verification pass over release tags and nineteen HLT menu files; see NOTES.md section 0 of the companion repository). Evidence taken from the cmssw fork checkout at commit <code>f99356577</code> (master, 2025-05-06), the upstream tag <code>CMSSW_13_3_1_patch1</code> (NanoAOD v13 production release), the upstream branches <code>CMSSW_10_6_X</code>, <code>CMSSW_12_4_X</code>, <code>CMSSW_12_6_X</code>, <code>CMSSW_13_0_X</code>, <code>CMSSW_14_0_X</code>, <code>CMSSW_15_0_X</code>, and upstream master at <code>ed35654b1</code> (2026-11-04). Fix: commit <code>1699a39f7</code> on the fork branch <code>claude/fervent-lamport-3oiuh6</code>, and the same change as <code>aebf3eb64</code> on branch <code>nano-photon-trigobj-unseeded</code> on top of upstream master. Nothing has been pushed.</p>
+<p class="meta">Issue report prepared for Santanu Mahata, 4 November 2026 (revised the same day after a second verification pass over release tags and nineteen HLT menu files; see NOTES.md section 0 of the companion repository; section 9 and 10 updated on 5 November 2026 with the measurements, the fix test and the relval). Evidence taken from the cmssw fork checkout at commit <code>f99356577</code> (master, 2025-05-06), the upstream tag <code>CMSSW_13_3_1_patch1</code> (NanoAOD v13 production release), the upstream branches <code>CMSSW_10_6_X</code>, <code>CMSSW_12_4_X</code>, <code>CMSSW_12_6_X</code>, <code>CMSSW_13_0_X</code>, <code>CMSSW_14_0_X</code>, <code>CMSSW_15_0_X</code>, and upstream master at <code>ed35654b1</code> (2026-11-04). Fix: commit <code>1699a39f7</code> on the fork branch <code>claude/fervent-lamport-3oiuh6</code>, and the same change as <code>aebf3eb64</code> on branch <code>nano-photon-trigobj-unseeded</code> on top of upstream master. Both branches are on the fork <code>santanumahata/cmssw</code>; nothing has been pushed to <code>cms-sw/cmssw</code>.</p>
 
 <div class="box red">
 <p><b>Observation.</b> In NanoAOD v13 the photon trigger objects (<code>TrigObj_id == 22</code>) document a bit for each last unseeded filter of the diphoton path (bit 14, <code>hltEG22Iso60CaloId15b35eHE12R9Id50b80eTrackIsoUnseededLastFilter</code>; bit 15, <code>hltEG22R9Id85b90eHE12R9Id50b80eR9UnseededLastFilter</code>), but no trigger object ever carries them. The sub-leading diphoton leg cannot be trigger-matched from NanoAOD.</p>
@@ -52,7 +52,7 @@
 <li>Explanations that were ruled out</li>
 <li>History and affected NanoAOD versions</li>
 <li>The fix and its expected effect</li>
-<li>Validation plan</li>
+<li>Validation</li>
 <li>Pull request: what is ready</li>
 <li>Appendix: references, line numbers, sources</li>
 </ol>
@@ -283,13 +283,45 @@ hltEG22Iso60CaloId15b35eHE12R9Id50b80eTrackIsoUnseededLastFilter = cms.EDFilter(
 <p><b>What does not change.</b> The bit list, the bit numbering, the documentation strings, the electron, muon, tau and jet selections, and the NanoAOD event content are untouched.</p>
 </div>
 
-<h2>9. Validation plan</h2>
-<p>The fix could not be executed in the environment used for this report, which has the repository but no CMSSW runtime. The following checks are proposed in a CMSSW area, for the pull request or for a local test.</p>
-<ol>
-<li>Run standard workflows that include the NANO step, before and after the change. In upstream master today these are the MC workflows of the upgrade matrix, for example <code>runTheMatrix.py -l 12452.0,12852.0</code> (H125GGgluonfusion_14TeV in the 2023 and 2024 scenarios, which fire the diphoton triggers) and <code>12434.0,12834.0</code> (TTbar 2023 and 2024), and the data workflows <code>141.046</code> (RunEGamma2023D) or <code>140.048</code> (RunEGamma2022C) with the <code>AODNANORUN3_reHLT</code> step; confirm the numbers with <code>runTheMatrix.py -n -e -l</code>. In a 15_1_X area of May 2025 the NanoAOD-only workflows were <code>2500.1001</code>, <code>2500.1101</code>, <code>2500.2001</code>, <code>2500.2101</code> (<code>NANOmc130X</code>, <code>NANOdata130Xrun3</code>, <code>NANOmc140X</code>, <code>NANOdata140Xrun3</code>); the numbers <code>2500.1</code> etc. quoted in the first version of this report do not exist.</li>
-<li>Count, on the output, photon trigger objects with the unseeded bits set in events that fired the diphoton path. Before the fix the count is zero by construction; after the fix it must be non-zero and of the same order as the count of events firing the path.</li>
-<li>Compare <code>nTrigObj</code>, the NanoAOD DQM trigger-object histograms and the file size. Only the photon multiplicity in diphoton-triggered events is expected to move; PR 41827 showed the equivalent change for electrons.</li>
-</ol>
+<h2>9. Validation</h2>
+<p>Done on lxplus on 4 and 5 November 2026. Per-file numbers, JSON files and the exact commands are in <code>results/</code> and <code>scripts/</code> of the notes branch (<code>results/REPORT.md</code>).</p>
+
+<h3>9.1 Measured on existing NanoAOD files</h3>
+<p>Twelve files, one per dataset, up to 300000 events each, read with uproot; bit numbers parsed from each file's own <code>TrigObj_filterBits</code> documentation. Seeded bits: 12, 13 (v12 to v14), 14, 15 (v15). Unseeded bits: 14, 15, 17 (v12 to v14), 16, 17, 19 (v15).</p>
+<table>
+<tr><th>NanoAOD</th><th>dataset (one file)</th><th>events</th><th>fired Mass90</th><th>photons with seeded bits</th><th>photons with unseeded bits</th></tr>
+<tr><td>v9</td><td>EGamma 2018D UL2018 NanoAODv9</td><td>300000</td><td>31771</td><td colspan="2">no photon trigger objects</td></tr>
+<tr><td>v10</td><td>EGamma 2022D PromptNanoAODv10</td><td>300000</td><td>46707</td><td colspan="2">diphoton bits not defined</td></tr>
+<tr><td>v11</td><td>EGamma 2022F PromptNanoAODv11</td><td>300000</td><td>41546</td><td colspan="2">diphoton bits not defined</td></tr>
+<tr><td>v12</td><td>GluGluHtoGG M125 Run3Summer22</td><td>12979</td><td>7725</td><td>15626 / 17978</td><td class="bad">0 / 0 / 0</td></tr>
+<tr><td>v12</td><td>EGamma 2022D 22Sep2023</td><td>300000</td><td>46407</td><td>208527 / 255099</td><td class="bad">0 / 0 / 0</td></tr>
+<tr><td>v13</td><td>GluGluHto2G M125 Run3Summer23</td><td>17760</td><td>10453</td><td>20865 / 24170</td><td class="bad">0 / 0 / 0</td></tr>
+<tr><td>v13</td><td>EGamma 2022D 16Dec2023</td><td>300000</td><td>46794</td><td>207844 / 252774</td><td class="bad">0 / 0 / 0</td></tr>
+<tr><td>v14</td><td>EGamma0 2024D PromptReco</td><td>300000</td><td>35892</td><td>203620 / 252039</td><td class="bad">0 / 0 / 0</td></tr>
+<tr><td>v15</td><td>GluGluH-Hto2G M125 RunIII2024Summer24</td><td>4180</td><td>2406</td><td>4815 / 5588</td><td class="bad">0 / 0 / 0</td></tr>
+<tr><td>v15</td><td>EGamma 2022D NanoAODv15</td><td>300000</td><td>48687</td><td>212270 / 258546</td><td class="bad">0 / 0 / 0</td></tr>
+<tr><td>v15</td><td>EGamma0 2024D MINIv6NANOv15</td><td>300000</td><td>30945</td><td>201628 / 248974</td><td class="bad">0 / 0 / 0</td></tr>
+<tr><td>133X</td><td>GluGluHToGG M125 powheg Run3Winter24NanoAOD</td><td>175654</td><td>101598</td><td>205090 / 239250</td><td class="bad">0 / 0 / 0</td></tr>
+</table>
+<p>The electron "CaloIdL_MW unseeded" bit is absent in v12 and set on electron objects from v13 on; no object with id 2 (MET) in any file; id 1515 (BoostedTau) objects only in the v15 files. No NanoAOD v14 (14_0_X) MC dataset was found in DAS; the Winter24 file carries the processing string 133X and the 18-bit layout.</p>
+
+<h3>9.2 Fix test: NANO re-made from one MiniAOD file, without and with the fix</h3>
+<p>Input: <code>/store/mc/Run3Summer23MiniAODv4/GluGluHto2G_M-125_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/MINIAODSIM/130X_mcRun3_2023_realistic_v15_ext1-v4/2820000/74338d47-0b38-4e0b-83a2-ad85c7f4e533.root</code>, the DAS parent of the central v13 file, all 17760 events. v13: <code>CMSSW_13_3_1_patch1</code>, era <code>Run3_2023</code>, global tag <code>133X_mcRun3_2023_realistic_ForNanov13_v1</code>, changed line 83. v15: <code>CMSSW_15_0_15_patch4</code>, era <code>Run3_2023,run3_nanoAOD_pre142X</code>, global tag <code>150X_mcRun3_2023_realistic_v1</code>, changed line 86. In both releases <code>git diff --numstat</code> showed exactly one changed line.</p>
+<table>
+<tr><th>file</th><th>fired Mass90</th><th>photons with seeded bits</th><th>photons with unseeded bits</th><th>Mass90 events with an unseeded bit</th><th>nTrigObj mean</th><th>size (bytes)</th></tr>
+<tr><td>central v13</td><td>10453</td><td>20865 / 24170</td><td>0 / 0 / 0</td><td>0</td><td>5.287</td><td>29333713</td></tr>
+<tr><td>v13, no fix</td><td>10453</td><td>20865 / 24170</td><td>0 / 0 / 0</td><td>0</td><td>5.287</td><td>29339920</td></tr>
+<tr><td>v13, with fix</td><td>10453</td><td>20865 / 24170</td><td class="ok">20461 / 18365 / 0</td><td class="ok">10453</td><td>5.388</td><td>29363499</td></tr>
+<tr><td>v15, no fix</td><td>10453</td><td>20865 / 24170</td><td>0 / 0 / 0</td><td>0</td><td>38.134</td><td>39947152</td></tr>
+<tr><td>v15, with fix</td><td>10453</td><td>20865 / 24170</td><td class="ok">20461 / 18365 / 0</td><td class="ok">10453</td><td>38.225</td><td>39959608</td></tr>
+</table>
+<ul>
+<li>Without the fix the re-made file is identical to the central v13 file: the same trigger objects (id, filter bits, p<sub>T</sub>) in 17760 of 17760 events.</li>
+<li>With the fix, the 21254 photon objects that carry an unseeded bit have p<sub>T</sub> from 22.04 GeV (median 58.30 GeV), none below 22 GeV.</li>
+<li>All trigger objects other than photons are identical before and after in 17760 of 17760 events, in both releases. Photon objects: 24835 to 26639 (v13), 25188 to 26807 (v15).</li>
+<li>The Diphoton30_18 unseeded bit (17 in v13, 19 in v15) stays 0: its filter name is not in the 2023 menu (section 5).</li>
+</ul>
+<p>The count used:</p>
 <pre>import uproot, awkward as ak, numpy as np
 t = uproot.open("nano.root")["Events"]
 a = t.arrays(["TrigObj_id", "TrigObj_filterBits", "HLT_Diphoton30_22_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass90"])
@@ -299,19 +331,25 @@ for bit in (16, 17):           # 14, 15 for NanoAOD v12 to v14 numbering
     hasbit = ak.any((a.TrigObj_filterBits[ph] &gt;&gt; bit) &amp; 1 == 1, axis=1)
     print(f"bit {bit}: {np.sum(hasbit &amp; fired)} of {np.sum(fired)} triggered events have a matching photon TrigObj")</pre>
 
+<h3>9.3 Relval in CMSSW_16_1_3</h3>
+<p><code>CMSSW_16_1_3</code> clean, and with commit <code>aebf3eb64</code> cherry-picked (one changed line against the release). Workflows 12452.0 (H125GGgluonfusion 2023, upgrade matrix, 10 generated events) and 141.046 (EGamma Run2023D run 369978, 100 events; RAW from the IB EOS cache because DAS lists it on tape only). Steps 1 and 2 ran once; steps 3 and 4 ran in both areas on the same <code>step2.root</code>.</p>
+<table>
+<tr><th>workflow</th><th>trigger objects in NANO</th><th>NANO, fix vs clean</th><th>DQM, fix vs clean</th><th>step 3 log</th></tr>
+<tr><td>12452.0</td><td>0 in both areas</td><td>identical, 10 of 10 events</td><td>116785 histograms each; 25 differ, all <code>DQM/TimerService</code></td><td>no <code>Exception</code>, no <code>triggerObjectTable</code> line</td></tr>
+<tr><td>141.046</td><td>0 in both areas (10 events fire Mass90)</td><td>identical, 100 of 100 events</td><td>53846 histograms each; 25 differ, all <code>DQM/TimerService</code></td><td>no <code>Exception</code>, no <code>triggerObjectTable</code> line</td></tr>
+</table>
+<p>The fix builds and runs without exceptions and changes nothing in these workflows. Their NanoAOD trigger-object table is empty in both areas, so they do not exercise the photon selection: in 141.046 the re-HLT trigger summary (<code>hltTriggerSummaryAOD__reHLT</code>) is 1428 bytes per event against 34559 bytes for the original 2023 HLT summary in the same file, and <code>slimmedPatTrigger</code> is 372 bytes per event. The effect of the fix is shown by the test of section 9.2.</p>
+
 <h2>10. Pull request: what is ready</h2>
 <table>
 <tr><th>Item</th><th>State</th></tr>
-<tr><td>Fix on the fork's working branch</td><td>commit <code>1699a39f7</code> on <code>claude/fervent-lamport-3oiuh6</code> (based on the fork's May 2025 master), local only</td></tr>
-<tr><td>PR branch on today's upstream master</td><td>branch <code>nano-photon-trigobj-unseeded</code> = upstream master <code>ed35654b1</code> (2026-11-04) + commit <code>aebf3eb64</code>; cherry-pick applied cleanly; checked out in the worktree <code>scratchpad/prwt</code>; local only</td></tr>
-<tr><td>PR title and description</td><td>file <code>PR_body.md</code> in the scratchpad directory, ready to paste; follows the cms-sw template headings</td></tr>
+<tr><td>Fix on the fork's working branch</td><td>commit <code>1699a39f7</code> on <code>claude/fervent-lamport-3oiuh6</code> (based on the fork's May 2025 master), on the fork <code>santanumahata/cmssw</code></td></tr>
+<tr><td>PR branch on today's upstream master</td><td>branch <code>nano-photon-trigobj-unseeded</code> = upstream master <code>ed35654b1</code> (2026-11-04) + commit <code>aebf3eb64</code>; cherry-pick applied cleanly; on the fork <code>santanumahata/cmssw</code>; no pull request opened</td></tr>
+<tr><td>PR title and description</td><td>file <code>pr/PR_body.md</code> on the notes branch, ready to paste; follows the cms-sw template headings</td></tr>
 <tr><td>Target</td><td><code>cms-sw/cmssw</code> master; the same line is still present there (line 90). A backport to <code>CMSSW_15_0_X</code> is worth requesting if another NanoAOD production from that branch is planned</td></tr>
 </table>
-<p>To publish, from the main checkout (the branch object is shared with the worktree):</p>
-<pre>git push -u origin nano-photon-trigobj-unseeded
-# then open the PR from santanumahata:nano-photon-trigobj-unseeded to cms-sw:master,
-# with the title and body from PR_body.md</pre>
-<p><b>What reviewers will look at.</b> The change touches the xpog area, so it needs the xpog signature. The bot's RelVal comparison will show differences in <code>nTrigObj</code> and in the trigger-object DQM histograms for the NanoAOD workflows, which are the expected ones. Referring to PR 40711 (where the bits came from) and PR 41827 (where the same fix was done for electrons) pre-empts the two most likely questions. The two related gaps in section 5 (2023 names of the Diphoton30_18 paths, missing bits for the low-mass and MVA diphoton paths) are best proposed as separate follow-up PRs so that this one stays a one-line bug fix.</p>
+<p>To open the pull request: from the GitHub web interface, <code>santanumahata:nano-photon-trigobj-unseeded</code> to <code>cms-sw:master</code>, with the title and body from <code>pr/PR_body.md</code>.</p>
+<p><b>What reviewers will look at.</b> The change touches the xpog area, so it needs the xpog signature. In <code>CMSSW_16_1_3</code> the relval workflows 12452.0 and 141.046 showed no difference outside the DQM timing histograms, because their NanoAOD has no trigger objects (section 9.3). Referring to PR 40711 (where the bits came from) and PR 41827 (where the same fix was done for electrons) pre-empts the two most likely questions. The two related gaps in section 5 (2023 names of the Diphoton30_18 paths, missing bits for the low-mass and MVA diphoton paths) are best proposed as separate follow-up PRs so that this one stays a one-line bug fix.</p>
 
 <h2>11. Appendix: references, line numbers, sources</h2>
 <table>
@@ -328,7 +366,7 @@ for bit in (16, 17):           # 14, 15 for NanoAOD v12 to v14 numbering
 <tr><td>Unseeded filter definitions, master menu</td><td class="mono">HLTrigger/Configuration/python/HLT_GRun_cff.py:47223-47225,47281-47302,47362-47383; path at 86983</td></tr>
 <tr><td>2018 and 2022 menus (Diphoton30_18 sequences)</td><td class="mono">CMSSW_10_6_X and CMSSW_12_4_X / CMSSW_12_6_X: HLTrigger/Configuration/python/HLT_GRun_cff.py</td></tr>
 <tr><td>NanoAOD relval recipes</td><td class="mono">Configuration/PyReleaseValidation/python/relval_nano.py</td></tr>
-<tr><td>Fix</td><td class="mono">1699a39f7 (claude/fervent-lamport-3oiuh6); aebf3eb64 (nano-photon-trigobj-unseeded on upstream master); not pushed</td></tr>
+<tr><td>Fix</td><td class="mono">1699a39f7 (claude/fervent-lamport-3oiuh6); aebf3eb64 (nano-photon-trigobj-unseeded on upstream master); on the fork santanumahata/cmssw</td></tr>
 </table>
 <p class="small"><b>Sources consulted.</b> cms-sw/cmssw pull requests 40711 (diphoton photon bits), 41827 (electron unseeded collection), 43292, 43286 and 43470 (13_3_X backports for NanoAOD v13); upstream branches CMSSW_10_6_X, CMSSW_12_4_X, CMSSW_12_6_X, CMSSW_13_0_X, CMSSW_13_3_X, CMSSW_14_0_X, CMSSW_15_0_X and master; NanoAOD v13 dataset names and global tags from public analysis configurations (uhh-cms/cmsdb v13 campaigns, bhbam/MCProduction_run3, maxgalli/SBI-Htt-EFT, choij1589/CustomNanoAOD) and from the 2022 skim notes of the santanumahata/2023_lowmass_analysis repositories. The CERN TWiki, McM and the NanoAOD documentation site were not reachable from the environment used for this report.</p>
 </body></html>

@@ -1,0 +1,20 @@
+<section id="fixtest" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:24px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">Fix test on real input: every Mass90 event gets its sub-leading-leg bits, nothing else changes</h2>
+<table style="font-size:22px;font-family:'IBM Plex Sans', Arial, sans-serif;color:#16213A;background:#FDFCF9;border:1px solid #D9D6CC">
+<tr style="background:#16213A"><th style="width:22%;color:#F6F5F0;text-align:left;padding:8px 14px">NANO file (17760 events each)</th><th style="width:9%;color:#F6F5F0;text-align:left">fired Mass90</th><th style="width:15%;color:#F6F5F0;text-align:left">photons: seeded bits</th><th style="width:17%;color:#F6F5F0;text-align:left">photons: unseeded bits</th><th style="width:16%;color:#F6F5F0;text-align:left">Mass90 events with an unseeded bit</th><th style="width:9%;color:#F6F5F0;text-align:left">nTrigObj mean</th><th style="width:12%;color:#F6F5F0;text-align:left">size (bytes)</th></tr>
+<tr><td>central v13 file</td><td>10453</td><td>20865 / 24170</td><td>0 / 0 / 0</td><td>0</td><td>5.287</td><td>29333713</td></tr>
+<tr><td>v13 re-made, no fix</td><td>10453</td><td>20865 / 24170</td><td>0 / 0 / 0</td><td>0</td><td>5.287</td><td>29339920</td></tr>
+<tr style="background:#DCEEF1"><td>v13 re-made, with fix</td><td>10453</td><td>20865 / 24170</td><td>20461 / 18365 / 0</td><td>10453 (all)</td><td>5.388</td><td>29363499</td></tr>
+<tr><td>v15 re-made, no fix</td><td>10453</td><td>20865 / 24170</td><td>0 / 0 / 0</td><td>0</td><td>38.134</td><td>39947152</td></tr>
+<tr style="background:#DCEEF1"><td>v15 re-made, with fix</td><td>10453</td><td>20865 / 24170</td><td>20461 / 18365 / 0</td><td>10453 (all)</td><td>38.225</td><td>39959608</td></tr>
+</table>
+<ul style="font-size:24px;line-height:1.45;color:#16213A">
+<li>Re-made without the fix, the file is identical to the central v13 file: same TrigObj (id, bits, pt) in 17760 of 17760 events.</li>
+<li>The 21254 photon objects that gain an unseeded bit have pt from 22.04 GeV (median 58.30 GeV), none below the 22 GeV leg threshold.</li>
+<li>Every object type other than photons is unchanged in 17760 of 17760 events; photon objects 24835 to 26639 (v13), 25188 to 26807 (v15).</li>
+<li>The third unseeded bit (Diphoton30_18 leg) stays 0: that filter name does not exist in the 2023 menu.</li>
+<li>Relval in CMSSW_16_1_3 with the fix (12452.0, 141.046): builds and runs without exceptions; outputs identical to the clean release except 25 DQM TimerService histograms per workflow. Its NANO TrigObj table is empty in both areas, so it does not exercise the photon selection.</li>
+</ul>
+<p style="font-size:22px;line-height:1.35;color:#44506A">Seeded / unseeded bits: 12, 13 / 14, 15, 17 in v13; 14, 15 / 16, 17, 19 in v15. Input: the MiniAOD parent of the central Run3Summer23 v13 GluGluHto2G M125 file; CMSSW_13_3_1_patch1 (v13) and CMSSW_15_0_15_patch4 (v15). 5 November 2026, results/REPORT.md "Fix test" and "Relval in CMSSW_16_1_3".</p>
+<aside>v13: era Run3_2023, GT 133X_mcRun3_2023_realistic_ForNanov13_v1, changed line 83. v15: era Run3_2023,run3_nanoAOD_pre142X, GT 150X_mcRun3_2023_realistic_v1 (processing string of Run3Summer23NanoAODv15 in DAS), changed line 86. Commands in scripts/make_fixed_nano.sh. Relval: the 141.046 reHLT trigger summary is 1.4 kB per event against 34.6 kB for the original 2023 HLT summary.</aside>
+</section>
