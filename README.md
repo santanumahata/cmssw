@@ -17,6 +17,13 @@ tags and nineteen HLT menu files; the corrections are listed in section 0 of `NO
   2022 to 2026 menus; see `NOTES.md` section 13).
 - `results/`: the lxplus measurement on ten NanoAOD files, v9 to v15 (`REPORT.md` and one JSON per
   file): the unseeded photon bits are never set, all controls behave; see `NOTES.md` section 14.
+- `results/fix_test/`: NANO re-made from one MiniAOD file without and with the fix
+  (CMSSW_13_3_1_patch1 for v13, CMSSW_15_0_15_patch4 for v15) and the central v13 file of the
+  same events, one JSON each; see `results/REPORT.md` "Fix test" and `NOTES.md` section 15.
+- `results/relval_16_1_3/`: relval workflows in CMSSW_16_1_3 clean vs with commit aebf3eb64
+  (TrigObj and DQM comparisons); see `results/REPORT.md` and `NOTES.md` section 16.
+- `scripts/measure_trigobj.py`, `scripts/make_fixed_nano.sh`, `scripts/relval_fix_check.sh`,
+  `scripts/compare_dqm.py`: the measurement, the fix test and the relval check as run on lxplus.
 
 Fix in one line, `PhysicsTools/NanoAOD/python/triggerObjects_cff.py`, Photon selection:
 

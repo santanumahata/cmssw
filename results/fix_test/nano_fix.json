@@ -1,0 +1,456 @@
+{
+ "version": "v13_fix",
+ "dataset": "MiniAOD-parent-of-central-v13",
+ "file": "cmssw/v13/nano_fix.root",
+ "file_size_bytes": 29363499,
+ "events_in_file": 17760,
+ "events_read": 17760,
+ "filterBits_interpretation": "AsJagged(AsDtype('>i4'))",
+ "n_photon_bits_documented": 18,
+ "n_electron_bits_documented": 17,
+ "photon_bit_numbers": {
+  "R9UnseededLast": 15,
+  "TrackIsoUnseededLast": 14,
+  "EG18Unseeded": 17,
+  "seeded_R9IdLast": 12,
+  "seeded_EcalIsoLast": 13,
+  "hltHtEcal800": 8
+ },
+ "electron_CaloIdL_MW_unseeded_bit": 16,
+ "paths_present": [
+  "HLT_Diphoton30_22_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass90",
+  "HLT_DoubleEle33_CaloIdL_MW"
+ ],
+ "fired_Mass90": 10453,
+ "fired_DoubleEle33_CaloIdL_MW": 87,
+ "photons_with_bit": {
+  "R9UnseededLast": 18365,
+  "TrackIsoUnseededLast": 20461,
+  "EG18Unseeded": 0,
+  "seeded_R9IdLast": 20865,
+  "seeded_EcalIsoLast": 24170,
+  "hltHtEcal800": 0
+ },
+ "photons_with_bit_in_Mass90_events": {
+  "R9UnseededLast": 18175,
+  "TrackIsoUnseededLast": 20256,
+  "EG18Unseeded": 0,
+  "seeded_R9IdLast": 16614,
+  "seeded_EcalIsoLast": 19213,
+  "hltHtEcal800": 0
+ },
+ "electrons_with_CaloIdL_MW_unseeded_bit": 702,
+ "objects_per_id": {
+  "1": 43931,
+  "3": 5838,
+  "4": 2341,
+  "6": 6538,
+  "11": 3204,
+  "13": 457,
+  "15": 6749,
+  "22": 26639
+ },
+ "n_id2_MET": 0,
+ "n_id1515_BoostedTau": 0,
+ "n_id22_Photon": 26639,
+ "events_with_unseeded_photon_bit": 10636,
+ "first_offending_run_lumi_event": [
+  [
+   1,
+   1086,
+   3417808
+  ],
+  [
+   1,
+   1086,
+   3417806
+  ],
+  [
+   1,
+   1086,
+   3417764
+  ],
+  [
+   1,
+   1086,
+   3417758
+  ],
+  [
+   1,
+   1086,
+   3417814
+  ],
+  [
+   1,
+   1086,
+   3417823
+  ],
+  [
+   1,
+   1086,
+   3417803
+  ],
+  [
+   1,
+   1086,
+   3417816
+  ],
+  [
+   1,
+   1086,
+   3417826
+  ],
+  [
+   1,
+   1086,
+   3417846
+  ],
+  [
+   1,
+   1086,
+   3417842
+  ],
+  [
+   1,
+   1086,
+   3417851
+  ],
+  [
+   1,
+   1086,
+   3417854
+  ],
+  [
+   1,
+   1086,
+   3417857
+  ],
+  [
+   1,
+   1086,
+   3417863
+  ],
+  [
+   1,
+   1086,
+   3417859
+  ],
+  [
+   1,
+   1086,
+   3417839
+  ],
+  [
+   1,
+   1086,
+   3417878
+  ],
+  [
+   1,
+   1086,
+   3417873
+  ],
+  [
+   1,
+   1086,
+   3417899
+  ],
+  [
+   1,
+   1086,
+   3417905
+  ],
+  [
+   1,
+   1086,
+   3417871
+  ],
+  [
+   1,
+   1086,
+   3417885
+  ],
+  [
+   1,
+   1086,
+   3417903
+  ],
+  [
+   1,
+   1086,
+   3417922
+  ],
+  [
+   1,
+   1086,
+   3417928
+  ],
+  [
+   1,
+   1086,
+   3417925
+  ],
+  [
+   1,
+   1086,
+   3417926
+  ],
+  [
+   1,
+   1086,
+   3417950
+  ],
+  [
+   1,
+   1086,
+   3417939
+  ],
+  [
+   1,
+   1086,
+   3417964
+  ],
+  [
+   1,
+   1086,
+   3417965
+  ],
+  [
+   1,
+   1086,
+   3417960
+  ],
+  [
+   1,
+   1086,
+   3417963
+  ],
+  [
+   1,
+   1086,
+   3417970
+  ],
+  [
+   1,
+   1086,
+   3417979
+  ],
+  [
+   1,
+   1086,
+   3417972
+  ],
+  [
+   1,
+   1086,
+   3417996
+  ],
+  [
+   1,
+   1086,
+   3417987
+  ],
+  [
+   1,
+   1086,
+   3417994
+  ],
+  [
+   1,
+   1086,
+   3418005
+  ],
+  [
+   1,
+   1086,
+   3417999
+  ],
+  [
+   1,
+   1086,
+   3418001
+  ],
+  [
+   1,
+   1086,
+   3418014
+  ],
+  [
+   1,
+   1086,
+   3418010
+  ],
+  [
+   1,
+   1086,
+   3418009
+  ],
+  [
+   1,
+   1086,
+   3418024
+  ],
+  [
+   1,
+   1086,
+   3418018
+  ],
+  [
+   1,
+   1086,
+   3418025
+  ],
+  [
+   1,
+   1086,
+   3418033
+  ]
+ ],
+ "Mass90_events_with_unseeded_photon_bit": 10453,
+ "fraction_Mass90_events_with_unseeded_photon_bit": 1.0,
+ "photons_per_Mass90_event_mean": 2.015689275805989,
+ "unseeded_photon_pt": {
+  "n": 21254,
+  "min": 22.03515625,
+  "median": 58.296875,
+  "n_below_22": 0
+ },
+ "nTrigObj_mean": 5.388344594594595,
+ "bit_counts_per_id_without_22": {
+  "1": {
+   "0": 13991,
+   "1": 8486,
+   "2": 30,
+   "3": 7575,
+   "4": 6820,
+   "5": 11761,
+   "6": 6727,
+   "7": 7385,
+   "8": 2725,
+   "10": 4550,
+   "11": 645,
+   "12": 5659,
+   "13": 1662,
+   "14": 2097,
+   "15": 2498,
+   "16": 2487,
+   "17": 39,
+   "18": 11,
+   "19": 34,
+   "20": 4,
+   "21": 2211,
+   "22": 4916,
+   "23": 1519,
+   "24": 1,
+   "25": 30,
+   "26": 4,
+   "27": 4244,
+   "28": 4271,
+   "29": 1718,
+   "30": 4
+  },
+  "3": {
+   "2": 2872,
+   "3": 1882,
+   "4": 459,
+   "5": 1004
+  },
+  "4": {
+   "0": 1882,
+   "1": 459
+  },
+  "6": {
+   "0": 5110,
+   "1": 1236,
+   "2": 183,
+   "4": 135,
+   "5": 122
+  },
+  "11": {
+   "0": 2131,
+   "1": 992,
+   "3": 36,
+   "4": 156,
+   "5": 163,
+   "6": 30,
+   "7": 36,
+   "8": 9,
+   "9": 25,
+   "10": 22,
+   "11": 872,
+   "12": 1040,
+   "13": 2436,
+   "14": 47,
+   "15": 2425,
+   "16": 702
+  },
+  "13": {
+   "0": 322,
+   "1": 152,
+   "2": 19,
+   "3": 152,
+   "4": 266,
+   "5": 343,
+   "6": 19,
+   "7": 28,
+   "8": 232,
+   "9": 100,
+   "10": 55,
+   "11": 12,
+   "12": 192
+  },
+  "15": {
+   "0": 415,
+   "1": 2889,
+   "2": 38,
+   "3": 3227,
+   "4": 2072,
+   "5": 5906,
+   "6": 383,
+   "7": 10,
+   "8": 200,
+   "10": 1199,
+   "11": 38,
+   "12": 17,
+   "13": 50,
+   "16": 274,
+   "17": 7,
+   "18": 5,
+   "19": 4,
+   "23": 1184,
+   "24": 164,
+   "25": 1523,
+   "26": 10,
+   "27": 17,
+   "28": 14,
+   "29": 892
+  }
+ },
+ "photon_bits_documented": {
+  "0": "hltEG33L1EG26HEFilter",
+  "1": "hltEG50HEFilter",
+  "2": "hltEG75HEFilter",
+  "3": "hltEG90HEFilter",
+  "4": "hltEG120HEFilter",
+  "5": "hltEG150HEFilter",
+  "6": "hltEG175HEFilter",
+  "7": "hltEG200HEFilter",
+  "8": "hltHtEcal800",
+  "9": "hltEG110EBTightIDTightIsoTrackIsoFilter",
+  "10": "hltEG120EBTightIDTightIsoTrackIsoFilter",
+  "11": "1mu-1photon",
+  "12": "hltEG30LR9Id85b90eHE12R9Id50b80eR9IdLastFilter",
+  "13": "hltEG30LIso60CaloId15b35eHE12R9Id50b80eEcalIsoLastFilter",
+  "14": "hltEG22Iso60CaloId15b35eHE12R9Id50b80eTrackIsoUnseededLastFilter",
+  "15": "hltEG22R9Id85b90eHE12R9Id50b80eR9UnseededLastFilter",
+  "16": "hltEG30Iso60CaloId15b35eR9Id50b90eHE12b10eR9Id50b80eEcalIsoFilter",
+  "17": "hltEG18TrackIso60Iso60CaloId15b35eR9Id50b90eHE12b10eR9Id50b80eTrackIsoUnseededFilter"
+ },
+ "reference_comparison": {
+  "reference_file": "cmssw/v13/nano_nofix.root",
+  "events_in_reference": 17760,
+  "events_in_common": 17760,
+  "events_identical_all_TrigObj": 7124,
+  "events_identical_TrigObj_without_id22": 17760
+ }
+}

@@ -1,0 +1,478 @@
+{
+ "version": "v15_fix",
+ "dataset": "MiniAOD-parent-of-central-v13",
+ "file": "cmssw/v15/nano_fix.root",
+ "file_size_bytes": 39959608,
+ "events_in_file": 17760,
+ "events_read": 17760,
+ "filterBits_interpretation": "AsJagged(AsDtype('>u8'))",
+ "n_photon_bits_documented": 21,
+ "n_electron_bits_documented": 20,
+ "photon_bit_numbers": {
+  "R9UnseededLast": 17,
+  "TrackIsoUnseededLast": 16,
+  "EG18Unseeded": 19,
+  "seeded_R9IdLast": 14,
+  "seeded_EcalIsoLast": 15,
+  "hltHtEcal800": 8
+ },
+ "electron_CaloIdL_MW_unseeded_bit": 16,
+ "paths_present": [
+  "HLT_Diphoton30_22_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass90",
+  "HLT_DoubleEle33_CaloIdL_MW"
+ ],
+ "fired_Mass90": 10453,
+ "fired_DoubleEle33_CaloIdL_MW": 87,
+ "photons_with_bit": {
+  "R9UnseededLast": 18365,
+  "TrackIsoUnseededLast": 20461,
+  "EG18Unseeded": 0,
+  "seeded_R9IdLast": 20865,
+  "seeded_EcalIsoLast": 24170,
+  "hltHtEcal800": 0
+ },
+ "photons_with_bit_in_Mass90_events": {
+  "R9UnseededLast": 18175,
+  "TrackIsoUnseededLast": 20256,
+  "EG18Unseeded": 0,
+  "seeded_R9IdLast": 16614,
+  "seeded_EcalIsoLast": 19213,
+  "hltHtEcal800": 0
+ },
+ "electrons_with_CaloIdL_MW_unseeded_bit": 702,
+ "objects_per_id": {
+  "1": 78979,
+  "3": 2898,
+  "4": 2339,
+  "6": 6479,
+  "11": 3204,
+  "13": 447,
+  "15": 557640,
+  "22": 26807,
+  "1515": 83
+ },
+ "n_id2_MET": 0,
+ "n_id1515_BoostedTau": 83,
+ "n_id22_Photon": 26807,
+ "events_with_unseeded_photon_bit": 10636,
+ "first_offending_run_lumi_event": [
+  [
+   1,
+   1086,
+   3417764
+  ],
+  [
+   1,
+   1086,
+   3417806
+  ],
+  [
+   1,
+   1086,
+   3417758
+  ],
+  [
+   1,
+   1086,
+   3417814
+  ],
+  [
+   1,
+   1086,
+   3417808
+  ],
+  [
+   1,
+   1086,
+   3417803
+  ],
+  [
+   1,
+   1086,
+   3417823
+  ],
+  [
+   1,
+   1086,
+   3417826
+  ],
+  [
+   1,
+   1086,
+   3417842
+  ],
+  [
+   1,
+   1086,
+   3417816
+  ],
+  [
+   1,
+   1086,
+   3417846
+  ],
+  [
+   1,
+   1086,
+   3417851
+  ],
+  [
+   1,
+   1086,
+   3417857
+  ],
+  [
+   1,
+   1086,
+   3417863
+  ],
+  [
+   1,
+   1086,
+   3417854
+  ],
+  [
+   1,
+   1086,
+   3417859
+  ],
+  [
+   1,
+   1086,
+   3417878
+  ],
+  [
+   1,
+   1086,
+   3417873
+  ],
+  [
+   1,
+   1086,
+   3417839
+  ],
+  [
+   1,
+   1086,
+   3417899
+  ],
+  [
+   1,
+   1086,
+   3417905
+  ],
+  [
+   1,
+   1086,
+   3417903
+  ],
+  [
+   1,
+   1086,
+   3417885
+  ],
+  [
+   1,
+   1086,
+   3417871
+  ],
+  [
+   1,
+   1086,
+   3417922
+  ],
+  [
+   1,
+   1086,
+   3417928
+  ],
+  [
+   1,
+   1086,
+   3417925
+  ],
+  [
+   1,
+   1086,
+   3417926
+  ],
+  [
+   1,
+   1086,
+   3417950
+  ],
+  [
+   1,
+   1086,
+   3417960
+  ],
+  [
+   1,
+   1086,
+   3417939
+  ],
+  [
+   1,
+   1086,
+   3417964
+  ],
+  [
+   1,
+   1086,
+   3417965
+  ],
+  [
+   1,
+   1086,
+   3417970
+  ],
+  [
+   1,
+   1086,
+   3417963
+  ],
+  [
+   1,
+   1086,
+   3417979
+  ],
+  [
+   1,
+   1086,
+   3417972
+  ],
+  [
+   1,
+   1086,
+   3417987
+  ],
+  [
+   1,
+   1086,
+   3417996
+  ],
+  [
+   1,
+   1086,
+   3417994
+  ],
+  [
+   1,
+   1086,
+   3418005
+  ],
+  [
+   1,
+   1086,
+   3417999
+  ],
+  [
+   1,
+   1086,
+   3418001
+  ],
+  [
+   1,
+   1086,
+   3418014
+  ],
+  [
+   1,
+   1086,
+   3418009
+  ],
+  [
+   1,
+   1086,
+   3418010
+  ],
+  [
+   1,
+   1086,
+   3418024
+  ],
+  [
+   1,
+   1086,
+   3418033
+  ],
+  [
+   1,
+   1086,
+   3418018
+  ],
+  [
+   1,
+   1086,
+   3418025
+  ]
+ ],
+ "Mass90_events_with_unseeded_photon_bit": 10453,
+ "fraction_Mass90_events_with_unseeded_photon_bit": 1.0,
+ "photons_per_Mass90_event_mean": 2.019037596862145,
+ "unseeded_photon_pt": {
+  "n": 21254,
+  "min": 22.03515625,
+  "median": 58.296875,
+  "n_below_22": 0
+ },
+ "nTrigObj_mean": 38.225,
+ "bit_counts_per_id_without_22": {
+  "1": {
+   "0": 13991,
+   "1": 8486,
+   "2": 30,
+   "3": 7575,
+   "4": 6820,
+   "5": 11761,
+   "6": 6727,
+   "7": 7385,
+   "8": 2725,
+   "10": 4550,
+   "11": 645,
+   "12": 5659,
+   "13": 1662,
+   "14": 2097,
+   "15": 2498,
+   "16": 2487,
+   "17": 39,
+   "18": 11,
+   "19": 34,
+   "20": 4,
+   "21": 2211,
+   "22": 4916,
+   "23": 1519,
+   "24": 1,
+   "25": 30,
+   "26": 4,
+   "27": 4244,
+   "28": 4271,
+   "29": 1718,
+   "30": 4,
+   "36": 229,
+   "37": 152,
+   "38": 51,
+   "39": 32,
+   "40": 674,
+   "41": 24,
+   "42": 41351,
+   "43": 4298,
+   "44": 35270,
+   "45": 3669
+  },
+  "3": {
+   "2": 2872,
+   "3": 1882,
+   "4": 459,
+   "5": 1004
+  },
+  "4": {
+   "0": 1882,
+   "1": 459
+  },
+  "6": {
+   "0": 5110,
+   "1": 1236,
+   "2": 183,
+   "4": 135,
+   "5": 122,
+   "6": 4
+  },
+  "11": {
+   "0": 2131,
+   "1": 992,
+   "3": 36,
+   "4": 156,
+   "5": 163,
+   "6": 30,
+   "7": 36,
+   "8": 9,
+   "9": 25,
+   "10": 22,
+   "11": 872,
+   "12": 1040,
+   "13": 2436,
+   "14": 47,
+   "15": 2425,
+   "16": 702,
+   "18": 884,
+   "19": 139
+  },
+  "13": {
+   "0": 322,
+   "1": 152,
+   "2": 19,
+   "3": 152,
+   "4": 266,
+   "5": 343,
+   "6": 19,
+   "7": 28,
+   "8": 232,
+   "9": 100,
+   "10": 55,
+   "11": 8,
+   "12": 192
+  },
+  "15": {
+   "0": 415,
+   "1": 2822,
+   "2": 523007,
+   "3": 3227,
+   "5": 2057,
+   "6": 164,
+   "7": 383,
+   "8": 10,
+   "9": 31,
+   "10": 87,
+   "11": 1199,
+   "12": 38,
+   "13": 17,
+   "14": 50,
+   "17": 274,
+   "18": 7,
+   "19": 5,
+   "20": 7,
+   "23": 5,
+   "24": 524148,
+   "25": 14,
+   "27": 1522,
+   "28": 34029,
+   "29": 916,
+   "30": 183
+  },
+  "1515": {
+   "1": 83,
+   "2": 80
+  }
+ },
+ "photon_bits_documented": {
+  "0": "hltEG33L1EG26HEFilter",
+  "1": "hltEG50HEFilter",
+  "2": "hltEG75HEFilter",
+  "3": "hltEG90HEFilter",
+  "4": "hltEG120HEFilter",
+  "5": "hltEG150HEFilter",
+  "6": "hltEG175HEFilter",
+  "7": "hltEG200HEFilter",
+  "8": "hltHtEcal800",
+  "9": "hltEG45EBTightIDTightIsoTrackIsoFilter",
+  "10": "hltEG50EBTightIDTightIsoTrackIsoFilter",
+  "11": "hltEG110EBTightIDTightIsoTrackIsoFilter",
+  "12": "hltEG120EBTightIDTightIsoTrackIsoFilter",
+  "13": "1mu-1photon",
+  "14": "hltEG30LR9Id85b90eHE12R9Id50b80eR9IdLastFilter",
+  "15": "hltEG30LIso60CaloId15b35eHE12R9Id50b80eEcalIsoLastFilter",
+  "16": "hltEG22Iso60CaloId15b35eHE12R9Id50b80eTrackIsoUnseededLastFilter",
+  "17": "hltEG22R9Id85b90eHE12R9Id50b80eR9UnseededLastFilter",
+  "18": "hltEG30Iso60CaloId15b35eR9Id50b90eHE12b10eR9Id50b80eEcalIsoFilter",
+  "19": "hltEG18TrackIso60Iso60CaloId15b35eR9Id50b90eHE12b10eR9Id50b80eTrackIsoUnseededFilter",
+  "20": "hltEG*L1VBFLooseIsoEGHEFilter"
+ },
+ "reference_comparison": {
+  "reference_file": "cmssw/v15/nano_nofix.root",
+  "events_in_reference": 17760,
+  "events_in_common": 17760,
+  "events_identical_all_TrigObj": 7124,
+  "events_identical_TrigObj_without_id22": 17760
+ }
+}
