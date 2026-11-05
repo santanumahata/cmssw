@@ -1,0 +1,38 @@
+<section id="code-measure-trigobj-py-4" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: measure_trigobj.py (4/7)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/measure_trigobj.py, lines 95 to 128</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">def compare_with_reference(arrays, reference_url):
+    # Total: time O(n_obj log n_obj), space O(n_obj)
+    reference = uproot.open(reference_url)[&quot;Events&quot;].arrays(EVENT_COLUMNS, entry_stop=MAX_EVENTS)
+    this_all, ref_all = event_contents(arrays), event_contents(reference)
+    this_other, ref_other = event_contents(arrays, skip_id=22), event_contents(reference, skip_id=22)
+    common = set(this_all) &amp; set(ref_all)                      # set join O(n)    | events in both files
+    identical_all = sum(1 for k in common if this_all[k] == ref_all[k])
+    identical_other = sum(1 for k in common if this_other[k] == ref_other[k])
+    return {
+        &quot;reference_file&quot;: reference_url,
+        &quot;events_in_reference&quot;: len(ref_all),
+        &quot;events_in_common&quot;: len(common),
+        &quot;events_identical_all_TrigObj&quot;: identical_all,
+        &quot;events_identical_TrigObj_without_id22&quot;: identical_other,
+    }
+
+
+def main():
+    # Total: time O(n_events * n_obj), space O(n_events * n_obj)
+    version, dataset, url, out_path = sys.argv[1:5]
+    reference_url = sys.argv[5] if len(sys.argv) &gt; 5 else None
+    root_file = uproot.open(url)
+    tree = root_file[&quot;Events&quot;]
+    branch = tree[&quot;TrigObj_filterBits&quot;]
+    doc = branch.title
+    photon_bits = bits_of(doc, &quot;Photon&quot;)                       # dict             | photon bit -&gt; name
+    electron_bits = bits_of(doc, &quot;Electron&quot;)                   # dict             | electron bit -&gt; name
+    bit = {key: find_bit(photon_bits, name) for key, name in PHOTON_FILTERS.items()}
+    electron_bit = find_bit(electron_bits, &quot;CaloIdL_MW unseeded&quot;)
+    n_bits = 64 if &quot;u8&quot; in str(branch.interpretation) else 32
+
+    paths = [p for p in (PATH_MASS90, PATH_DIELE) if p in tree.keys()]
+    arrays = tree.arrays(EVENT_COLUMNS + paths, entry_stop=MAX_EVENTS)  # columnar read | up to 300k events
+    ids = arrays[&quot;TrigObj_id&quot;]</pre>
+</section>

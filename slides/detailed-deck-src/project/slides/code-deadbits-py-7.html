@@ -1,0 +1,36 @@
+<section id="code-deadbits-py-7" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: deadbits.py (7/8)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/deadbits.py, lines 193 to 224</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">def main():
+    cfg = open(sys.argv[1]).read()
+    sels = parse_config(cfg)
+    menus = []
+    for arg in sys.argv[2:]:
+        label, path = arg.split(&quot;=&quot;, 1)
+        mods = parse_modules(open(path).read())
+        filters = [n for n, (t, b) in mods.items() if t == &quot;EDFilter&quot;]
+        paths = [n for n, (t, b) in mods.items() if t == &quot;Path&quot;]
+        producers = [n for n, (t, b) in mods.items() if t == &quot;EDProducer&quot;]
+        menus.append((label, mods, filters, paths, producers))
+    print(&quot;config:&quot;, sys.argv[1]); print(&quot;menus:&quot;, &quot; &quot;.join(l for l, *_ in menus))
+    for name, s in sels.items():
+        print(&quot;\n== %s (sel colls: %s; skip=%s; %d bits)&quot; % (name, s[&quot;colls&quot;] or &quot;any&quot;, s[&quot;skip&quot;], len(s[&quot;bits&quot;])))
+        if not s[&quot;bits&quot;] and s[&quot;skip&quot;] == &quot;True&quot;:
+            print(&quot;   !! no quality bits and skipObjectsNotPassingQualityBits=True: this object type is never written&quot;)
+        counts = {l: {&quot;OK&quot;: 0, &quot;UNK&quot;: 0, &quot;COLL&quot;: 0, &quot;STALE&quot;: 0} for l, *_ in menus}
+        for bitno, a0, doc in s[&quot;bits&quot;]:
+            alts = alternatives(a0)
+            row = []
+            for label, mods, filters, paths, producers in menus:
+                st = bit_status(mods, filters, paths, producers, alts, s[&quot;colls&quot;])
+                counts[label][st.split(&quot;{&quot;)[0]] += 1
+                row.append((label, st))
+            if any(st.split(&quot;{&quot;)[0] != &quot;OK&quot; for l, st in row):
+                desc = a0 if isinstance(a0, str) else &quot;|&quot;.join(a0)
+                print(&quot;   bit %2d %-70s %s&quot; % (bitno, (desc[:68] + (&quot;..&quot; if len(desc) &gt; 68 else &quot;&quot;)), &quot; &quot;.join(&quot;%s:%s&quot; % (l, st.split(&quot;{&quot;)[0]) for l, st in row)))
+                extra = [st for l, st in row if &quot;{&quot; in st]
+                if extra: print(&quot;          detail: &quot; + extra[0][extra[0].find(&quot;{&quot;):][:260])
+        print(&quot;   summary: &quot; + &quot; | &quot;.join(&quot;%s OK=%d COLL=%d STALE=%d UNK=%d&quot; % (l, c[&quot;OK&quot;], c[&quot;COLL&quot;], c[&quot;STALE&quot;], c[&quot;UNK&quot;]) for l, c in counts.items()))
+
+main()</pre>
+</section>

@@ -1,0 +1,31 @@
+<section id="code-wfn-py-1" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: wfn.py (1/1)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/wfn.py, lines 1 to 27</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">import re, sys
+class WFN:
+    def __init__(self, offset):
+        self.offset = offset; self.index = 1; self.thousands = 0; self.hundreds = 0
+    def __call__(self):
+        v = float(f&quot;{self.offset}.{self.thousands}{self.hundreds}{self.index:02d}&quot;); self.index += 1; return v
+    def subnext(self):
+        self.hundreds += 1; self.index = 1
+    def next(self, index=None):
+        if index is None: self.thousands += 1; self.hundreds = 0
+        else: self.thousands = index; self.hundreds = 0
+        self.index = 1
+src = open(sys.argv[1]).read()
+m = re.search(r&#x27;_wfn\s*=\s*WFN\((\d+)\)&#x27;, src)
+w = WFN(int(m.group(1))) if m else None
+print(&quot;counter init:&quot;, m.group(0) if m else &quot;none (old scheme?)&quot;)
+for i, line in enumerate(src.splitlines(), 1):
+    s = line.strip()
+    if s.startswith(&quot;#&quot;): continue
+    if re.match(r&#x27;_wfn\.next\(\s*\)&#x27;, s): w.next()
+    elif re.match(r&#x27;_wfn\.next\((\d+)\)&#x27;, s): w.next(int(re.match(r&#x27;_wfn\.next\((\d+)\)&#x27;, s).group(1)))
+    elif re.match(r&#x27;_wfn\.subnext\(\)&#x27;, s): w.subnext()
+    elif &quot;workflows[_wfn()]&quot; in s:
+        print(&quot;%-10s %s&quot; % (w(), s.split(&quot;=&quot;, 1)[1].strip()[:110]))
+    elif re.match(r&#x27;workflows\[([\d.]+)\]&#x27;, s):
+        print(&quot;%-10s %s&quot; % (re.match(r&#x27;workflows\[([\d.]+)\]&#x27;, s).group(1), s.split(&quot;=&quot;, 1)[1].strip()[:110]))
+</pre>
+</section>

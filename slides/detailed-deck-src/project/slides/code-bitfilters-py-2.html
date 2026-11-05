@@ -1,0 +1,11 @@
+<section id="code-bitfilters-py-2" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: bitfilters.py (2/2)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/bitfilters.py, lines 30 to 36</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">        row[name] = {&quot;hltEgammaCandidates&quot;: &quot;S&quot;, &quot;hltEgammaCandidatesUnseeded&quot;: &quot;U&quot;}.get(coll, coll)
+    menus.append((f.split(&quot;/&quot;)[-1].replace(&quot;menu_&quot;,&quot;&quot;).replace(&quot;.py&quot;,&quot;&quot;), row))
+print(&quot;%-82s %s&quot; % (&quot;filter&quot;, &quot; &quot;.join(&quot;%-3s&quot; % (&quot;c%d&quot; % i) for i in range(len(menus)))))
+for i, (n, r) in enumerate(menus): print(&quot;  c%-2d %s&quot; % (i, n))
+for name in FILTERS:
+    print(&quot;%-82s %s&quot; % (name, &quot; &quot;.join(&quot;%-3s&quot; % r[name] for n, r in menus)))
+</pre>
+</section>

@@ -1,0 +1,16 @@
+<section id="code-menusummary-py-3" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: menusummary.py (3/3)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/menusummary.py, lines 67 to 78</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">        lv = [f for f in leaves(mods, n) if f.startswith(&quot;hlt&quot;) and not f.startswith(&quot;hltPre&quot;) and mods[f][1].find(&quot;HLTL1TSeed&quot;) &lt; 0 and not re.search(r&#x27;(Trigger|Bool|HLTPrescaler)&#x27;, mods[f][1][:40])]
+        egf = [f for f in lv if re.search(r&#x27;EG|Diphoton|DiEG|DiPhoton|Mass|Photon&#x27;, f)]
+        uns = [f for f in egf if &quot;Unseeded&quot; in f]
+        sed = [f for f in egf if &quot;Unseeded&quot; not in f and not re.search(r&#x27;Comb|Mass&#x27;, f)]
+        comb = [f for f in egf if re.search(r&#x27;Comb|Mass&#x27;, f)]
+        st = set(param(mods[f][1], &quot;saveTags&quot;) for f in egf)
+        h = hashlib.md5(&quot; &quot;.join(egf).encode()).hexdigest()[:8]
+        print(&quot;  PATH %s: nEgFilters=%d chain=%s saveTags=%s&quot; % (n.replace(&quot;HLT_&quot;, &quot;&quot;), len(egf), h, &quot;/&quot;.join(sorted(x or &quot;None&quot; for x in st))))
+        print(&quot;       last seeded   : %s&quot; % (sed[-1] if sed else &quot;-&quot;))
+        print(&quot;       last unseeded : %s&quot; % (uns[-1] if uns else &quot;-&quot;))
+        print(&quot;       comb/mass     : %s&quot; % &quot;, &quot;.join(comb))
+</pre>
+</section>

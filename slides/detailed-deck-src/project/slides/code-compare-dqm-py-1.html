@@ -1,0 +1,38 @@
+<section id="code-compare-dqm-py-1" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: compare_dqm.py (1/2)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/compare_dqm.py, lines 1 to 34</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">#!/usr/bin/env python3
+&quot;&quot;&quot;List the histograms that differ between two harvested DQM files.
+
+Usage: python3 compare_dqm.py &lt;clean DQM_V0001_*.root&gt; &lt;fix DQM_V0001_*.root&gt; &lt;out.json&gt;
+&quot;&quot;&quot;
+import json
+import sys
+
+import numpy as np
+import uproot
+
+
+def histograms(path):
+    # Total: time O(n_hist * n_bins), space O(n_hist * n_bins)
+    found = {}
+    with uproot.open(path) as root_file:
+        for name, classname in root_file.classnames().items():  # dict scan O(n)   | every stored object
+            if not classname.startswith((&quot;TH1&quot;, &quot;TH2&quot;, &quot;TH3&quot;, &quot;TProfile&quot;)):
+                continue
+            found[name.split(&quot;;&quot;)[0]] = root_file[name].values(flow=True)  # array O(bins) | bin contents
+    return found
+
+
+def main():
+    # Total: time O(n_hist * n_bins), space O(n_hist * n_bins)
+    clean_path, fix_path, out_path = sys.argv[1:4]
+    clean, fix = histograms(clean_path), histograms(fix_path)
+    only_clean = sorted(set(clean) - set(fix))                 # set diff O(n)    | histograms lost by the fix
+    only_fix = sorted(set(fix) - set(clean))                   # set diff O(n)    | histograms added by the fix
+    differing = sorted(name for name in set(clean) &amp; set(fix)  # set join O(n)    | same name, different bins
+                       if clean[name].shape != fix[name].shape or not np.array_equal(clean[name], fix[name]))
+    result = {
+        &quot;clean&quot;: clean_path,
+        &quot;fix&quot;: fix_path,</pre>
+</section>

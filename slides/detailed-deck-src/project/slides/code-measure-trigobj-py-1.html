@@ -1,0 +1,37 @@
+<section id="code-measure-trigobj-py-1" data-transition="fade" style="background:#F6F5F0;color:#16213A;font-family:'IBM Plex Sans', Arial, sans-serif;padding:56px 72px 72px 72px;display:flex;flex-direction:column;gap:12px">
+<h2 style="font-size:40px;font-weight:600;line-height:1.1">Backup code: measure_trigobj.py (1/7)</h2>
+<p style="font-size:18px;line-height:1.2;color:#44506A;font-family:'JetBrains Mono', 'Courier New', monospace">scripts/measure_trigobj.py, lines 1 to 33</p>
+<pre style="margin:0;flex:1;min-height:0;background:#16213A;color:#F6F5F0;border-radius:12px;padding:16px 22px;font-size:16.5px;line-height:1.3;font-family:'JetBrains Mono', 'Courier New', monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden">#!/usr/bin/env python3
+&quot;&quot;&quot;Count TrigObj filter bits of the Diphoton30_22 photon legs in one NanoAOD file.
+
+Bit numbers are parsed from the TrigObj_filterBits branch documentation, never hardcoded.
+Usage: python3 measure_trigobj.py &lt;version&gt; &lt;dataset&gt; &lt;file&gt; &lt;out.json&gt; [&lt;reference file&gt;]
+With a reference file, events are matched by (run, lumi, event) and their TrigObj content compared.
+&quot;&quot;&quot;
+import json
+import re
+import sys
+
+import awkward as ak
+import numpy as np
+import uproot
+
+MAX_EVENTS = 300000
+PATH_MASS90 = &quot;HLT_Diphoton30_22_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass90&quot;
+PATH_DIELE = &quot;HLT_DoubleEle33_CaloIdL_MW&quot;
+PHOTON_FILTERS = {
+    &quot;R9UnseededLast&quot;: &quot;hltEG22R9Id85b90eHE12R9Id50b80eR9UnseededLastFilter&quot;,
+    &quot;TrackIsoUnseededLast&quot;: &quot;hltEG22Iso60CaloId15b35eHE12R9Id50b80eTrackIsoUnseededLastFilter&quot;,
+    &quot;EG18Unseeded&quot;: &quot;hltEG18TrackIso60Iso60CaloId15b35eR9Id50b90eHE12b10eR9Id50b80eTrackIsoUnseededFilter&quot;,
+    &quot;seeded_R9IdLast&quot;: &quot;hltEG30LR9Id85b90eHE12R9Id50b80eR9IdLastFilter&quot;,
+    &quot;seeded_EcalIsoLast&quot;: &quot;hltEG30LIso60CaloId15b35eHE12R9Id50b80eEcalIsoLastFilter&quot;,
+    &quot;hltHtEcal800&quot;: &quot;hltHtEcal800&quot;,
+}
+SEEDED = (&quot;seeded_R9IdLast&quot;, &quot;seeded_EcalIsoLast&quot;)
+UNSEEDED = (&quot;R9UnseededLast&quot;, &quot;TrackIsoUnseededLast&quot;, &quot;EG18Unseeded&quot;)
+EXPECTED_PHOTON_BIT_COUNTS = (0, 12, 18, 21)
+BIT_ENTRY = re.compile(r&quot;(\d+)\s*=&gt;\s*(.*?)(?=,\s*\d+\s*=&gt;|\s+for\s+\w+\s*$)&quot;)
+EVENT_COLUMNS = [&quot;run&quot;, &quot;luminosityBlock&quot;, &quot;event&quot;, &quot;TrigObj_id&quot;, &quot;TrigObj_filterBits&quot;, &quot;TrigObj_pt&quot;]
+
+</pre>
+</section>
