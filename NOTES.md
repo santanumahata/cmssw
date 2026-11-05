@@ -1094,3 +1094,34 @@ section 14 (`scripts/measure_trigobj.py`, first DAS file, 300000 events, LCG_107
 - Mass90 fired in 1511 of 300000 events, against 31771-48687 in the data files of section 14; not investigated.
 - File `/store/data/Run2026C/EGamma0/NANOAOD/PromptReco-v1/000/402/536/00000/38961e9f-be5f-4319-a1b9-bf287597c1fc.root`
   (454912 events). JSON: `results/16_0_X_EGamma0_Run2026C_PromptReco.json`.
+
+---
+
+## 18. Fix test on 2026 data, CMSSW_16_0_4_patch2 (lxplus, 5 November 2026)
+
+`scripts/make_fixed_nano.sh v16`: CMSSW_16_0_4_patch2 (release of the central Run2026C PromptReco NANO file,
+`edmProvDump`), `--data`, era `Run3_2026`, GT `160X_dataRun3_Prompt_frozen260223_v1` (`autoCond.py:39`
+`run3_data_prompt` of that release; the GT Tier0 used is not in the file provenance and was not checked). Input
+`/store/data/Run2026C/EGamma0/MINIAOD/PromptReco-v1/000/402/536/00000/33c652d5-5e17-456b-9b90-6d8e00734855.root`
+(run 402536, same run as the section 17 file), first 20000 events, NANO made without and with the fix (line 86
+changed, one line). JSONs: `results/fix_test/v16_nano_nofix.json`, `results/fix_test/v16_nano_fix.json`.
+
+| | nano_nofix | nano_fix |
+|---|---|---|
+| fired Mass90 | 308 | 308 |
+| photons with bit 16 / 17 (all events) | 0 / 0 | 671 / 1010 |
+| photons with bit 16 / 17 (Mass90 events) | 0 / 0 | 334 / 507 |
+| photons with bit 19 | 0 | 0 |
+| photons with seeded bit 14 / 15 | 8909 / 10760 | 8909 / 10760 |
+| Mass90 events with an unseeded photon bit | 0 / 308 | 308 / 308 |
+| unseeded-bit photons: n, min pt, median pt | 0 | 1234, 22.01 GeV, 37.06 GeV |
+| photon objects (id 22) | 12744 | 13109 |
+| electrons with CaloIdL_MW unseeded bit | 189 | 189 |
+| nTrigObj mean | 2.0998 | 2.11805 |
+
+- Same outcome as the v13 and v15 fix tests of section 15: without the fix the unseeded bits are 0, as in the
+  central file of section 17; with it every Mass90-fired event has a photon with an unseeded bit, seeded-bit
+  counts unchanged.
+- Bit 19 (Diphoton30_18 unseeded) stays 0 after the fix, as in section 15; not investigated for 2026.
+- Not checked here: event-by-event agreement of nano_nofix with a central file, and the id != 22 comparison.
+- Log: `/eos/user/s/smahata/trigobj_check/make_fixed_nano_v16.log`.
