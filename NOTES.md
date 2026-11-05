@@ -1075,3 +1075,22 @@ HLT trigger summaries are 1.3-1.4 kB per event, against 34.6 kB for the original
 input), so this relval does not exercise the photon selection; the fix test of section 15 does. Details:
 `results/REPORT.md` "Relval in CMSSW_16_1_3"; JSONs in `results/relval_16_1_3/`; script
 `scripts/relval_fix_check.sh`.
+
+---
+
+## 17. 2026 PromptReco NANOAOD, CMSSW_16_0_X (lxplus, 5 November 2026)
+
+DAS has no dataset named NanoAOD v16 (`*NanoAODv16*`, `*Nanov16*`, `*NANOv16*`, data and MC). The 2026 EGamma0
+PromptReco NANOAOD is made in CMSSW_16_0_X (DAS `release`: Run2026A 16_0_2_patch1; Run2026B 16_0_2_patch1, 16_0_4;
+Run2026C 16_0_4_patch2, 16_0_5_patch1); it is labelled here "16_0_X PromptReco", not v16. Same procedure as
+section 14 (`scripts/measure_trigobj.py`, first DAS file, 300000 events, LCG_107):
+
+| release | dataset (one file) | events | fired Mass90 | photons with seeded bits | photons with unseeded bits | e unseeded bit | id 2 | id 1515 |
+|---|---|---|---|---|---|---|---|---|
+| 16_0_X | /EGamma0/Run2026C-PromptReco-v1/NANOAOD | 300000 | 1511 | 14: 124972, 15: 145161 | 16: 0, 17: 0, 19: 0 | 16: 1034 | 0 | 42 |
+
+- 21 photon bits documented, same bit numbers as v15. 0 events with an unseeded photon bit; in Mass90-fired events
+  1655 / 1579 photons carry seeded bits 14 / 15 and 0 carry unseeded bits.
+- Mass90 fired in 1511 of 300000 events, against 31771-48687 in the data files of section 14; not investigated.
+- File `/store/data/Run2026C/EGamma0/NANOAOD/PromptReco-v1/000/402/536/00000/38961e9f-be5f-4319-a1b9-bf287597c1fc.root`
+  (454912 events). JSON: `results/16_0_X_EGamma0_Run2026C_PromptReco.json`.
