@@ -1061,11 +1061,11 @@ Details and tables: `results/REPORT.md` "Fix test"; JSONs in `results/fix_test/`
 ## 16. Build and relval check on the synced master (lxplus, 5 November 2026)
 
 CMSSW_16_1_3 with commit `aebf3eb64` cherry-picked (one changed line, `git diff CMSSW_16_1_3 --numstat`) builds
-cleanly. Relval 12452.0 (H125GGgluonfusion 2023, upgrade matrix, 10 events) ran in the clean area and steps 3-4
-were rerun in the fix area on the same `step2.root`: both NANO outputs contain no TrigObj at all
-(`RecoNanoFakeHLT_2023`, nTrigObj mean 0.0, no HLT path branches), so this workflow cannot show the fix; clean
-and fix are identical in 10 / 10 events, and the step 3 logs have no `Exception` and no `triggerObjectTable`
-lines. 141.046 (EGamma 2023D, 100 events) needed its RAW from the IB EOS cache (tape only in DAS); its clean
-steps 2-4 completed, its fix-area step 3 did not complete before the 5 November deadline, and the DQM comparison
-was still running at commit time. Details: `results/REPORT.md` "Relval in CMSSW_16_1_3"; JSONs in
-`results/relval_16_1_3/`; script `scripts/relval_fix_check.sh`.
+and runs relval 12452.0 (H125GGgluonfusion 2023, upgrade matrix, 10 events) and 141.046 (EGamma 2023D, 100 events,
+RAW from the IB EOS cache because DAS has it on tape only) without exceptions; steps 3-4 ran in both areas on the
+same `step2.root`. Clean and fix agree in TrigObj (10 / 10 and 100 / 100 events) and in every DQM histogram except
+25 `DQM/TimerService` ones per workflow. The NANO TrigObj table is empty in both workflows and areas (the relval
+HLT trigger summaries are 1.3-1.4 kB per event, against 34.6 kB for the original 2023 HLT summary in the 141.046
+input), so this relval does not exercise the photon selection; the fix test of section 15 does. Details:
+`results/REPORT.md` "Relval in CMSSW_16_1_3"; JSONs in `results/relval_16_1_3/`; script
+`scripts/relval_fix_check.sh`.
