@@ -38,6 +38,11 @@ Two decks, built on 4 November 2026 and updated on 5 November with the fix test 
 | Issue deck (problem, scope, measurement, fix test, fix) | 11 | `slides/issue-deck.pdf` | `slides/issue-deck.html` | `slides/issue-deck-src/project/` | https://claude.ai/artifact/CnPtNgvGdp6PAAh9xfizof |
 | Detailed walkthrough (code at every step, breadth scan, measurement, fix test, appendices) | 33 | `slides/detailed-deck.pdf` | `slides/detailed-deck.html` | `slides/detailed-deck-src/project/` | https://claude.ai/artifact/Qx2HzCEjougjAQmaH6P2Qc |
 
+Beamer version (dark CMS style, 47 frames: the main talk plus backup frames with the code at every step, all
+tables, history, production recipe and reproducibility): source `slides/beamer/src/trigobj_unseeded.tex` with
+`preamble.tex`, PDF `slides/beamer/outputs/trigobj_unseeded.pdf`. Build from `slides/beamer/src/` with
+`pdflatex -interaction=nonstopmode -output-directory=../outputs trigobj_unseeded.tex`, twice.
+
 `scripts/render_deck.js <deck root> <output base>` turns a deck's `project/` folder into the standalone HTML
 and the PDF (Node + Playwright with Chromium; Google Fonts are used when reachable, otherwise the
 basic faces).
