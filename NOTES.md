@@ -1159,3 +1159,14 @@ v13 data: `scripts/make_fixed_nano.sh v13data`, CMSSW_13_3_1_patch1 (DAS release
 - Probes are electrons. The nofix file was not compared event by event with the central v13 file.
 - Results: `results/tnp_2022D_v13/` (JSON, per-file plots, `tnp_compare.png`), `results/tnp_2026C/`. Slide
   "Trigger efficiency with the fix" added after the fix-test slide in the three decks.
+
+---
+
+## 20. v13 data recipe check: re-made no-fix NANO vs the central 16Dec2023 file (lxplus, 6 November 2026)
+
+`scripts/measure_trigobj.py` with the reference file
+`/store/data/Run2022D/EGamma/NANOAOD/16Dec2023-v1/2550000/499b6a69-bd7e-4bce-bd6d-4ab4f250ea2d.root` (964636 events);
+the comparison now selects the reference events whose (run, lumi, event) are in the compared file instead of reading
+the first 300000 entries. `cmssw/v13data/nano_nofix.root` (section 19, 62007 events): 19539 events in common, TrigObj
+(id, filterBits, pt) identical in 19539 / 19539, also with id 22 excluded. The other 42468 events are not in this
+central file. JSON: `results/fix_test/v13data_nano_nofix.json`.

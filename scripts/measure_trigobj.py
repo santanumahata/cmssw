@@ -94,7 +94,13 @@ def event_contents(arrays, skip_id=None):
 
 def compare_with_reference(arrays, reference_url):
     # Total: time O(n_obj log n_obj), space O(n_obj)
-    reference = uproot.open(reference_url)["Events"].arrays(EVENT_COLUMNS, entry_stop=MAX_EVENTS)
+    tree = uproot.open(reference_url)["Events"]
+    ref_keys = tree.arrays(["run", "luminosityBlock", "event"])           # columnar   | ids of every reference event
+    this_keys = set(zip(ak.to_list(arrays["run"]), ak.to_list(arrays["luminosityBlock"]),
+                        ak.to_list(arrays["event"])))                       # set O(n)   | ids in this file
+    in_this = np.array([k in this_keys for k in zip(ak.to_list(ref_keys["run"]),
+                        ak.to_list(ref_keys["luminosityBlock"]), ak.to_list(ref_keys["event"]))])
+    reference = tree.arrays(EVENT_COLUMNS)[in_this]                         # mask O(n)  | only shared events
     this_all, ref_all = event_contents(arrays), event_contents(reference)
     this_other, ref_other = event_contents(arrays, skip_id=22), event_contents(reference, skip_id=22)
     common = set(this_all) & set(ref_all)                      # set join O(n)    | events in both files
