@@ -1,6 +1,6 @@
 #!/bin/bash
 # Reproduce NanoAOD from one MiniAOD file twice, without and with the photon TrigObj fix.
-# Usage: bash make_fixed_nano.sh v13|v15|v16
+# Usage: bash make_fixed_nano.sh v13|v15|v16|v13data
 set -eo pipefail
 
 export X509_USER_PROXY=/afs/cern.ch/user/s/smahata/private/x509up_cms
@@ -31,8 +31,16 @@ case "$1" in
         INPUT=root://cms-xrd-global.cern.ch//store/data/Run2026C/EGamma0/MINIAOD/PromptReco-v1/000/402/536/00000/33c652d5-5e17-456b-9b90-6d8e00734855.root
         MODE="--data"; CONTENT=NANOAOD; NEVENTS=20000
         ;;
+    v13data)
+        RELEASE=CMSSW_13_3_1_patch1          # release of /EGamma/Run2022D-16Dec2023-v1/NANOAOD in DAS
+        ERA=Run3
+        GT=133X_dataRun3_v3                  # autoCond run3_data in this release; 16Dec2023 GT not found
+        # one of the 40 DAS parents of the central v13 data file 499b6a69-bd7e-4bce-bd6d-4ab4f250ea2d.root
+        INPUT=root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/05d4c158-d7eb-439d-bf0c-947db0f8d58c.root
+        MODE="--data"; CONTENT=NANOAOD; NEVENTS=-1
+        ;;
     *)
-        echo "usage: $0 v13|v15|v16"; exit 1
+        echo "usage: $0 v13|v15|v16|v13data"; exit 1
         ;;
 esac
 OUT=$WORK/$1

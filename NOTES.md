@@ -1125,3 +1125,37 @@ changed, one line). JSONs: `results/fix_test/v16_nano_nofix.json`, `results/fix_
 - Bit 19 (Diphoton30_18 unseeded) stays 0 after the fix, as in section 15; not investigated for 2026.
 - Not checked here: event-by-event agreement of nano_nofix with a central file, and the id != 22 comparison.
 - Log: `/eos/user/s/smahata/trigobj_check/make_fixed_nano_v16.log`.
+
+---
+
+## 19. Unseeded-leg trigger efficiency, Z->ee tag-and-probe on re-made NANO (lxplus, 6 November 2026)
+
+`scripts/tnp_unseeded.py` (one file) and `scripts/plot_tnp_compare.py` (no fix vs fix overlay). Tag: tight electron
+(`Electron_cutBased` 4), pT > 35 GeV, |eta_SC| < 2.1, event fires `HLT_Ele32_WPTight_Gsf`, matched (dR < 0.1) to an
+electron TrigObj with the WPTight bit and to a photon TrigObj with a seeded-leg bit. Probe: other electron, cutBased
+>= 2, pT > 15 GeV, |eta_SC| < 2.5 outside 1.4442-1.566, opposite charge, 70 < m_ee < 110 GeV; same-sign pairs counted
+only. Pass: probe matched to a photon TrigObj with the unseeded TrackIso bit, the R9 bit, either, or (control) either
+seeded bit. Bit numbers parsed from each file. 68% Clopper-Pearson intervals; no background subtraction.
+
+v13 data: `scripts/make_fixed_nano.sh v13data`, CMSSW_13_3_1_patch1 (DAS release of
+`/EGamma/Run2022D-16Dec2023-v1/NANOAOD`), era `Run3`, GT `133X_dataRun3_v3` (`autoCond.py:41` `run3_data`; the
+16Dec2023 GT was not found, section 3.4), input `/store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/05d4c158-d7eb-439d-bf0c-947db0f8d58c.root`
+(one of the 40 DAS parents of the central v13 file `499b6a69-...`), all 62007 events. 23299 events fire Ele32, 8978 tags,
+1210 opposite-sign and 12 same-sign pairs.
+
+| numerator | no fix | with fix |
+|---|---|---|
+| unseeded TrackIso (bit 14) | 0 / 1210 | 1118 / 1210 = 0.924 |
+| unseeded R9 (bit 15) | 0 / 1210 | 827 / 1210 = 0.683 |
+| unseeded leg, bit 14 or 15 | 0 / 1210 | 1125 / 1210 = 0.930 (0.922-0.937) |
+| seeded leg, bit 12 or 13 | 979 / 1210 = 0.809 | 979 / 1210 = 0.809 |
+
+- Unseeded leg with fix vs probe pT: 15-20 GeV 0/17, 20-22 1/18, 22-25 25/28, 25-30 103/111, 30-35 136/147,
+  35-40 226/237, 40-50 505/522, 50-70 112/113, 70-100 12/12. Vs |eta_SC|: 0-0.8 548/560, 0.8-1.4442 345/368,
+  1.566-2.0 124/168, 2.0-2.5 108/114. The 1.566-2.0 bin was not investigated.
+- Seeded leg identical without and with the fix in every pT bin (0, 0, 0, 13, 128, 216, 495, 110, 12).
+- 2026C data (section 18 files, 20000 events, run before the seeded numerator existed): 739 Ele32 events, 263 tags,
+  42 opposite-sign and 2 same-sign pairs; unseeded leg 0 / 42 without and 39 / 42 with the fix.
+- Probes are electrons. The nofix file was not compared event by event with the central v13 file.
+- Results: `results/tnp_2022D_v13/` (JSON, per-file plots, `tnp_compare.png`), `results/tnp_2026C/`. Slide
+  "Trigger efficiency with the fix" added after the fix-test slide in the three decks.
