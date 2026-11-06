@@ -422,6 +422,22 @@ sel = "type(92) && pt > 7
   GluGluHto2G M125 file (17760 events); 2026: run 402536 MINIAOD. NOTES.md 15, 18; scripts/make\_fixed\_nano.sh.}
 \end{frame}
 
+\begin{whiteframe}{Trigger efficiency with the fix: unseeded leg 0 $\to$ 0.93, seeded leg unchanged}
+  \centering
+  \includegraphics[width=0.98\linewidth,height=0.46\textheight,keepaspectratio]{tnp_compare_2022D_v13.png}\par\vspace{2pt}
+  {\scriptsize
+  \begin{tabular}{@{}lll@{}}
+    \toprule
+    & no fix & with fix\\\midrule
+    unseeded leg (bit 14 or 15) & 0 / 1210 & 1125 / 1210 = 0.930 (0.922--0.937)\\
+    seeded leg (bit 12 or 13) & 979 / 1210 = 0.809 & 979 / 1210 = 0.809, identical in every bin\\\bottomrule
+  \end{tabular}}\par\vspace{3pt}
+  \whitecap{Z$\to$ee tag-and-probe on NANO re-made in CMSSW\_13\_3\_1\_patch1 from 2022D EGamma 22Sep2023 MINIAOD (62007 events).
+  Tag: tight e, \pT$>$35, $|\eta_{SC}|<$2.1, HLT\_Ele32\_WPTight\_Gsf object and a seeded-leg photon object. Probe: loose e,
+  \pT$>$15, opposite charge, 70$<m_{ee}<$110\,GeV (12 same-sign pairs). 68\% Clopper-Pearson. 2026C data (16\_0\_4\_patch2,
+  20000 events): 42 pairs, unseeded leg 0 / 42 without and 39 / 42 with the fix. scripts/tnp\_unseeded.py, plot\_tnp\_compare.py.}
+\end{whiteframe}
+
 \begin{frame}{Relval in CMSSW\_16\_1\_3: the fix builds and runs; these workflows have no TrigObj}
   \vspace{0pt}\par
   {\scriptsize Clean CMSSW\_16\_1\_3 versus the same release with commit aebf3eb64 cherry-picked (one changed line).
