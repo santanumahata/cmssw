@@ -1,5 +1,6 @@
-# Overlay the tag-and-probe efficiencies without and with the fix: unseeded leg (either bit) and seeded leg (control).
-# usage: python3 plot_tnp_compare.py <nofix json> <fix json> <title> <output png>
+# Overlay the tag-and-probe efficiencies without and with the fix for one diphoton path family:
+# unseeded leg (either unseeded bit) and seeded leg (control).
+# usage: python3 plot_tnp_compare.py <nofix json> <fix json> <family, e.g. 30_22> <title> <output png>
 import json
 import sys
 
@@ -23,12 +24,13 @@ def clopper_pearson(passed, total):
     return passed / total, low, high
 
 
-def curve(result, numerator, variable):
+def curve(result, family, numerator, variable):
     # Points (bin centre, efficiency, lower error, upper error) for bins with probes.
     # Total: time O(bins), space O(bins)
     edges = result[f"{variable}_bins"]
-    totals = result[f"total_{variable}"]
-    passes = result[f"passed_{variable}"][numerator]
+    leg = result["legs"][family]
+    totals = leg[f"total_{variable}"]
+    passes = leg[f"passed_{variable}"][numerator]
     points = []                                               # list | one tuple per non-empty bin
     for k in range(len(edges) - 1):                           # O(bins) | bin loop
         if totals[k] == 0:
@@ -40,14 +42,16 @@ def curve(result, numerator, variable):
 
 def main():
     # Total: time O(series * bins), space O(bins)
-    nofix_file, fix_file, title, out_png = sys.argv[1:5]
+    nofix_file, fix_file, family, title, out_png = sys.argv[1:6]
     results = {"nofix": json.load(open(nofix_file)), "fix": json.load(open(fix_file))}
-    assert results["nofix"]["counts"] == results["fix"]["counts"], "nofix and fix must have the same tags and probes"
+    for key in ("tags", "pairs_os", "pairs_ss", "total_pt", "total_eta"):
+        assert results["nofix"]["legs"][family][key] == results["fix"]["legs"][family][key], \
+            f"nofix and fix differ in {key}: they must have the same tags and probes"
 
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.2))
     for ax, variable, xlabel in ((axes[0], "pt", "probe electron $p_T$ [GeV]"), (axes[1], "eta", "probe electron $|\\eta_{SC}|$")):
         for which, numerator, legend, marker, colour in SERIES:   # O(4) | one curve per series
-            points = curve(results[which], numerator, variable)
+            points = curve(results[which], family, numerator, variable)
             x = [p[0] for p in points]
             y = [p[1] for p in points]
             errors = [[p[2] for p in points], [p[3] for p in points]]

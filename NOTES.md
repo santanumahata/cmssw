@@ -1170,3 +1170,36 @@ the comparison now selects the reference events whose (run, lumi, event) are in 
 the first 300000 entries. `cmssw/v13data/nano_nofix.root` (section 19, 62007 events): 19539 events in common, TrigObj
 (id, filterBits, pt) identical in 19539 / 19539, also with id 22 excluded. The other 42468 events are not in this
 central file. JSON: `results/fix_test/v13data_nano_nofix.json`.
+
+---
+
+## 21. Tag-and-probe on all 40 parent files, Diphoton30_22 and Diphoton30_18 legs (lxplus HTCondor, 7 November 2026)
+
+Same tag, probe and pass definitions as section 19, now for two path families. `scripts/tnp_unseeded.py` takes the
+seeded and unseeded bits of each family from `LEGS`; the tag must match a seeded bit of the family being measured.
+Bits parsed from the files (identical in all 80 job logs): electron WPTight 1; 30_22 seeded 12, 13, unseeded 14
+(TrackIso), 15 (R9); 30_18 seeded 16 (EG30 EcalIso), unseeded 17 (EG18 TrackIso, the only unseeded 30_18 bit).
+
+Input: the 40 MINIAOD parents of the central v13 file `499b6a69-...` (DAS), 3125939 events. One HTCondor job per file
+(`scripts/condor/`: `tnp.sub`, `tnp_job.sh`) runs the dumped no-fix and fix NANO configurations of
+`make_fixed_nano.sh v13data` with cmsRun, then `tnp_unseeded.py` on each NANO; only the JSONs come back. Cluster
+9771223, 40 / 40 jobs return value 0. Merged with `scripts/merge_tnp.py`; 1142457 events fire Ele32.
+
+| family | opposite / same sign pairs | unseeded leg, no fix | unseeded leg, with fix | seeded leg (no fix = fix) |
+|---|---|---|---|---|
+| 30_22 | 59863 / 596 | 0 | 55133 = 0.921 (0.920-0.922) | 48108 = 0.804 |
+| 30_18 | 57727 / 537 | 0 | 52460 = 0.909 (0.908-0.910) | 44989 = 0.779 |
+
+- 30_22 with fix: TrackIso 54874 (0.917), R9 40909 (0.683).
+- Unseeded leg with fix vs probe pT (bins 15, 17, 18, 20, 22, 25, 30, 35, 40, 50, 70, 100 GeV):
+  - 30_22: 0/423, 1/244, 6/581, 109/784, 1246/1605, 3794/4179, 6894/7325, 11601/12201, 24553/25422, 5874/6037, 701/708.
+  - 30_18: 8/404, 51/237, 359/560, 626/758, 1343/1556, 3538/4039, 6403/7083, 10760/11788, 22896/24476, 5496/5805,
+    647/680.
+- Vs |eta_SC| (0-0.8, 0.8-1.4442, 1.566-2.0, 2.0-2.5):
+  - 30_22: 26595/27529, 16568/17856, 6256/8258, 5714/6220.
+  - 30_18: 26325/26961, 16199/17206, 4613/7790, 5323/5770.
+  - The 1.566-2.0 bin is lower also for the seeded leg; not investigated.
+- Seeded leg identical without and with the fix in every bin; tags, pairs and probe counts identical in the no-fix and
+  fix files (checked by `plot_tnp_compare.py`).
+- Results: `results/tnp_2022D_v13_40files/` (`merged_nofix.json`, `merged_fix.json`, `tnp_compare_30_22.png`,
+  `tnp_compare_30_18.png`). The efficiency slides in the three decks now show these two plots.
