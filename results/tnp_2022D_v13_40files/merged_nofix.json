@@ -1,0 +1,320 @@
+{
+ "label": "v13data_40files_nofix",
+ "files": [
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root",
+  "nano_nofix.root"
+ ],
+ "path": "HLT_Ele32_WPTight_Gsf",
+ "events": 3125939,
+ "events_fired_path": 1142457,
+ "pt_bins": [
+  15,
+  17,
+  18,
+  20,
+  22,
+  25,
+  30,
+  35,
+  40,
+  50,
+  70,
+  100
+ ],
+ "eta_bins": [
+  0.0,
+  0.8,
+  1.4442,
+  1.566,
+  2.0,
+  2.5
+ ],
+ "legs": {
+  "30_22": {
+   "tags": 447700,
+   "pairs_os": 59863,
+   "pairs_ss": 596,
+   "passed": {
+    "TrackIso": 0,
+    "R9": 0,
+    "either": 0,
+    "seeded": 48108
+   },
+   "total_pt": [
+    423,
+    244,
+    581,
+    784,
+    1605,
+    4179,
+    7325,
+    12201,
+    25422,
+    6037,
+    708
+   ],
+   "total_eta": [
+    27529,
+    17856,
+    0,
+    8258,
+    6220
+   ],
+   "passed_pt": {
+    "TrackIso": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "R9": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "either": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "seeded": [
+     0,
+     0,
+     0,
+     2,
+     11,
+     346,
+     5996,
+     11106,
+     23867,
+     5732,
+     697
+    ]
+   },
+   "passed_eta": {
+    "TrackIso": [
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "R9": [
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "either": [
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "seeded": [
+     23253,
+     14726,
+     0,
+     5431,
+     4698
+    ]
+   },
+   "efficiency": {
+    "TrackIso": [
+     0.0,
+     0.0,
+     3.074873212334018e-05
+    ],
+    "R9": [
+     0.0,
+     0.0,
+     3.074873212334018e-05
+    ],
+    "either": [
+     0.0,
+     0.0,
+     3.074873212334018e-05
+    ],
+    "seeded": [
+     0.8036349665068573,
+     0.8019982137838674,
+     0.8052615253229399
+    ]
+   }
+  },
+  "30_18": {
+   "tags": 424650,
+   "pairs_os": 57727,
+   "pairs_ss": 537,
+   "passed": {
+    "TrackIso": 0,
+    "either": 0,
+    "seeded": 44989
+   },
+   "total_pt": [
+    404,
+    237,
+    560,
+    758,
+    1556,
+    4039,
+    7083,
+    11788,
+    24476,
+    5805,
+    680
+   ],
+   "total_eta": [
+    26961,
+    17206,
+    0,
+    7790,
+    5770
+   ],
+   "passed_pt": {
+    "TrackIso": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "either": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "seeded": [
+     0,
+     0,
+     0,
+     2,
+     9,
+     330,
+     5620,
+     10342,
+     22328,
+     5379,
+     648
+    ]
+   },
+   "passed_eta": {
+    "TrackIso": [
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "either": [
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "seeded": [
+     22808,
+     14095,
+     0,
+     3920,
+     4166
+    ]
+   },
+   "efficiency": {
+    "TrackIso": [
+     0.0,
+     0.0,
+     3.1886470870618077e-05
+    ],
+    "either": [
+     0.0,
+     0.0,
+     3.1886470870618077e-05
+    ],
+    "seeded": [
+     0.7793406897985344,
+     0.7776015178106855,
+     0.781070137720466
+    ]
+   }
+  }
+ }
+}

@@ -1,0 +1,16 @@
+# 40 jobs, one per MINIAOD parent of the central v13 file 499b6a69-bd7e-4bce-bd6d-4ab4f250ea2d.root (inputs.txt).
+# Submit from an AFS directory that holds tnp_job.sh, tnp.sub and inputs.txt: condor_submit tnp.sub
+executable            = tnp_job.sh
+arguments             = $(INDEX) $(LFN)
+output                = logs/job_$(INDEX).out
+error                 = logs/job_$(INDEX).err
+log                   = logs/condor.log
+use_x509userproxy     = true
+x509userproxy         = /afs/cern.ch/user/s/smahata/private/x509up_cms
+request_cpus          = 4
++JobFlavour           = "longlunch"
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+transfer_output_files = tnp_$(INDEX)_nofix.json, tnp_$(INDEX)_fix.json
+# the queue variable must not be called INPUT: submit commands are case-insensitive and "input" is the stdin file
+queue INDEX, LFN from inputs.txt
