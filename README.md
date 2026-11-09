@@ -25,7 +25,15 @@ tags and nineteen HLT menu files; the corrections are listed in section 0 of `NO
 - `scripts/measure_trigobj.py`, `scripts/make_fixed_nano.sh`, `scripts/relval_fix_check.sh`,
   `scripts/compare_dqm.py`: the measurement, the fix test and the relval check as run on lxplus.
 - `results/CODE.md`: every script above in full, and the shell commands I ran by hand on 5 November 2026
-  copied verbatim from the session log; written by `scripts/make_commands_file.py`.
+  copied verbatim from the session log; written by `scripts/make_commands_file.py`. It does not include the
+  tag-and-probe scripts below.
+- `results/16_0_X_EGamma0_Run2026C_PromptReco.json`: the 2026C PromptReco (CMSSW_16_0_X) measurement; `NOTES.md`
+  sections 17-18.
+- `scripts/tnp_unseeded.py`, `scripts/merge_tnp.py`, `scripts/plot_tnp_compare.py`, `scripts/condor/`
+  (`tnp.sub`, `tnp_job.sh`, `inputs.txt`): Z->ee tag-and-probe of the Diphoton30_22 and Diphoton30_18 legs on
+  re-made NANO, one file or 40 files on HTCondor; results in `results/tnp_2022D_v13/`,
+  `results/tnp_2022D_v13_40files/` and `results/tnp_2026C/`; `NOTES.md` sections 19-21.
+- `RUNBOOK.md`: the lxplus and HTCondor procedure step by step, with the failures I hit and their fixes.
 
 Fix in one line, `PhysicsTools/NanoAOD/python/triggerObjects_cff.py`, Photon selection:
 
@@ -33,14 +41,16 @@ Fix in one line, `PhysicsTools/NanoAOD/python/triggerObjects_cff.py`, Photon sel
 
 ## Slides
 
-Two decks, built on 4 November 2026 and updated on 5 November with the fix test and the relval (the files below are current; the private Claude artifacts still show the 4 November version):
+Two decks, built on 4 November 2026 and updated through 9 November with the fix test, the relval, the 16_0_X
+rows, the trigger-efficiency slides and an outline (the files below are current; the private Claude artifacts
+still show the 4 November version):
 
 | Deck | Slides | PDF | Standalone HTML | Source (Slides format) | Claude artifact |
 |---|---|---|---|---|---|
-| Issue deck (problem, scope, measurement, fix test, fix) | 11 | `slides/issue-deck.pdf` | `slides/issue-deck.html` | `slides/issue-deck-src/project/` | https://claude.ai/artifact/CnPtNgvGdp6PAAh9xfizof |
-| Detailed walkthrough (code at every step, breadth scan, measurement, fix test, appendices) | 33 | `slides/detailed-deck.pdf` | `slides/detailed-deck.html` | `slides/detailed-deck-src/project/` | https://claude.ai/artifact/Qx2HzCEjougjAQmaH6P2Qc |
+| Issue deck (problem, scope, measurement, fix test, trigger efficiency, fix) | 14 | `slides/issue-deck.pdf` | `slides/issue-deck.html` | `slides/issue-deck-src/project/` | https://claude.ai/artifact/CnPtNgvGdp6PAAh9xfizof |
+| Detailed walkthrough (code at every step, breadth scan, measurement, fix test, trigger efficiency, appendices) | 36 | `slides/detailed-deck.pdf` | `slides/detailed-deck.html` | `slides/detailed-deck-src/project/` | https://claude.ai/artifact/Qx2HzCEjougjAQmaH6P2Qc |
 
-Beamer version (dark CMS style, 47 frames: the main talk plus backup frames with the code at every step, all
+Beamer version (dark CMS style, 49 pages: the main talk plus backup frames with the code at every step, all
 tables, history, production recipe and reproducibility): source `slides/beamer/src/trigobj_unseeded.tex` with
 `preamble.tex`, PDF `slides/beamer/outputs/trigobj_unseeded.pdf`. Build from `slides/beamer/src/` with
 `pdflatex -interaction=nonstopmode -output-directory=../outputs trigobj_unseeded.tex`, twice.
