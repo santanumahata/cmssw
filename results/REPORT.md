@@ -101,7 +101,7 @@ NANO re-made twice from one MiniAOD file, without and with the one-line fix, wit
 Script: `scripts/relval_fix_check.sh`; JSONs in `results/relval_16_1_3/`.
 
 - Areas: `clean` = CMSSW_16_1_3; `fix` = CMSSW_16_1_3 + `git cms-addpkg PhysicsTools/NanoAOD` +
-  `git cherry-pick aebf3eb64` (fetched from `santanumahata/cmssw` branch `nano-photon-trigobj-unseeded`).
+  `git cherry-pick 828ed8b2a` (fetched from `santanumahata/cmssw` branch `nano-photon-trigobj-unseeded`).
   `git diff CMSSW_16_1_3 --numstat`: `1 1 PhysicsTools/NanoAOD/python/triggerObjects_cff.py`.
   The cherry-pick was used instead of `git cms-merge-topic`, because the topic branch is based on master
   `ed35654b1`, not on the 16_1_X release.

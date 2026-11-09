@@ -33,7 +33,7 @@
 <body>
 
 <h1>NanoAOD photon trigger objects: the unseeded-leg filter bits of HLT_Diphoton30_22_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass90 can never be set</h1>
-<p class="meta">Issue report prepared for Santanu Mahata, 4 November 2026 (revised the same day after a second verification pass over release tags and nineteen HLT menu files; see NOTES.md section 0 of the companion repository; section 9 and 10 updated on 5 November 2026 with the measurements, the fix test and the relval). Evidence taken from the cmssw fork checkout at commit <code>f99356577</code> (master, 2025-05-06), the upstream tag <code>CMSSW_13_3_1_patch1</code> (NanoAOD v13 production release), the upstream branches <code>CMSSW_10_6_X</code>, <code>CMSSW_12_4_X</code>, <code>CMSSW_12_6_X</code>, <code>CMSSW_13_0_X</code>, <code>CMSSW_14_0_X</code>, <code>CMSSW_15_0_X</code>, and upstream master at <code>ed35654b1</code> (2026-11-04). Fix: commit <code>1699a39f7</code> on the fork branch <code>claude/fervent-lamport-3oiuh6</code>, and the same change as <code>aebf3eb64</code> on branch <code>nano-photon-trigobj-unseeded</code> on top of upstream master. Both branches are on the fork <code>santanumahata/cmssw</code>; nothing has been pushed to <code>cms-sw/cmssw</code>.</p>
+<p class="meta">Issue report prepared for Santanu Mahata, 4 November 2026 (revised the same day after a second verification pass over release tags and nineteen HLT menu files; see NOTES.md section 0 of the companion repository; section 9 and 10 updated on 5 November 2026 with the measurements, the fix test and the relval). Evidence taken from the cmssw fork checkout at commit <code>f99356577</code> (master, 2025-05-06), the upstream tag <code>CMSSW_13_3_1_patch1</code> (NanoAOD v13 production release), the upstream branches <code>CMSSW_10_6_X</code>, <code>CMSSW_12_4_X</code>, <code>CMSSW_12_6_X</code>, <code>CMSSW_13_0_X</code>, <code>CMSSW_14_0_X</code>, <code>CMSSW_15_0_X</code>, and upstream master at <code>ed35654b1</code> (2026-11-04). Fix: commit <code>42555a463</code> on the fork branch <code>nano-photon-trigobj-unseeded-forkmaster</code>, and the same change as <code>828ed8b2a</code> on branch <code>nano-photon-trigobj-unseeded</code> on top of upstream master. Both branches are on the fork <code>santanumahata/cmssw</code>; nothing has been pushed to <code>cms-sw/cmssw</code>.</p>
 
 <div class="box red">
 <p><b>Observation.</b> In NanoAOD v13 the photon trigger objects (<code>TrigObj_id == 22</code>) document a bit for each last unseeded filter of the diphoton path (bit 14, <code>hltEG22Iso60CaloId15b35eHE12R9Id50b80eTrackIsoUnseededLastFilter</code>; bit 15, <code>hltEG22R9Id85b90eHE12R9Id50b80eR9UnseededLastFilter</code>), but no trigger object ever carries them. The sub-leading diphoton leg cannot be trigger-matched from NanoAOD.</p>
@@ -274,7 +274,7 @@ hltEG22Iso60CaloId15b35eHE12R9Id50b80eTrackIsoUnseededLastFilter = cms.EDFilter(
 <p><b>Impact.</b> Any analysis that matches the sub-leading photon of the diphoton triggers to its HLT leg through <code>TrigObj</code> finds no candidate: trigger matching and leg-by-leg efficiency studies on NanoAOD (for example in HiggsDNA-based H to gamma gamma workflows) can only use the leading-leg bits. Existing v12 to v15 files cannot be repaired after the fact, because the unseeded objects were never written. Only a new NanoAOD pass with the corrected configuration restores the information.</p>
 
 <h2>8. The fix and its expected effect</h2>
-<p>Commit <code>1699a39f7</code> (fork branch) and its cherry-pick <code>aebf3eb64</code> (on upstream master) change one line of <code>PhysicsTools/NanoAOD/python/triggerObjects_cff.py</code>:</p>
+<p>Commit <code>42555a463</code> (fork branch) and its cherry-pick <code>828ed8b2a</code> (on upstream master) change one line of <code>PhysicsTools/NanoAOD/python/triggerObjects_cff.py</code>:</p>
 <pre><span class="del">-            sel = cms.string("type(92) &amp;&amp; pt &gt; 15 &amp;&amp; coll('hltEgammaCandidates')"),</span>
 <span class="add">+            sel = cms.string("type(92) &amp;&amp; pt &gt; 15 &amp;&amp; (coll('hltEgammaCandidates') || coll('hltEgammaCandidatesUnseeded'))"),</span></pre>
 <div class="box green">
@@ -332,7 +332,7 @@ for bit in (16, 17):           # 14, 15 for NanoAOD v12 to v14 numbering
     print(f"bit {bit}: {np.sum(hasbit &amp; fired)} of {np.sum(fired)} triggered events have a matching photon TrigObj")</pre>
 
 <h3>9.3 Relval in CMSSW_16_1_3</h3>
-<p><code>CMSSW_16_1_3</code> clean, and with commit <code>aebf3eb64</code> cherry-picked (one changed line against the release). Workflows 12452.0 (H125GGgluonfusion 2023, upgrade matrix, 10 generated events) and 141.046 (EGamma Run2023D run 369978, 100 events; RAW from the IB EOS cache because DAS lists it on tape only). Steps 1 and 2 ran once; steps 3 and 4 ran in both areas on the same <code>step2.root</code>.</p>
+<p><code>CMSSW_16_1_3</code> clean, and with commit <code>828ed8b2a</code> cherry-picked (one changed line against the release). Workflows 12452.0 (H125GGgluonfusion 2023, upgrade matrix, 10 generated events) and 141.046 (EGamma Run2023D run 369978, 100 events; RAW from the IB EOS cache because DAS lists it on tape only). Steps 1 and 2 ran once; steps 3 and 4 ran in both areas on the same <code>step2.root</code>.</p>
 <table>
 <tr><th>workflow</th><th>trigger objects in NANO</th><th>NANO, fix vs clean</th><th>DQM, fix vs clean</th><th>step 3 log</th></tr>
 <tr><td>12452.0</td><td>0 in both areas</td><td>identical, 10 of 10 events</td><td>116785 histograms each; 25 differ, all <code>DQM/TimerService</code></td><td>no <code>Exception</code>, no <code>triggerObjectTable</code> line</td></tr>
@@ -343,8 +343,8 @@ for bit in (16, 17):           # 14, 15 for NanoAOD v12 to v14 numbering
 <h2>10. Pull request: what is ready</h2>
 <table>
 <tr><th>Item</th><th>State</th></tr>
-<tr><td>Fix on the fork's working branch</td><td>commit <code>1699a39f7</code> on <code>claude/fervent-lamport-3oiuh6</code> (based on the fork's May 2025 master), on the fork <code>santanumahata/cmssw</code></td></tr>
-<tr><td>PR branch on today's upstream master</td><td>branch <code>nano-photon-trigobj-unseeded</code> = upstream master <code>ed35654b1</code> (2026-11-04) + commit <code>aebf3eb64</code>; cherry-pick applied cleanly; on the fork <code>santanumahata/cmssw</code>; no pull request opened</td></tr>
+<tr><td>Fix on the fork's working branch</td><td>commit <code>42555a463</code> on <code>nano-photon-trigobj-unseeded-forkmaster</code> (based on the fork's May 2025 master), on the fork <code>santanumahata/cmssw</code></td></tr>
+<tr><td>PR branch on today's upstream master</td><td>branch <code>nano-photon-trigobj-unseeded</code> = upstream master <code>ed35654b1</code> (2026-11-04) + commit <code>828ed8b2a</code>; cherry-pick applied cleanly; on the fork <code>santanumahata/cmssw</code>; no pull request opened</td></tr>
 <tr><td>PR title and description</td><td>file <code>pr/PR_body.md</code> on the notes branch, ready to paste; follows the cms-sw template headings</td></tr>
 <tr><td>Target</td><td><code>cms-sw/cmssw</code> master; the same line is still present there (line 90). A backport to <code>CMSSW_15_0_X</code> is worth requesting if another NanoAOD production from that branch is planned</td></tr>
 </table>
@@ -366,7 +366,7 @@ for bit in (16, 17):           # 14, 15 for NanoAOD v12 to v14 numbering
 <tr><td>Unseeded filter definitions, master menu</td><td class="mono">HLTrigger/Configuration/python/HLT_GRun_cff.py:47223-47225,47281-47302,47362-47383; path at 86983</td></tr>
 <tr><td>2018 and 2022 menus (Diphoton30_18 sequences)</td><td class="mono">CMSSW_10_6_X and CMSSW_12_4_X / CMSSW_12_6_X: HLTrigger/Configuration/python/HLT_GRun_cff.py</td></tr>
 <tr><td>NanoAOD relval recipes</td><td class="mono">Configuration/PyReleaseValidation/python/relval_nano.py</td></tr>
-<tr><td>Fix</td><td class="mono">1699a39f7 (claude/fervent-lamport-3oiuh6); aebf3eb64 (nano-photon-trigobj-unseeded on upstream master); on the fork santanumahata/cmssw</td></tr>
+<tr><td>Fix</td><td class="mono">42555a463 (nano-photon-trigobj-unseeded-forkmaster); 828ed8b2a (nano-photon-trigobj-unseeded on upstream master); on the fork santanumahata/cmssw</td></tr>
 </table>
 <p class="small"><b>Sources consulted.</b> cms-sw/cmssw pull requests 40711 (diphoton photon bits), 41827 (electron unseeded collection), 43292, 43286 and 43470 (13_3_X backports for NanoAOD v13); upstream branches CMSSW_10_6_X, CMSSW_12_4_X, CMSSW_12_6_X, CMSSW_13_0_X, CMSSW_13_3_X, CMSSW_14_0_X, CMSSW_15_0_X and master; NanoAOD v13 dataset names and global tags from public analysis configurations (uhh-cms/cmsdb v13 campaigns, bhbam/MCProduction_run3, maxgalli/SBI-Htt-EFT, choij1589/CustomNanoAOD) and from the 2022 skim notes of the santanumahata/2023_lowmass_analysis repositories. The CERN TWiki, McM and the NanoAOD documentation site were not reachable from the environment used for this report.</p>
 </body></html>

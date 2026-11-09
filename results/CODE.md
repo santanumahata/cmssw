@@ -1022,7 +1022,7 @@ echo "=== done $1"
 
 ```bash
 #!/bin/bash
-# Relval check of the photon TrigObj fix in CMSSW_16_1_3: clean area vs area with commit aebf3eb64.
+# Relval check of the photon TrigObj fix in CMSSW_16_1_3: clean area vs area with commit 828ed8b2a.
 # Steps 1-2 of each workflow run once (clean area); steps 3-4 run in both areas on the same step-2 output.
 # Usage: bash relval_fix_check.sh
 set -eo pipefail
@@ -1032,7 +1032,7 @@ source /cvmfs/cms.cern.ch/cmsset_default.sh
 
 RELEASE=CMSSW_16_1_3
 WORK=/eos/user/s/smahata/trigobj_check/relval_16_1_3
-FIX_COMMIT=aebf3eb64b9c525e77a99405f8a97aa254b335e9
+FIX_COMMIT=828ed8b2a887a758130483d19a27adac8e29c181
 CFF=PhysicsTools/NanoAOD/python/triggerObjects_cff.py
 mkdir -p $WORK
 

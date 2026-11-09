@@ -389,8 +389,8 @@ sel = "type(92) && pt > 7
       content. Existing files cannot be repaired: only a new NANO pass restores the sub-leading leg.}
     \end{column}
   \end{columns}
-  \src{Commit aebf3eb64 on branch nano-photon-trigobj-unseeded (on top of upstream master ed35654b1) and 1699a39f7 on
-  claude/fervent-lamport-3oiuh6, both on the fork santanumahata/cmssw. Line 83 in CMSSW\_13\_3\_1\_patch1, 86 in 15\_0\_15\_patch4, 90 in master.}
+  \src{Commit 828ed8b2a on branch nano-photon-trigobj-unseeded (on top of upstream master ed35654b1) and 42555a463 on
+  nano-photon-trigobj-unseeded-forkmaster, both on the fork santanumahata/cmssw. Line 83 in CMSSW\_13\_3\_1\_patch1, 86 in 15\_0\_15\_patch4, 90 in master.}
 \end{frame}
 
 \begin{frame}{Fix test on real input: every Mass90 event gets its sub-leading-leg bits}
@@ -456,7 +456,7 @@ sel = "type(92) && pt > 7
 
 \begin{frame}{Relval in CMSSW\_16\_1\_3: the fix builds and runs; these workflows have no TrigObj}
   \vspace{0pt}\par
-  {\scriptsize Clean CMSSW\_16\_1\_3 versus the same release with commit aebf3eb64 cherry-picked (one changed line).
+  {\scriptsize Clean CMSSW\_16\_1\_3 versus the same release with commit 828ed8b2a cherry-picked (one changed line).
   Steps 1--2 ran once; steps 3--4 ran in both areas on the same \code{step2.root}.}
   \par\vspace{6pt}
   {\scriptsize
@@ -507,7 +507,7 @@ sel = "type(92) && pt > 7
       \hl{Pull request} (prepared, not opened)
       \begin{itemize}\scriptsize
         \item Title: \emph{NanoAOD: accept unseeded e/gamma trigger objects in the Photon TrigObj selection}.
-        \item From santanumahata:nano-photon-trigobj-unseeded (aebf3eb64 on master ed35654b1) to cms-sw:master;
+        \item From santanumahata:nano-photon-trigobj-unseeded (828ed8b2a on master ed35654b1) to cms-sw:master;
               xpog signature.
         \item Cites PR 40711 (bits added) and PR 41827 (electrons fixed).
         \item Backport to CMSSW\_15\_0\_X if another production from that branch is planned.
@@ -1223,7 +1223,7 @@ python3 measure_trigobj.py v13_fix   ... nano_fix.root   nano_fix.json   nano_no
 \begin{frame}{Backup: the relval check in detail}
   \begin{itemize}\small
     \item \hl{Areas}: \code{clean} = CMSSW\_16\_1\_3; \code{fix} = the same release + \code{git cms-addpkg PhysicsTools/NanoAOD}
-          + \code{git cherry-pick aebf3eb64}; \code{git diff CMSSW_16_1_3 --numstat} = one line. Cherry-pick instead of
+          + \code{git cherry-pick 828ed8b2a}; \code{git diff CMSSW_16_1_3 --numstat} = one line. Cherry-pick instead of
           \code{git cms-merge-topic}, because the topic branch sits on master, not on the 16\_1\_X release.
     \item \hl{12452.0}: not in the default matrix of 16\_1\_3 (\code{-w upgrade} needed); its RelVal GEN-SIM input returned
           no file at T2\_CH\_CERN, so step 1 generated the 10 events.
@@ -1289,7 +1289,7 @@ with the fix:
         \item \code{scan/}: raw scanner outputs; \code{pr/}: patch and PR text; \code{report/}: issue report (PDF);
               \code{slides/}: the HTML decks and this Beamer deck.
       \end{itemize}
-    \item \hl{Fix branch}: \url{https://github.com/santanumahata/cmssw/tree/nano-photon-trigobj-unseeded} (aebf3eb64).
+    \item \hl{Fix branch}: \url{https://github.com/santanumahata/cmssw/tree/nano-photon-trigobj-unseeded} (828ed8b2a).
     \item \hl{Open the pull request} (creates nothing by itself):\\
           {\scriptsize\url{https://github.com/cms-sw/cmssw/compare/master...santanumahata:cmssw:nano-photon-trigobj-unseeded}}
   \end{itemize}

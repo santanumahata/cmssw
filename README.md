@@ -20,7 +20,7 @@ tags and nineteen HLT menu files; the corrections are listed in section 0 of `NO
 - `results/fix_test/`: NANO re-made from one MiniAOD file without and with the fix
   (CMSSW_13_3_1_patch1 for v13, CMSSW_15_0_15_patch4 for v15) and the central v13 file of the
   same events, one JSON each; see `results/REPORT.md` "Fix test" and `NOTES.md` section 15.
-- `results/relval_16_1_3/`: relval workflows in CMSSW_16_1_3 clean vs with commit aebf3eb64
+- `results/relval_16_1_3/`: relval workflows in CMSSW_16_1_3 clean vs with commit 828ed8b2a
   (TrigObj and DQM comparisons); see `results/REPORT.md` and `NOTES.md` section 16.
 - `scripts/measure_trigobj.py`, `scripts/make_fixed_nano.sh`, `scripts/relval_fix_check.sh`,
   `scripts/compare_dqm.py`: the measurement, the fix test and the relval check as run on lxplus.
@@ -42,13 +42,12 @@ Fix in one line, `PhysicsTools/NanoAOD/python/triggerObjects_cff.py`, Photon sel
 ## Slides
 
 Two decks, built on 4 November 2026 and updated through 9 November with the fix test, the relval, the 16_0_X
-rows, the trigger-efficiency slides and an outline (the files below are current; the private Claude artifacts
-still show the 4 November version):
+rows, the trigger-efficiency slides and an outline:
 
-| Deck | Slides | PDF | Standalone HTML | Source (Slides format) | Claude artifact |
-|---|---|---|---|---|---|
-| Issue deck (problem, scope, measurement, fix test, trigger efficiency, fix) | 14 | `slides/issue-deck.pdf` | `slides/issue-deck.html` | `slides/issue-deck-src/project/` | https://claude.ai/artifact/CnPtNgvGdp6PAAh9xfizof |
-| Detailed walkthrough (code at every step, breadth scan, measurement, fix test, trigger efficiency, appendices) | 36 | `slides/detailed-deck.pdf` | `slides/detailed-deck.html` | `slides/detailed-deck-src/project/` | https://claude.ai/artifact/Qx2HzCEjougjAQmaH6P2Qc |
+| Deck | Slides | PDF | Standalone HTML | Source (Slides format) |
+|---|---|---|---|---|
+| Issue deck (problem, scope, measurement, fix test, trigger efficiency, fix) | 14 | `slides/issue-deck.pdf` | `slides/issue-deck.html` | `slides/issue-deck-src/project/` |
+| Detailed walkthrough (code at every step, breadth scan, measurement, fix test, trigger efficiency, appendices) | 36 | `slides/detailed-deck.pdf` | `slides/detailed-deck.html` | `slides/detailed-deck-src/project/` |
 
 Beamer version (dark CMS style, 49 pages: the main talk plus backup frames with the code at every step, all
 tables, history, production recipe and reproducibility): source `slides/beamer/src/trigobj_unseeded.tex` with
@@ -66,9 +65,9 @@ request has been opened.
 
 - Notes, scripts, scan outputs, report and slides (this repository, as a branch of the fork):
   https://github.com/santanumahata/cmssw/tree/nanoaod-trigobj-notes
-- The fix on top of upstream master (branch for the future pull request, commit aebf3eb64):
+- The fix on top of upstream master (branch for the future pull request, commit 828ed8b2a):
   https://github.com/santanumahata/cmssw/tree/nano-photon-trigobj-unseeded
-- The same fix on the fork's own master (session working branch, commit 1699a39f7):
-  https://github.com/santanumahata/cmssw/tree/claude/fervent-lamport-3oiuh6
+- The same fix on the fork's own master (session working branch, commit 42555a463):
+  https://github.com/santanumahata/cmssw/tree/nano-photon-trigobj-unseeded-forkmaster
 - To open the pull request later (creates nothing by itself):
   https://github.com/cms-sw/cmssw/compare/master...santanumahata:cmssw:nano-photon-trigobj-unseeded

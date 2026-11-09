@@ -127,7 +127,7 @@ pdflatex -interaction=nonstopmode -halt-on-error -output-directory=../outputs tr
 pdflatex -interaction=nonstopmode -output-directory=../outputs trigobj_unseeded.tex
 grep -c Overfull ../outputs/trigobj_unseeded.log                  # 0
 cd ../../..
-export NODE_PATH=/home/santanu/micromamba/envs/claude_env/lib/node_playwright/node_modules
+export NODE_PATH=$MAMBA_ENV/lib/node_playwright/node_modules   # MAMBA_ENV: the micromamba env with Playwright
 node scripts/render_deck.js slides/issue-deck-src slides/issue-deck
 node scripts/render_deck.js slides/detailed-deck-src slides/detailed-deck
 ```
@@ -188,8 +188,8 @@ git ls-remote https://github.com/santanumahata/cmssw.git refs/heads/nanoaod-trig
   **Cause:** the 30_18 filters were renamed in 2023; the bit list has only the 2018 and 2022 names
   (`NOTES.md` sections 7, 8, 15).
   **Fix:** none in the one-line fix; measure the 30_18 leg on 2022 data.
-- **Symptom:** `node: No such file` for `/home/santanu/micromamba/envs/claude_env/bin/node`.
-  **Fix:** use `/usr/bin/node` with `NODE_PATH` set to the claude_env Playwright modules (step 9).
+- **Symptom:** `node: No such file` for `$MAMBA_ENV/bin/node`.
+  **Fix:** use `/usr/bin/node` with `NODE_PATH` set to the Playwright modules of `$MAMBA_ENV` (step 9).
 - **Symptom:** the local notes clone is gone after a session restart.
   **Cause:** the session scratchpad is wiped.
   **Fix:** `git clone --single-branch -b nanoaod-trigobj-notes https://github.com/santanumahata/cmssw.git notes_repo`.

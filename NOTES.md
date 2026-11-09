@@ -109,7 +109,7 @@ selection. Confirmed on twelve NanoAOD files (section 14) and by NANO re-made wi
 ## 2. Repository and session state
 
 - Working checkout: fork `santanumahata/cmssw`, shallow clone, branch
-  `claude/fervent-lamport-3oiuh6`, based on fork master `f99356577`
+  `nano-photon-trigobj-unseeded-forkmaster`, based on fork master `f99356577`
   ("Merge pull request #47943 from ftorrresd/nano_comparison_report", 2025-05-06). This is
   code of the 15_1_X cycle (its GRun menu is `/dev/CMSSW_15_0_0/GRun/V62`, its FULL menu
   `/dev/CMSSW_15_0_0/HLT/V78`, and it ships the frozen menu `HLT_2025v10_cff.py`).
@@ -129,11 +129,13 @@ selection. Confirmed on twelve NanoAOD files (section 14) and by NANO re-made wi
   `CMSSW_13_3_1_patch1`, `CMSSW_13_3_2`, `CMSSW_13_3_2_patch1`, `CMSSW_13_3_3`.
 - Commits made (both branches pushed to the fork `santanumahata/cmssw` later; nothing pushed to
   `cms-sw/cmssw`):
-  - `1699a39f7` on `claude/fervent-lamport-3oiuh6`: the fix on the fork's May 2025 master.
-    Author santanumahata, committer Claude (amended on request of a repository hook).
-  - `aebf3eb64` on `nano-photon-trigobj-unseeded`: the same change cherry-picked onto
-    upstream master `ed35654b1`; applied cleanly; checked out in a git worktree in the
-    session scratchpad. Same author and committer.
+  - `42555a463` on `nano-photon-trigobj-unseeded-forkmaster`: the fix on the fork's May 2025 master.
+    Author and committer santanumahata.
+  - `828ed8b2a` on `nano-photon-trigobj-unseeded`: the same change on upstream master `ed35654b1`;
+    applied cleanly. Same author and committer.
+  - On 9 November 2026 both commits and the notes branch were re-created with author and committer
+    santanumahata (same trees and dates). Older hashes cited in this file: `1699a39f7` = `42555a463`,
+    `aebf3eb64` = `828ed8b2a`.
 - Files fetched from `raw.githubusercontent.com` for the verification (all **verified**
   by reading):
   - `PhysicsTools/NanoAOD/python/triggerObjects_cff.py` at the branch tips `CMSSW_12_4_X`,

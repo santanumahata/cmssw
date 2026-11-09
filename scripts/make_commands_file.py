@@ -1,12 +1,12 @@
 # Write results/CODE.md: every analysis script in full, then the hand-run shell commands of this session verbatim.
-# usage: python3 make_commands_file.py <dump of the session's shell calls> <repo root>
+# usage: SESSION_WORKDIR=<local work folder> SESSION_SCRATCH=<scratch folder> python3 make_commands_file.py <dump of the session's shell calls> <repo root>
 import os
 import re
 import sys
 
 calls_file, root = sys.argv[1], sys.argv[2]
-LOCAL = '/home/santanu/.config/Claude/scratch-workspaces/bcb56660-0fde-4131-be70-35a637089569/a7237d23-a55d-46d8-8df5-151d815d0978/scratch-2026-11-04-d4f5dc'
-SCRATCH = re.compile(r'/tmp/claude-1000/[^ ;]*?/scratchpad')
+LOCAL = os.environ['SESSION_WORKDIR']
+SCRATCH = re.compile(re.escape(os.environ['SESSION_SCRATCH']))
 SCRIPTS = [                                                   # (path in repo, fence language)
     ('scripts/verify_nanoaod_files.py', 'python'),
     ('scripts/deadbits.py', 'python'),

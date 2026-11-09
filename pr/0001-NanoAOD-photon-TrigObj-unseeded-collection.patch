@@ -1,4 +1,4 @@
-From aebf3eb64b9c525e77a99405f8a97aa254b335e9 Mon Sep 17 00:00:00 2001
+From 828ed8b2a887a758130483d19a27adac8e29c181 Mon Sep 17 00:00:00 2001
 From: santanumahata <santanuedu.m@gmail.com>
 Date: Wed, 4 Nov 2026 18:28:26 +0000
 Subject: [PATCH] NanoAOD: let photon TrigObj keep objects from the unseeded
@@ -20,9 +20,6 @@ Accept both collections, as the Electron selection already does since
 PR #41827. With skipObjectsNotPassingQualityBits=True only unseeded
 objects that pass one of the photon filters are added, and the
 producer's self-cleaning merges them with the seeded duplicate.
-
-Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
-Claude-Session: https://claude.ai/code/session_01QJYkW4qPckDhLoe6VfCP28
 ---
  PhysicsTools/NanoAOD/python/triggerObjects_cff.py | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
