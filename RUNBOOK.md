@@ -128,10 +128,11 @@ pdflatex -interaction=nonstopmode -output-directory=../outputs trigobj_unseeded.
 grep -c Overfull ../outputs/trigobj_unseeded.log                  # 0
 cd ../../..
 export NODE_PATH=$MAMBA_ENV/lib/node_playwright/node_modules   # MAMBA_ENV: the micromamba env with Playwright
-node scripts/render_deck.js slides/issue-deck-src slides/issue-deck
-node scripts/render_deck.js slides/detailed-deck-src slides/detailed-deck
+/usr/bin/node scripts/render_deck.js slides/issue-deck-src slides/issue-deck
+/usr/bin/node scripts/render_deck.js slides/detailed-deck-src slides/detailed-deck
+/usr/bin/node scripts/render_pdf.js $PWD/report    # absolute path: the script builds a file:// URL from it
 ```
-**Expect:** Beamer 49 pages, issue deck 14 slides, detailed deck 36 slides (9 November). In an overflow check
+**Expect:** Beamer 49 pages, issue deck 14 slides, detailed deck 36 slides, report 10 pages (9 November). In an overflow check
 (any element bottom > 1016 px of a 1080 px slide) only `cover` (both decks) and the issue-deck `trigger` slide
 are flagged; they were flagged before the November changes too. HTML slides embed figures as base64 data URIs;
 a new slide is a file in `project/slides/` plus its id in `project/deck.json` `order`.
@@ -139,16 +140,42 @@ a new slide is a file in `project/slides/` plus its id in `project/deck.json` `o
 ### 10. Commit and push to the fork only
 **Known-good command:**
 ```bash
+export NAME_PATTERN='<regex of the forbidden tool and vendor names; kept outside the repository>'
 git add <files>
-git commit -m "<message, no attribution lines>"
+git grep -ciIE "$NAME_PATTERN"; for f in $(git ls-files '*.pdf'); do (pdftotext $f -; pdfinfo $f) | grep -ciE "$NAME_PATTERN"; done   # all 0
+git -c user.name=santanumahata -c user.email=santanuedu.m@gmail.com commit -m "<message, no attribution lines>"
 git -c credential.helper='!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f' \
   push -q https://github.com/santanumahata/cmssw.git HEAD:refs/heads/nanoaod-trigobj-notes
 git ls-remote https://github.com/santanumahata/cmssw.git refs/heads/nanoaod-trigobj-notes   # equals HEAD
 ```
 
+### 11. Rewrite commit metadata to my identity (only if forbidden names got in)
+**Known-good command (run 9 November; backup first, then rewrite, then push with lease):**
+```bash
+git bundle create <session folder>/backup/notes_before_scrub.bundle nanoaod-trigobj-notes
+FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f --env-filter '
+echo "$GIT_AUTHOR_NAME $GIT_AUTHOR_EMAIL" | grep -qiE "$NAME_PATTERN" && { GIT_AUTHOR_NAME=santanumahata; GIT_AUTHOR_EMAIL=santanuedu.m@gmail.com; }
+echo "$GIT_COMMITTER_NAME $GIT_COMMITTER_EMAIL" | grep -qiE "$NAME_PATTERN" && { GIT_COMMITTER_NAME=santanumahata; GIT_COMMITTER_EMAIL=santanuedu.m@gmail.com; }
+export GIT_AUTHOR_NAME GIT_AUTHOR_EMAIL GIT_COMMITTER_NAME GIT_COMMITTER_EMAIL' \
+ --msg-filter 'grep -viE "^[A-Za-z-]+:.*($NAME_PATTERN)|^($NAME_PATTERN)" | sed -e :a -e "/^\n*\$/{\$d;N;ba" -e "}"' nanoaod-trigobj-notes
+# a single fix commit C on a cmssw branch (fetched with --depth 2): same tree, same parent, same dates
+N=$(GIT_AUTHOR_NAME=santanumahata GIT_AUTHOR_EMAIL=santanuedu.m@gmail.com GIT_AUTHOR_DATE="$(git log -1 --format=%aD $C)" \
+    GIT_COMMITTER_NAME=santanumahata GIT_COMMITTER_EMAIL=santanuedu.m@gmail.com GIT_COMMITTER_DATE="$(git log -1 --format=%cD $C)" \
+    git commit-tree $C^{tree} -p $C^ -m "<message without the trailer lines>")
+git push https://github.com/santanumahata/cmssw.git --force-with-lease=refs/heads/<branch>:<old sha> $N:refs/heads/<branch>
+```
+**Expect:** `git diff --stat <old> <new>` empty (trees identical); `git log --format='%an%ae%cn%ce%n%B' | grep -ciE "$NAME_PATTERN"`
+is 0 on a fresh clone. Hashes cited in files then need updating (`git grep` the old short hashes).
+
 ## Conventions
 - Never push to `cms-sw/cmssw`, never open a PR or issue. Data access is read-only; only small test files.
-- `NOTES.md`: never change earlier sections; append a new numbered, dated section.
+- `NOTES.md`: never change earlier sections; append a new numbered, dated section. Exception made on request on
+  9 November: section 2 (repository state) edited in place for the branch rename and new hashes.
+- No forbidden tool or vendor name anywhere (the names are in `NAME_PATTERN`, outside the repository): file contents, PDFs, commit author, committer and
+  trailers, branch names. Commits are authored and committed as `santanumahata <santanuedu.m@gmail.com>`; local paths
+  containing such a name become placeholders (`$MAMBA_ENV`, `SESSION_WORKDIR`, `SESSION_SCRATCH`).
+- Fork branches: `nanoaod-trigobj-notes` (this repository), `nano-photon-trigobj-unseeded` (fix `828ed8b2a` on
+  upstream master), `nano-photon-trigobj-unseeded-forkmaster` (fix `42555a463` on the fork's May 2025 master).
 - Tag-and-probe: tag tight electron, pT > 35, |eta_SC| < 2.1, `HLT_Ele32_WPTight_Gsf`, matched (dR < 0.1) to the
   WPTight electron object and to a seeded-leg photon object of the family measured; probe cutBased >= 2, pT > 15,
   |eta_SC| < 2.5 outside 1.4442-1.566, opposite sign, 70 < m_ee < 110 GeV. Counting only, no fit; same-sign pairs
@@ -193,8 +220,18 @@ git ls-remote https://github.com/santanumahata/cmssw.git refs/heads/nanoaod-trig
 - **Symptom:** the local notes clone is gone after a session restart.
   **Cause:** the session scratchpad is wiped.
   **Fix:** `git clone --single-branch -b nanoaod-trigobj-notes https://github.com/santanumahata/cmssw.git notes_repo`.
-  Uncommitted work is lost, which is why every step ends with a push.
+  Uncommitted work is lost, which is why every step ends with a push. Happened on 9 November with RUNBOOK.md and
+  README.md uncommitted; recovered by replaying, in order, the file writes and edits recorded in the session
+  transcript (`<transcript folder>/<session id>.jsonl`) onto the fresh clone, each edit checked to match once.
+- **Symptom:** `gh: command not found`; a `gh ... | grep` check then reports "clean" because it greps the error.
+  **Fix:** query the REST API with `curl -s -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/santanumahata/cmssw/...`.
+- **Symptom:** after a force-push, `https://api.github.com/repos/santanumahata/cmssw/commits/<old sha>` still returns
+  HTTP 200.
+  **Cause:** GitHub keeps commits that are on no branch reachable by SHA (observed on 9 November for 3 commits).
+  **Fix:** none from git. UNVERIFIED: GitHub Support can purge them on request (I file that myself).
 
 ## Changelog
 - 2026-11-09 — Runbook created from the 5–9 November work: 16_0_X and v13 data NANO, recipe check, local and
   HTCondor tag-and-probe for both diphoton families, deck rebuild and push.
+- 2026-11-09 — Report render and /usr/bin/node in step 9; identity and name check in step 10; new step 11 (history
+  scrub); conventions for names, identity, branches; gotchas for missing gh, old SHAs, transcript recovery.
