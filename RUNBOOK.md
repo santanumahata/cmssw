@@ -1,6 +1,6 @@
 # NanoAOD photon TrigObj fix: measurement, fix test and tag-and-probe — Runbook
 
-**Last updated:** 2026-11-09
+**Last updated:** 2026-11-11
 **Where it runs:** lxplus (EL9), work area `/eos/user/s/smahata/trigobj_check/`, HTCondor submit directory
 `/afs/cern.ch/user/s/smahata/tnp_condor_v13data/`; notes, decks and git on the local machine.
 
@@ -10,7 +10,8 @@ I re-make NanoAOD from MINIAOD without and with the one-line Photon-selection fi
 (`scripts/measure_trigobj.py`), and measure the Diphoton30_22 and Diphoton30_18 leg efficiencies with Z->ee
 tag-and-probe (`scripts/tnp_unseeded.py`): one file locally, or all 40 MINIAOD parents of one central v13
 NanoAOD file on HTCondor (`scripts/condor/`), then merge (`scripts/merge_tnp.py`) and overlay
-(`scripts/plot_tnp_compare.py`). Results go to `results/` and `NOTES.md` (append-only sections), then into
+(`scripts/plot_tnp_compare.py`); the same tag-and-probe directly on those MINIAOD files is the reference
+(`scripts/tnp_miniaod.py`, `scripts/plot_mini_vs_nano.py`). Results go to `results/` and `NOTES.md` (append-only sections), then into
 the three decks, then to the fork `santanumahata/cmssw`, branch `nanoaod-trigobj-notes` only.
 
 ## Steps
@@ -109,6 +110,34 @@ python3 $S/plot_tnp_compare.py merged_nofix.json merged_fix.json 30_18 "Run2022D
 **Expect:** `40 files, 3125939 events` (the DAS total of `inputs.txt`); 59863 opposite-sign pairs for 30_22 and
 57727 for 30_18; unseeded leg 0 without the fix; seeded counts equal without and with the fix.
 
+### 7a. MiniAOD reference on the same 40 files
+Same cuts on the MINIAOD parents themselves (`scripts/tnp_miniaod.py`, FWLite in cmsenv): stored RunIIIWinter22-V1
+IDs, `slimmedPatTrigger` filter labels, each numerator raw and `_pt15`. Second run `nanoprec`: electron and TrigObj
+eta/phi rounded as NanoAOD stores them. No cmsRun; one CPU per job.
+**Known-good command (on lxplus; copy `tnp_miniaod.py`, `merge_tnp.py`, `plot_mini_vs_nano.py` to
+`/eos/user/s/smahata/trigobj_check/` and `scripts/condor/tnp_mini*` plus `inputs.txt` to the submit directory):**
+```bash
+export X509_USER_PROXY=/afs/cern.ch/user/s/smahata/private/x509up_cms
+D=/afs/cern.ch/user/s/smahata/tnp_condor_mini; S=/eos/user/s/smahata/trigobj_check
+mkdir -p $D/logs && cd $D && chmod +x tnp_mini_job.sh
+md5sum inputs.txt ../tnp_condor_v13data/inputs.txt                 # equal
+condor_submit tnp_mini.sub; condor_submit tnp_mini_nanoprec.sub
+# after both clusters are empty:
+grep "return value" logs/condor.log logs/condor_nanoprec.log | sort | uniq -c   # 40 + 40 return value 0
+source /cvmfs/sft.cern.ch/lcg/views/LCG_107/x86_64-el9-gcc13-opt/setup.sh
+python3 $S/merge_tnp.py v13data_40files_mini merged_mini.json tnp_*_mini.json
+python3 $S/merge_tnp.py v13data_40files_mini_nanoprec merged_mini_nanoprec.json tnp_*_mini_nanoprec.json
+N=/afs/cern.ch/user/s/smahata/tnp_condor_v13data/merged_fix.json
+python3 $S/plot_mini_vs_nano.py $N merged_mini.json 30_22 "Run2022D EGamma (40 files), Diphoton30_22 legs: MiniAOD vs fixed NanoAOD" mini_vs_nano_30_22.png
+python3 $S/plot_mini_vs_nano.py $N merged_mini.json 30_18 "Run2022D EGamma (40 files), Diphoton30_18 legs: MiniAOD vs fixed NanoAOD" mini_vs_nano_30_18.png
+```
+Per-file check: compare `tags`, `pairs_os`, `pairs_ss`, `total_*` and every `passed*` of `tnp_<i>_mini_nanoprec.json`
+with `../tnp_condor_v13data/tnp_<i>_fix.json` for all 40 files.
+**Expect (clusters 9773146, 9773153 on 10 November):** about 2 min per file. Raw: 30_22 55132 / 59861 = 0.9210,
+30_18 52458 / 57725 = 0.9088, 1-3 tags or pairs off the fixed NanoAOD in 25 files; `_pt15` = raw. `nanoprec`: 0 / 80
+file-family differences. Before committing, drop `legs.*.pairs` from the merged JSONs (23.6 MB → 11 KB); the full
+files stay in `$D`.
+
 ### 8. Fetch results to the local clone
 **Known-good command (local), per file:**
 ```bash
@@ -136,6 +165,8 @@ export NODE_PATH=$MAMBA_ENV/lib/node_playwright/node_modules   # MAMBA_ENV: the 
 (any element bottom > 1016 px of a 1080 px slide) only `cover` (both decks) and the issue-deck `trigger` slide
 are flagged; they were flagged before the November changes too. HTML slides embed figures as base64 data URIs;
 a new slide is a file in `project/slides/` plus its id in `project/deck.json` `order`.
+The supervisor deck (local only, not in this repository) is built the same way as the Beamer one, from
+`<session folder>/slides/supervisor_10/src/trigobj_short.tex`: 12 pages, 0 overfull (10 November).
 
 ### 10. Commit and push to the fork only
 **Known-good command:**
@@ -180,6 +211,8 @@ is 0 on a fresh clone. Hashes cited in files then need updating (`git grep` the 
   WPTight electron object and to a seeded-leg photon object of the family measured; probe cutBased >= 2, pT > 15,
   |eta_SC| < 2.5 outside 1.4442-1.566, opposite sign, 70 < m_ee < 110 GeV. Counting only, no fit; same-sign pairs
   reported; 68% Clopper-Pearson. The no-fix file is the control.
+- The MiniAOD reference (step 7a) reads the MINIAOD parents of the same NANO files, never a different sample, and
+  copies the NanoAOD electron and photon TrigObj selections for the tag.
 - Bit numbers are always parsed from the file's `TrigObj_filterBits` documentation, never hard-coded.
 - Results: `results/tnp_<era>_<version>[_<variant>]/`; scripts in `scripts/`, HTCondor files in `scripts/condor/`.
 - The local clone lives in the session scratchpad and is not durable: commit and push before stopping.
@@ -199,7 +232,8 @@ is 0 on a fresh clone. Hashes cited in files then need updating (`git grep` the 
   timeouts, `cd` into the AFS submit directory fails.
   **Cause:** AFS unreachable from that lxplus node.
   **Fix:** reconnect to `lxplus.cern.ch` (a new node), in a retry loop. Do not ssh to a fixed node name such as
-  `lxplus955.cern.ch`: it failed with `Host key verification failed`.
+  `lxplus955.cern.ch` or `lxplus921.cern.ch`: both failed with `Host key verification failed` (EOS and AFS are the
+  same from any node).
 - **Symptom:** `scp` ends with `Connection closed`.
   **Fix:** copy with `ssh ... "cat > file" < file` or `ssh ... "cat file" > file` and compare md5 on both sides;
   never send the fetch's stderr to /dev/null without the md5 check (a failed fetch then passes silently).
@@ -223,15 +257,25 @@ is 0 on a fresh clone. Hashes cited in files then need updating (`git grep` the 
   Uncommitted work is lost, which is why every step ends with a push. Happened on 9 November with RUNBOOK.md and
   README.md uncommitted; recovered by replaying, in order, the file writes and edits recorded in the session
   transcript (`<transcript folder>/<session id>.jsonl`) onto the fresh clone, each edit checked to match once.
+  Happened again on 10 November (RUNBOOK.md): replay also the shell commands that edited the file (Python
+  string-replacement heredocs), in timestamp order; transcript entries without a timestamp are duplicates.
 - **Symptom:** `gh: command not found`; a `gh ... | grep` check then reports "clean" because it greps the error.
   **Fix:** query the REST API with `curl -s -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/santanumahata/cmssw/...`.
 - **Symptom:** after a force-push, `https://api.github.com/repos/santanumahata/cmssw/commits/<old sha>` still returns
   HTTP 200.
   **Cause:** GitHub keeps commits that are on no branch reachable by SHA (observed on 9 November for 3 commits).
   **Fix:** none from git. UNVERIFIED: GitHub Support can purge them on request (I file that myself).
+- **Symptom:** `ModuleNotFoundError: No module named 'scipy'` with the LCG view set up.
+  **Cause:** `python3 -I` ignores `PYTHONPATH`, through which the LCG view provides its packages.
+  **Fix:** run LCG Python without `-I`.
+- **Symptom:** the MINIAOD and fixed NanoAOD counts differ by 1-3 tags or pairs in some files.
+  **Cause:** NanoAOD stores eta, phi with 12 mantissa bits (deltaEtaSC 10); objects at a cut or bin edge move across.
+  **Fix:** none needed; `tnp_miniaod.py ... nanoprec` reproduces the NanoAOD counts exactly (NOTES.md section 22).
 
 ## Changelog
 - 2026-11-09 — Runbook created from the 5–9 November work: 16_0_X and v13 data NANO, recipe check, local and
   HTCondor tag-and-probe for both diphoton families, deck rebuild and push.
 - 2026-11-09 — Report render and /usr/bin/node in step 9; identity and name check in step 10; new step 11 (history
   scrub); conventions for names, identity, branches; gotchas for missing gh, old SHAs, transcript recovery.
+- 2026-11-11 — New step 7a (MiniAOD reference T&P, raw and nanoprec); supervisor deck build line in step 9; MiniAOD
+  convention; gotchas for `python3 -I` with LCG and NanoAOD rounding; fixed-node and scratchpad-wipe entries tightened.
