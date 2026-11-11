@@ -1205,3 +1205,41 @@ Input: the 40 MINIAOD parents of the central v13 file `499b6a69-...` (DAS), 3125
   fix files (checked by `plot_tnp_compare.py`).
 - Results: `results/tnp_2022D_v13_40files/` (`merged_nofix.json`, `merged_fix.json`, `tnp_compare_30_22.png`,
   `tnp_compare_30_18.png`). The efficiency slides in the three decks now show these two plots.
+
+## 22. MiniAOD reference: cut-and-count on the same 40 MINIAOD files vs the fixed NanoAOD (lxplus HTCondor, 10 November 2026)
+
+I measure the same tag-and-probe efficiencies directly on the 40 MINIAOD parents of section 21 (same `inputs.txt`,
+same events), as the reference for the fixed NanoAOD. `scripts/tnp_miniaod.py` (FWLite, CMSSW_13_3_1_patch1) applies
+the cuts of `tnp_unseeded.py`:
+- electron ID from the stored `cutBasedElectronID-RunIIIWinter22-V1-loose` / `-tight` of `slimmedElectrons`, the ID
+  NanoAOD re-runs for `Electron_cutBased` (`electrons_cff.py` lines 20-28 in 13_3_1_patch1); pT is the MINIAOD pT,
+  since NanoAOD calibrates `Electron_pt` only for `run2_egamma`; eta_SC = `superCluster().eta()`;
+- trigger matching by filter label in `slimmedPatTrigger` (dR < 0.1); the tag objects pass the NanoAOD electron and
+  photon TrigObj selections (`triggerObjects_cff.py` lines 57, 63, 83);
+- every numerator twice: raw (label only) and `_pt15` (label and trigger-object pT > 15, the NanoAOD photon cut).
+
+Content check on 2000 events of `05d4c158-...`: both IDs stored; all seven filter labels present on trigger objects.
+One-file check on `05d4c158-...` (62007 events): every count equal to `tnp_unseeded.py` on the fixed NANO of the same
+file. Full run: cluster 9773146 (`scripts/condor/tnp_mini.sub`, `tnp_mini_job.sh`), 40 / 40 jobs return value 0,
+3125939 events, 1142457 fire Ele32.
+
+| family | | tags | opposite / same sign pairs | unseeded leg (either) | seeded leg |
+|---|---|---|---|---|---|
+| 30_22 | MiniAOD | 447698 | 59861 / 596 | 55132 = 0.9210 (0.9199-0.9221) | 48107 = 0.8036 (0.8020-0.8053) |
+| 30_22 | fixed NanoAOD | 447700 | 59863 / 596 | 55133 = 0.9210 (0.9199-0.9221) | 48108 = 0.8036 (0.8020-0.8053) |
+| 30_18 | MiniAOD | 424647 | 57725 / 537 | 52458 = 0.9088 (0.9075-0.9100) | 44988 = 0.7794 (0.7776-0.7811) |
+| 30_18 | fixed NanoAOD | 424650 | 57727 / 537 | 52460 = 0.9088 (0.9075-0.9100) | 44989 = 0.7793 (0.7776-0.7811) |
+
+- 30_22 MiniAOD: TrackIso 54873, R9 40908 (fixed NanoAOD 54874, 40909).
+- `_pt15` equals raw for every numerator: no MINIAOD trigger-object match below 15 GeV is lost by the NanoAOD cut.
+- Per file, 25 of 40 files differ from the fixed NanoAOD by 1-3 tags or pairs, both signs, at cut and bin edges.
+  NanoAOD stores electron eta, phi with 12 mantissa bits and deltaEtaSC with 10 (`common_cff.py` lines 41, 44;
+  `electrons_cff.py` line 319), TrigObj eta, phi with 12 (`TriggerObjectTableProducer.cc` lines 320-321). With that
+  rounding applied to MINIAOD before any cut (`tnp_miniaod.py ... nanoprec`, a copy of
+  `ReduceMantissaToNbitsRounding`; cluster 9773153, `tnp_mini_nanoprec.sub`, 40 / 40 return value 0), every count
+  equals the fixed NanoAOD in every bin, every numerator, both families, all 40 files (0 / 80 file-family differences).
+- 68% Clopper-Pearson intervals.
+- Results: `results/tnp_2022D_v13_40files/` (`merged_mini.json`, `merged_mini_nanoprec.json` without the per-pair rows,
+  which stay in `/afs/cern.ch/user/s/smahata/tnp_condor_mini/`; `mini_vs_nano_30_22.png`, `mini_vs_nano_30_18.png`
+  from `scripts/plot_mini_vs_nano.py`, lower panel MiniAOD / fixed NanoAOD). `scripts/merge_tnp.py` now also
+  concatenates per-pair rows when present.

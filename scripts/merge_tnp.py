@@ -32,6 +32,8 @@ def add_leg(total, leg):
     for key in SUMMED_DICT_LISTS:
         for num in total[key]:
             total[key][num] = [a + b for a, b in zip(total[key][num], leg[key][num])]
+    if "pairs" in total:                                      # - | MINIAOD JSONs: per-pair list, concatenated
+        total["pairs"] += leg["pairs"]
 
 
 def main():

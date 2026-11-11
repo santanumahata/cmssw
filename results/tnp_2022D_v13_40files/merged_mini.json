@@ -1,0 +1,503 @@
+{
+ "label": "v13data_40files_mini",
+ "files": [
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/05d4c158-d7eb-439d-bf0c-947db0f8d58c.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/57462506-43f0-40b8-8314-974e864a08f0.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/6b995357-b3c4-4f31-9dde-0088fd559954.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/6c8b3a76-1361-449e-8eb8-b49cca6d8ca4.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/72b96bef-ed6d-4a46-b18c-1344292423cb.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/78a77644-1594-40a9-b3fb-3f6904ad86ea.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/79942d73-17bf-4677-b13c-ea7b87bf4ffc.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/7a6a1616-3e92-4b2b-90b1-29155e3ce046.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/8a488121-d8ea-4c62-95f9-216f394877d8.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/8d3d5e4f-e56f-4d81-8f0a-447b34485948.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/9e08f91b-5158-4f23-b8e5-6e1cb689a3ef.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/07e874b6-9259-4740-9328-9563957b9130.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/a72e8f68-d718-4b96-9a10-20692e1ecd00.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/a9b6b116-8b74-4955-a303-60f0dc2b1fb5.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/ab48babb-c310-43b8-870a-5472b5f3f2bf.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/b4dcf66e-c17c-40f6-a580-031f83a962c7.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/b71d62c5-0bf1-4693-af9a-c95a5348922f.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/ba4fec7f-4980-4857-ad9b-e645e37b83cd.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/bba13208-bb38-4a98-8e43-0728be4bcee9.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/c25844fa-6e9c-4973-ae51-6155a4346248.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/c2fca8bd-5f73-4164-be81-a433f9a0212e.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/c3d20fae-cb10-4e34-9bf9-89b90cb46430.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/09a1ef15-99bc-4dfa-8c49-0e423d7a8d33.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/c9f1d36b-234f-466f-81e3-2447401635a6.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/cee73bf4-5195-434f-92d4-2be0d800e8ea.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/da2be3b0-f752-46ba-93b9-441d6e5b72f4.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/dcf36328-49b9-40d1-b02a-799db8fd06ec.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/e5694bcd-cc7a-4654-9e49-4e3916726069.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/f5c3b5f8-ea0a-40c4-9cef-e09303e35ff5.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/f9a8cd4d-b138-4238-90bd-b830e89ee4d2.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/f9d19541-2f5f-4637-9299-b42aff948d82.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/fa82495d-82d6-4c35-94cb-77242c3796d4.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/facf685c-d490-4e67-bb93-63655e85fe5c.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/0a7b8632-023b-4eee-9b4c-545abebdbce9.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/0e51ccd9-4712-4715-889f-5e4f14c49ef2.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/1770f108-a26b-4d1d-bec2-414dc3d90aa7.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/1c20facc-f835-4c26-9c23-339e987c2dfa.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/2abed044-58bd-4a76-9c67-c8d2b9b33c79.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/3cb6430b-7bb1-412c-b8de-a59d9da95962.root",
+  "root://cms-xrd-global.cern.ch//store/data/Run2022D/EGamma/MINIAOD/22Sep2023-v1/2520000/533248b5-9c89-43ea-8402-a2c4d75da90f.root"
+ ],
+ "path": "HLT_Ele32_WPTight_Gsf_v*",
+ "events": 3125939,
+ "events_fired_path": 1142457,
+ "pt_bins": [
+  15,
+  17,
+  18,
+  20,
+  22,
+  25,
+  30,
+  35,
+  40,
+  50,
+  70,
+  100
+ ],
+ "eta_bins": [
+  0.0,
+  0.8,
+  1.4442,
+  1.566,
+  2.0,
+  2.5
+ ],
+ "legs": {
+  "30_22": {
+   "tags": 447698,
+   "pairs_os": 59861,
+   "pairs_ss": 596,
+   "passed": {
+    "TrackIso": 54873,
+    "TrackIso_pt15": 54873,
+    "R9": 40908,
+    "R9_pt15": 40908,
+    "either": 55132,
+    "either_pt15": 55132,
+    "seeded": 48107,
+    "seeded_pt15": 48107
+   },
+   "total_pt": [
+    423,
+    244,
+    581,
+    784,
+    1605,
+    4179,
+    7325,
+    12202,
+    25419,
+    6037,
+    708
+   ],
+   "total_eta": [
+    27529,
+    17856,
+    0,
+    8256,
+    6220
+   ],
+   "passed_pt": {
+    "TrackIso": [
+     0,
+     1,
+     6,
+     109,
+     1240,
+     3780,
+     6856,
+     11549,
+     24443,
+     5845,
+     694
+    ],
+    "TrackIso_pt15": [
+     0,
+     1,
+     6,
+     109,
+     1240,
+     3780,
+     6856,
+     11549,
+     24443,
+     5845,
+     694
+    ],
+    "R9": [
+     0,
+     0,
+     0,
+     57,
+     793,
+     2569,
+     4875,
+     8478,
+     18579,
+     4643,
+     591
+    ],
+    "R9_pt15": [
+     0,
+     0,
+     0,
+     57,
+     793,
+     2569,
+     4875,
+     8478,
+     18579,
+     4643,
+     591
+    ],
+    "either": [
+     0,
+     1,
+     6,
+     109,
+     1246,
+     3794,
+     6894,
+     11602,
+     24551,
+     5874,
+     701
+    ],
+    "either_pt15": [
+     0,
+     1,
+     6,
+     109,
+     1246,
+     3794,
+     6894,
+     11602,
+     24551,
+     5874,
+     701
+    ],
+    "seeded": [
+     0,
+     0,
+     0,
+     2,
+     11,
+     346,
+     5996,
+     11107,
+     23865,
+     5732,
+     697
+    ],
+    "seeded_pt15": [
+     0,
+     0,
+     0,
+     2,
+     11,
+     346,
+     5996,
+     11107,
+     23865,
+     5732,
+     697
+    ]
+   },
+   "passed_eta": {
+    "TrackIso": [
+     26446,
+     16508,
+     0,
+     6228,
+     5691
+    ],
+    "TrackIso_pt15": [
+     26446,
+     16508,
+     0,
+     6228,
+     5691
+    ],
+    "R9": [
+     21297,
+     9250,
+     0,
+     4814,
+     5547
+    ],
+    "R9_pt15": [
+     21297,
+     9250,
+     0,
+     4814,
+     5547
+    ],
+    "either": [
+     26595,
+     16568,
+     0,
+     6255,
+     5714
+    ],
+    "either_pt15": [
+     26595,
+     16568,
+     0,
+     6255,
+     5714
+    ],
+    "seeded": [
+     23253,
+     14726,
+     0,
+     5430,
+     4698
+    ],
+    "seeded_pt15": [
+     23253,
+     14726,
+     0,
+     5430,
+     4698
+    ]
+   },
+   "efficiency": {
+    "TrackIso": [
+     0.9166736272364311,
+     0.9155288632845079,
+     0.9178043704392502
+    ],
+    "TrackIso_pt15": [
+     0.9166736272364311,
+     0.9155288632845079,
+     0.9178043704392502
+    ],
+    "R9": [
+     0.6833831710128464,
+     0.6814709109422148,
+     0.6852892787752494
+    ],
+    "R9_pt15": [
+     0.6833831710128464,
+     0.6814709109422148,
+     0.6852892787752494
+    ],
+    "either": [
+     0.9210003174019813,
+     0.9198825988764556,
+     0.922103867027948
+    ],
+    "either_pt15": [
+     0.9210003174019813,
+     0.9198825988764556,
+     0.922103867027948
+    ],
+    "seeded": [
+     0.8036451111742203,
+     0.8020083624,
+     0.8052716653584682
+    ],
+    "seeded_pt15": [
+     0.8036451111742203,
+     0.8020083624,
+     0.8052716653584682
+    ]
+   }
+  },
+  "30_18": {
+   "tags": 424647,
+   "pairs_os": 57725,
+   "pairs_ss": 537,
+   "passed": {
+    "TrackIso": 52458,
+    "TrackIso_pt15": 52458,
+    "either": 52458,
+    "either_pt15": 52458,
+    "seeded": 44988,
+    "seeded_pt15": 44988
+   },
+   "total_pt": [
+    404,
+    237,
+    560,
+    758,
+    1556,
+    4039,
+    7083,
+    11789,
+    24473,
+    5805,
+    680
+   ],
+   "total_eta": [
+    26961,
+    17206,
+    0,
+    7788,
+    5770
+   ],
+   "passed_pt": {
+    "TrackIso": [
+     8,
+     51,
+     359,
+     626,
+     1343,
+     3538,
+     6403,
+     10760,
+     22894,
+     5496,
+     647
+    ],
+    "TrackIso_pt15": [
+     8,
+     51,
+     359,
+     626,
+     1343,
+     3538,
+     6403,
+     10760,
+     22894,
+     5496,
+     647
+    ],
+    "either": [
+     8,
+     51,
+     359,
+     626,
+     1343,
+     3538,
+     6403,
+     10760,
+     22894,
+     5496,
+     647
+    ],
+    "either_pt15": [
+     8,
+     51,
+     359,
+     626,
+     1343,
+     3538,
+     6403,
+     10760,
+     22894,
+     5496,
+     647
+    ],
+    "seeded": [
+     0,
+     0,
+     0,
+     2,
+     9,
+     330,
+     5620,
+     10343,
+     22326,
+     5379,
+     648
+    ],
+    "seeded_pt15": [
+     0,
+     0,
+     0,
+     2,
+     9,
+     330,
+     5620,
+     10343,
+     22326,
+     5379,
+     648
+    ]
+   },
+   "passed_eta": {
+    "TrackIso": [
+     26325,
+     16199,
+     0,
+     4612,
+     5322
+    ],
+    "TrackIso_pt15": [
+     26325,
+     16199,
+     0,
+     4612,
+     5322
+    ],
+    "either": [
+     26325,
+     16199,
+     0,
+     4612,
+     5322
+    ],
+    "either_pt15": [
+     26325,
+     16199,
+     0,
+     4612,
+     5322
+    ],
+    "seeded": [
+     22808,
+     14095,
+     0,
+     3919,
+     4166
+    ],
+    "seeded_pt15": [
+     22808,
+     14095,
+     0,
+     3919,
+     4166
+    ]
+   },
+   "efficiency": {
+    "TrackIso": [
+     0.9087570376786488,
+     0.9075429537905257,
+     0.9099568606274444
+    ],
+    "TrackIso_pt15": [
+     0.9087570376786488,
+     0.9075429537905257,
+     0.9099568606274444
+    ],
+    "either": [
+     0.9087570376786488,
+     0.9075429537905257,
+     0.9099568606274444
+    ],
+    "either_pt15": [
+     0.9087570376786488,
+     0.9075429537905257,
+     0.9099568606274444
+    ],
+    "seeded": [
+     0.7793503681247294,
+     0.7776111927353098,
+     0.7810798187727979
+    ],
+    "seeded_pt15": [
+     0.7793503681247294,
+     0.7776111927353098,
+     0.7810798187727979
+    ]
+   }
+  }
+ },
+ "pairs_dropped": "per-pair rows kept only on lxplus: /afs/cern.ch/user/s/smahata/tnp_condor_mini/merged_mini.json"
+}
