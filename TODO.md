@@ -18,10 +18,11 @@
    alternatives in the existing bits; bits for the low-mass and other diphoton paths, to be agreed with EGM and Higgs.
 
 ## Blocked
-- Runbook update for the PR preparation (new step 12, conventions, changelog line) — **waiting on:** my choice
-  between splitting `RUNBOOK.md` into card + `RUNBOOK-DETAIL.md`, or keeping one file and adding step 12.
+- Nothing blocked.
 
 ## Done
+- 2026-11-13 — Runbook split into card `RUNBOOK.md` (7.4 KB) and `RUNBOOK-DETAIL.md` (23.7 KB); new step 12 (PR
+  preparation), conventions for the PR body, EGM tag and signing — commit `4e57cd9`, `git ls-remote` equals HEAD.
 - 2026-11-13 — Notes branch updated: short `pr/PR_body.md` (bug, effect, fix, EGM FYI tag), patch regenerated from
   `8bb009d9b`, new hash in `README.md` and `RUNBOOK.md`, `NOTES.md` section 23 appended — commit `a02c7de`,
   `git ls-remote` equals HEAD.
