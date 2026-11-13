@@ -205,7 +205,7 @@ is 0 on a fresh clone. Hashes cited in files then need updating (`git grep` the 
 - No forbidden tool or vendor name anywhere (the names are in `NAME_PATTERN`, outside the repository): file contents, PDFs, commit author, committer and
   trailers, branch names. Commits are authored and committed as `santanumahata <santanuedu.m@gmail.com>`; local paths
   containing such a name become placeholders (`$MAMBA_ENV`, `SESSION_WORKDIR`, `SESSION_SCRATCH`).
-- Fork branches: `nanoaod-trigobj-notes` (this repository), `nano-photon-trigobj-unseeded` (fix `828ed8b2a` on
+- Fork branches: `nanoaod-trigobj-notes` (this repository), `nano-photon-trigobj-unseeded` (fix `8bb009d9b` on
   upstream master), `nano-photon-trigobj-unseeded-forkmaster` (fix `42555a463` on the fork's May 2025 master).
 - Tag-and-probe: tag tight electron, pT > 35, |eta_SC| < 2.1, `HLT_Ele32_WPTight_Gsf`, matched (dR < 0.1) to the
   WPTight electron object and to a seeded-leg photon object of the family measured; probe cutBased >= 2, pT > 15,

@@ -1243,3 +1243,15 @@ file. Full run: cluster 9773146 (`scripts/condor/tnp_mini.sub`, `tnp_mini_job.sh
   which stay in `/afs/cern.ch/user/s/smahata/tnp_condor_mini/`; `mini_vs_nano_30_22.png`, `mini_vs_nano_30_18.png`
   from `scripts/plot_mini_vs_nano.py`, lower panel MiniAOD / fixed NanoAOD). `scripts/merge_tnp.py` now also
   concatenates per-pair rows when present.
+
+## 23. Fix branch rebased; PR description shortened (13 November 2026)
+
+- `nano-photon-trigobj-unseeded` rebased onto upstream master `43690ddd6` (13 November 2026): cherry-pick of
+  `828ed8b2a`, new tip `8bb009d9b`, same author, message and one-line diff. GitHub compare
+  `cms-sw:master...santanumahata:nano-photon-trigobj-unseeded`: 1 ahead, 0 behind,
+  `triggerObjects_cff.py +1 -1`. `828ed8b2a` is no longer on a branch; the relval records of section 16 and
+  `results/CODE.md` refer to it as it was then.
+- `pr/0001-NanoAOD-photon-TrigObj-unseeded-collection.patch` regenerated from `8bb009d9b`.
+- `pr/PR_body.md` shortened to the bug, its effect (unseeded photon bits 0 in central NanoAOD from v12 on,
+  section 14) and the fix, with an FYI to `@cms-sw/egamma-pog-l2`; no validation or backport section.
+- No PR opened; nothing pushed to `cms-sw/cmssw`.

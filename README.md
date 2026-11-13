@@ -65,7 +65,7 @@ request has been opened.
 
 - Notes, scripts, scan outputs, report and slides (this repository, as a branch of the fork):
   https://github.com/santanumahata/cmssw/tree/nanoaod-trigobj-notes
-- The fix on top of upstream master (branch for the future pull request, commit 828ed8b2a):
+- The fix on top of upstream master (branch for the future pull request, commit 8bb009d9b on upstream master 43690ddd6):
   https://github.com/santanumahata/cmssw/tree/nano-photon-trigobj-unseeded
 - The same fix on the fork's own master (session working branch, commit 42555a463):
   https://github.com/santanumahata/cmssw/tree/nano-photon-trigobj-unseeded-forkmaster

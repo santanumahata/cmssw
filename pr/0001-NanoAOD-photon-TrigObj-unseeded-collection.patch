@@ -1,4 +1,4 @@
-From 828ed8b2a887a758130483d19a27adac8e29c181 Mon Sep 17 00:00:00 2001
+From 8bb009d9b0ea98354c3bb5c826f1281634bcb323 Mon Sep 17 00:00:00 2001
 From: santanumahata <santanuedu.m@gmail.com>
 Date: Wed, 4 Nov 2026 18:28:26 +0000
 Subject: [PATCH] NanoAOD: let photon TrigObj keep objects from the unseeded
@@ -25,7 +25,7 @@ producer's self-cleaning merges them with the seeded duplicate.
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/PhysicsTools/NanoAOD/python/triggerObjects_cff.py b/PhysicsTools/NanoAOD/python/triggerObjects_cff.py
-index 2691ff0e8..6239ec1de 100644
+index 2691ff0..6239ec1 100644
 --- a/PhysicsTools/NanoAOD/python/triggerObjects_cff.py
 +++ b/PhysicsTools/NanoAOD/python/triggerObjects_cff.py
 @@ -87,7 +87,7 @@ triggerObjectTable = triggerObjectTableProducer.clone(
