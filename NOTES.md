@@ -1255,3 +1255,12 @@ file. Full run: cluster 9773146 (`scripts/condor/tnp_mini.sub`, `tnp_mini_job.sh
 - `pr/PR_body.md` shortened to the bug, its effect (unseeded photon bits 0 in central NanoAOD from v12 on,
   section 14) and the fix, with an FYI to `@cms-sw/egamma-pog-l2`; no validation or backport section.
 - No PR opened; nothing pushed to `cms-sw/cmssw`.
+
+## 24. Pull request opened (14 November 2026)
+
+- https://github.com/cms-sw/cmssw/pull/52514, base `master`, head `santanumahata:nano-photon-trigobj-unseeded`
+  (`8bb009d9b`), opened from my account. GitHub reports 1 changed file, +1 -1
+  (`PhysicsTools/NanoAOD/python/triggerObjects_cff.py`, the Photon `sel` line). Title and body are `pr/PR_body.md`
+  without its title line.
+- Before opening: the branch was 13 commits behind master; none of the 13 touches `PhysicsTools/NanoAOD`
+  (GitHub compare `43690ddd6...master`), so it was not rebased again.

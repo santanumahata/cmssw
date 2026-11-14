@@ -1,26 +1,25 @@
 # NanoAOD photon TrigObj fix — TODO
 
-**Last updated:** 2026-11-13
+**Last updated:** 2026-11-14
 
 ## Now
-- PR ready to open — fix branch `8bb009d9b` and `pr/PR_body.md` final; not opened (Next 1).
+- PR open: https://github.com/cms-sw/cmssw/pull/52514 — waiting for cms-bot, xpog L2 signature, tests, ORP merge.
 
 ## Next
-1. Open the PR myself, by hand:
-   https://github.com/cms-sw/cmssw/compare/master...santanumahata:cmssw:nano-photon-trigobj-unseeded — title and
-   body from `pr/PR_body.md`.
-2. After opening: xpog L2 signature (`enibigir`, `ram1123`, `vepadulano`, `battibass`), tests, then an ORP merge
+1. On PR 52514: xpog L2 signature (`enibigir`, `ram1123`, `vepadulano`, `battibass`), tests, then an ORP merge
    (`sextonkennedy`, `mandrenguyen`, `ftenchini`); from cms-bot `categories.py`, `categories_map.py`,
    `cmssw_l2/l2.json`, 13 November.
-3. Supervisor deck footer still reads "9 November 2026" (`slides/supervisor_10/src/trigobj_short.tex`, local only) —
+2. Supervisor deck footer still reads "9 November 2026" (`slides/supervisor_10/src/trigobj_short.tex`, local only) —
    decide whether to change the date.
-4. Follow-ups kept out of the one-line PR (`NOTES.md` section 8.2): 2023+ names of the Diphoton30_18 filters as
+3. Follow-ups kept out of the one-line PR (`NOTES.md` section 8.2): 2023+ names of the Diphoton30_18 filters as
    alternatives in the existing bits; bits for the low-mass and other diphoton paths, to be agreed with EGM and Higgs.
 
 ## Blocked
 - Nothing blocked.
 
 ## Done
+- 2026-11-14 — PR https://github.com/cms-sw/cmssw/pull/52514 opened on `master` from `8bb009d9b`: 1 file, +1 -1,
+  author santanumahata; name scan of commit, patch, title and body 0.
 - 2026-11-13 — Runbook split into card `RUNBOOK.md` (7.4 KB) and `RUNBOOK-DETAIL.md` (23.7 KB); new step 12 (PR
   preparation), conventions for the PR body, EGM tag and signing — commit `4e57cd9`, `git ls-remote` equals HEAD.
 - 2026-11-13 — Notes branch updated: short `pr/PR_body.md` (bug, effect, fix, EGM FYI tag), patch regenerated from
