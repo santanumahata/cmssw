@@ -252,6 +252,8 @@ git grep -n -e 'Iso60CaloId15b35e' -e 'Iso60b40eCaloId11b32e' origin/master -- $
 git branch -m nano-photon-diphoton3018-2023names nano-photon-diphoton3018-2023names-on52514   # keeps 8983610a713
 git switch -c nano-photon-diphoton3018-2023names origin/master
 git cherry-pick 8983610a713
+git -c user.name=santanumahata -c user.email=santanuedu.m@gmail.com commit --amend --no-edit \
+  --author="santanumahata <santanuedu.m@gmail.com>"           # my GitHub identity; author date kept
 git log --oneline origin/master..HEAD
 git diff --stat origin/master..HEAD
 python3 -m py_compile $F
@@ -261,9 +263,10 @@ git fetch -q my-cmssw nano-photon-diphoton3018-2023names
 git rev-list --left-right --count origin/master...FETCH_HEAD
 ```
 **Expect (20 November):** master `7167add78d2`; the Diphoton30_18 lines 113-114 carry the old names only (the grep also
-matches the Diphoton30_22 lines 110-111); `mksel` takes a list on master (`triggerObjects_cff.py:24`). Cherry-pick clean; one commit `68fc08904d9`,
-author and committer `smahata <santanu.mahata@cern.ch>`; `triggerObjects_cff.py | 5 +++--`; parse OK. Push
-`8983610a713...68fc08904d9 (forced update)`; rev-list `0 1`. Name check of commit, diff, branch name and PR text 0.
+matches the Diphoton30_22 lines 110-111); `mksel` takes a list on master (`triggerObjects_cff.py:24`). Cherry-pick clean; one commit `e830f534b11`
+(first pushed as `68fc08904d9` with `smahata <santanu.mahata@cern.ch>`, then amended, same tree), author and committer
+`santanumahata <santanuedu.m@gmail.com>`; `triggerObjects_cff.py | 5 +++--`; parse OK. Pushes
+`8983610a713...68fc08904d9`, `68fc08904d9...e830f534b11` (forced update); rev-list `0 1`. Name check of commit, diff, branch name and PR text 0.
 The code is independent of #52514 (different line); the unseeded bit needs both. Upstream diff, without opening a PR:
 `https://github.com/cms-sw/cmssw/compare/master...santanumahata:cmssw:nano-photon-diphoton3018-2023names`. The
 cms-sw PR template is `pull_request_template.md` at the cmssw root: PR description, PR validation, a backport
@@ -411,7 +414,7 @@ so stock and pr52514 on new-name files (C-v4, D-v1) are expected to give no tags
   containing such a name become placeholders (`$MAMBA_ENV`, `SESSION_WORKDIR`, `SESSION_SCRATCH`).
 - Fork branches: `nanoaod-trigobj-notes` (this repository), `nano-photon-trigobj-unseeded` (fix `8bb009d9b` on
   upstream master), `nano-photon-trigobj-unseeded-forkmaster` (fix `42555a463` on the fork's May 2025 master),
-  `nano-photon-diphoton3018-2023names` (second change `68fc08904d9` on upstream master `7167add78d2`; not yet a PR;
+  `nano-photon-diphoton3018-2023names` (second change `e830f534b11` on upstream master `7167add78d2`; not yet a PR;
   the earlier `8983610a713` on `8bb009d9b` is kept only in the local branch `nano-photon-diphoton3018-2023names-on52514`).
 - A fix for upstream goes to my fork first; the upstream PR is opened only after I confirm the fork branch.
 - Each upstream PR branch sits on current cms-sw master and carries only its own lines
@@ -532,3 +535,4 @@ so stock and pr52514 on new-name files (C-v4, D-v1) are expected to give no tags
   its 3 lines), fork branch replaced by a lease push, old commit kept locally; convention one PR branch = own lines on
   master; gotchas for the rejected push and the raw-byte PDF grep; deck line 19 pages, EGM title page and logos.
 - 2026-11-20 — Supervisor deck source and outputs renamed to the talk title plus my name (step 9).
+- 2026-11-20 — Step 13: second change re-authored as `santanumahata <santanuedu.m@gmail.com>`, now `e830f534b11`.
