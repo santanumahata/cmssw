@@ -1,9 +1,10 @@
 # NanoAOD photon TrigObj fix: measurement, fix test and tag-and-probe — Runbook (detail)
 
-**Last updated:** 2026-11-13
+**Last updated:** 2026-11-20
 **Card:** `RUNBOOK.md` — commands only.
 **Where it runs:** lxplus (EL9), work area `/eos/user/s/smahata/trigobj_check/`, HTCondor submit directory
-`/afs/cern.ch/user/s/smahata/tnp_condor_v13data/`; notes, decks and git on the local machine.
+`/afs/cern.ch/user/s/smahata/tnp_condor_v13data/`; 2023 closure in `/eos/user/s/smahata/nano3018_test/`, submit
+directory `~/closure_2023_condor/` on lxplus9108; notes, decks and git on the local machine.
 
 ## Overview
 I re-make NanoAOD from MINIAOD without and with the one-line Photon-selection fix
@@ -15,7 +16,9 @@ NanoAOD file on HTCondor (`scripts/condor/`), then merge (`scripts/merge_tnp.py`
 (`scripts/tnp_miniaod.py`, `scripts/plot_mini_vs_nano.py`). Results go to `results/` and `NOTES.md` (append-only sections), then into
 the three decks, then to the fork `santanumahata/cmssw`, branch `nanoaod-trigobj-notes` only. Before the pull
 request, the fix branch is moved onto current upstream master and the PR text is kept ready (step 12); I open
-the PR myself.
+the PR myself. For 2023 data from run 367661 a second change on the fork ORs the old and new Diphoton30_18 filter
+names (step 13); steps 14-17 check the names in MINIAOD, re-make 2023 NANO in three CMSSW_16_1_3 areas and run the
+cumulative closure (stock, then +#52514, then both changes).
 
 ## Steps
 
@@ -169,7 +172,8 @@ export NODE_PATH=$MAMBA_ENV/lib/node_playwright/node_modules   # MAMBA_ENV: the 
 are flagged; they were flagged before the November changes too. HTML slides embed figures as base64 data URIs;
 a new slide is a file in `project/slides/` plus its id in `project/deck.json` `order`.
 The supervisor deck (local only, not in this repository) is built the same way as the Beamer one, from
-`<session folder>/slides/supervisor_10/src/trigobj_short.tex`: 12 pages, 0 overfull (10 November).
+`<session folder>/slides/supervisor_10/src/trigobj_short.tex`: 15 pages, 0 overfull (20 November); the last page,
+after `\appendix`, is backup.
 
 ### 10. Commit and push to the fork only
 **Known-good command:**
@@ -231,6 +235,157 @@ commit, diff and `pr/PR_body.md` 0. I then open the PR by hand from
 `https://github.com/cms-sw/cmssw/compare/master...santanumahata:cmssw:nano-photon-trigobj-unseeded`, title and
 body from `pr/PR_body.md`.
 
+### 13. Second change: Diphoton30_18 bits accept old and new filter names (fork only)
+**Known-good command (local cmssw clone, run 19 November):**
+```bash
+cd /home/santanu/Videos/cmssw
+git remote add my-cmssw https://github.com/santanumahata/cmssw.git
+git fetch my-cmssw nano-photon-trigobj-unseeded
+git checkout -b nano-photon-diphoton3018-2023names my-cmssw/nano-photon-trigobj-unseeded
+# edit PhysicsTools/NanoAOD/python/triggerObjects_cff.py, Photon bits: the two Diphoton30_18 mksel lines become
+#   # Diphoton30_18 legs: HLT renamed both filters during Run2023C-v3, keep old and new names
+#   mksel(["hltEG30Iso60CaloId15b35eR9Id50b90eHE12b10eR9Id50b80eEcalIsoFilter","hltEG30Iso60b40eCaloId11b32eHE10b9eR9Id50b90eEcalIsoFilter"]),
+#   mksel(["hltEG18TrackIso60Iso60CaloId15b35eR9Id50b90eHE12b10eR9Id50b80eTrackIsoUnseededFilter","hltDiEG18TrackIso60Iso60b40eCaloId11b32eHE10b9eR9Id50b90eTrackIsoUnseededFilter"]),
+python3 -c "import ast; ast.parse(open('PhysicsTools/NanoAOD/python/triggerObjects_cff.py').read()); print('parse OK')"
+git diff --stat
+git add PhysicsTools/NanoAOD/python/triggerObjects_cff.py
+git commit -m "NanoAOD TrigObj: OR the 2023 Diphoton30_18 filter names into the photon bits"
+git -c credential.helper='!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f' \
+  push -q https://github.com/santanumahata/cmssw.git HEAD:refs/heads/nano-photon-diphoton3018-2023names
+git ls-remote https://github.com/santanumahata/cmssw.git refs/heads/nano-photon-diphoton3018-2023names   # equals HEAD
+```
+**Expect:** parse OK; hunk `@@ -113,2 +113,3 @@` (+3 -2); commit `8983610a713` on `8bb009d9b`, `git log` author `smahata <santanu.mahata@cern.ch>`, 19 Nov 23:56 +0100.
+`mksel` of a list ORs the names; the bit documentation reads "old OR new". Not a PR: an upstream PR only after I
+confirm the fork branch.
+
+### 14. MiniAOD check: which Diphoton30_18 filter names fire in which 2023 era
+Analyzer area `/eos/user/s/smahata/edanalyzer/CMSSW_13_0_13` (an EL7 release, so `cmssw-el7`); configs
+`cfg_Cv1v2_oldString.py` (old names) and `cfg_Dv1v2_newString.py` (new names) in `MyAnalysis/DiphotonTnPAnalyzer/python/`.
+**Known-good command (lxplus9108, run 19 November):**
+```bash
+A=/eos/user/s/smahata/edanalyzer/CMSSW_13_0_13/src/MyAnalysis/DiphotonTnPAnalyzer
+OUT=$A/demo_filter_rename
+CV2=root://cms-xrd-global.cern.ch//store/data/Run2023C/EGamma0/MINIAOD/22Sep2023_v2-v1/40000/b6b896c4-5d8b-43cf-84f7-c8e7ded6abdc.root
+DV1=root://cms-xrd-global.cern.ch//store/data/Run2023D/EGamma0/MINIAOD/22Sep2023_v1-v1/2530000/664b05d0-e4ac-48d8-83b9-1ccf889a27c3.root
+mkdir -p $OUT
+cmssw-el7 --command-to-run "cd $A/../.. && eval \`scram runtime -sh\` && \
+ cmsRun $A/python/cfg_Cv1v2_oldString.py inputFiles=$CV2 maxEvents=20000 outputFile=$OUT/Cv2_old.root > $OUT/Cv2_old.log 2>&1 && \
+ cmsRun $A/python/cfg_Dv1v2_newString.py inputFiles=$CV2 maxEvents=20000 outputFile=$OUT/Cv2_new.root > $OUT/Cv2_new.log 2>&1 && \
+ cmsRun $A/python/cfg_Cv1v2_oldString.py inputFiles=$DV1 maxEvents=20000 outputFile=$OUT/Dv1_old.root > $OUT/Dv1_old.log 2>&1 && \
+ cmsRun $A/python/cfg_Dv1v2_newString.py inputFiles=$DV1 maxEvents=20000 outputFile=$OUT/Dv1_new.root > $OUT/Dv1_new.log 2>&1"
+source /cvmfs/cms.cern.ch/cmsset_default.sh
+cd /cvmfs/cms.cern.ch/el9_amd64_gcc12/cms/cmssw/CMSSW_13_3_0/src && eval `scram runtime -sh` && cd $OUT
+for f in Cv2_old Cv2_new Dv1_old Dv1_new; do
+  root -l -b -q -e "TTree*t=(TTree*)TFile::Open(\"${f}_numEvent20000.root\")->Get(\"diphotonTnP/tnpPhoHLT\"); \
+   printf(\"$f pairs=%lld seed=%lld unseed=%lld\n\", t->GetEntries(), t->GetEntries(\"probe_passSeed==1\"), t->GetEntries(\"probe_passUnseed==1\"));"
+done
+```
+**Expect (19 November):** `Cv2_old pairs=1225 seed=460 unseed=550`, `Cv2_new 1225 / 0 / 0`, `Dv1_old 1240 / 0 / 0`,
+`Dv1_new 1240 / 413 / 496`: each name set finds objects only in its own era (C-v2 run 367615, D-v1 run 370175).
+
+### 15. Build three CMSSW_16_1_3 areas on EOS: plain, pr52514, fixed
+**Known-good command (lxplus9108, run 19-20 November):**
+```bash
+source /cvmfs/cms.cern.ch/cmsset_default.sh
+export SCRAM_ARCH=el9_amd64_gcc13
+W=/eos/user/s/smahata/nano3018_test
+mkdir -p $W/plain $W/pr52514 $W/fixed
+cd $W/plain && scram project CMSSW CMSSW_16_1_3
+cd $W/pr52514 && scram project CMSSW CMSSW_16_1_3 && cd CMSSW_16_1_3/src && eval `scram runtime -sh`
+git cms-init --upstream-only
+git cms-addpkg PhysicsTools/NanoAOD
+git fetch https://github.com/santanumahata/cmssw.git nano-photon-trigobj-unseeded
+git checkout FETCH_HEAD -- PhysicsTools/NanoAOD/python/triggerObjects_cff.py
+git diff --stat HEAD
+scram b -j 8 > $W/pr52514/build.log 2>&1; echo "build exit $?"
+# the same six lines in $W/fixed with branch nano-photon-diphoton3018-2023names, log $W/fixed/build.log
+```
+**Expect:** pr52514 `1 file changed, 1 insertion(+), 1 deletion(-)`, fixed `1 file changed, 4 insertions(+), 3 deletions(-)`;
+build exit 0 for both. `python3 -c "import PhysicsTools.NanoAOD.triggerObjects_cff as m; print(m.__file__)"` gives
+the cvmfs release file in plain and `<area>/CMSSW_16_1_3/src/...` in the other two.
+
+### 16. Re-make 2023 NANO (20000 events) and count bits 18, 19
+**Known-good command (lxplus9108, run 19 November; one ssh session per cmsDriver, for area in plain, fixed and
+file in Cv2, Dv1 of step 14):**
+```bash
+source /cvmfs/cms.cern.ch/cmsset_default.sh; export SCRAM_ARCH=el9_amd64_gcc13
+W=/eos/user/s/smahata/nano3018_test; area=fixed
+CV2=root://cms-xrd-global.cern.ch//store/data/Run2023C/EGamma0/MINIAOD/22Sep2023_v2-v1/40000/b6b896c4-5d8b-43cf-84f7-c8e7ded6abdc.root
+cd $W/$area/CMSSW_16_1_3/src && eval `scram runtime -sh` && cd $W/$area
+cmsDriver.py nano_Cv2 -s NANO --data --era Run3_2023,run3_nanoAOD_pre142X --conditions auto:run3_data \
+  --datatier NANOAOD --eventcontent NANOAOD --filein $CV2 --fileout file:Cv2_nano.root -n 20000 \
+  --python_filename nano_Cv2_cfg.py > nano_Cv2.log 2>&1; echo "$area Cv2 exit $?"
+# count, in any 16_1_3 cmsenv:
+for area in fixed plain; do for f in Cv2 Dv1; do
+  root -l -b -q -e "TTree*t=(TTree*)TFile::Open(\"$W/$area/${f}_nano.root\")->Get(\"Events\"); \
+   printf(\"$area $f events=%lld bit18=%lld bit19=%lld\n\", t->GetEntries(), \
+   t->GetEntries(\"Sum\$(TrigObj_id==22 && ((TrigObj_filterBits>>18)&1))>0\"), \
+   t->GetEntries(\"Sum\$(TrigObj_id==22 && ((TrigObj_filterBits>>19)&1))>0\"));"
+done; done
+root -l -b -q -e "TTree*t=(TTree*)TFile::Open(\"$W/fixed/Dv1_nano.root\")->Get(\"Events\"); \
+ cout<<t->GetBranch(\"TrigObj_filterBits\")->GetTitle()<<endl;" | tr ';' '\n' | grep -n "Diphoton\|hltEG30Iso60\|hltEG18\|hltDiEG18"
+```
+**Expect (19-20 November):** all four cmsDriver exit 0. Events with >= 1 photon TrigObj carrying the bit, bit18 / bit19:
+fixed Cv2 14630 / 2602, fixed Dv1 13753 / 1781, plain Cv2 14630 / 0, plain Dv1 0 / 0. Fixed bits 18, 19 read
+"old OR new"; plain shows the old names only; bit 20 unchanged.
+
+### 17. Closure: 2023 trigger efficiency, cumulative steps (submitted 20 November; outputs not yet checked)
+Job files `scripts/condor/closure_2023/nano_job.sh` and `closure.sub`, copied to `~/closure_2023_condor/` on lxplus9108
+(md5 `0bc1720e…`, `c216decd…` on both sides). One job = one MINIAOD file, all events, in one area.
+**Known-good command (lxplus9108, run 20 November):**
+```bash
+cd ~/closure_2023_condor && mkdir -p logs
+cp /tmp/x509up_u170597 ~/private/x509_proxy          # the proxy file named in closure.sub
+source /cvmfs/cms.cern.ch/cmsset_default.sh
+W=/eos/user/s/smahata/nano3018_test
+rm -f inputs.txt inputs_more.txt
+for T in Cv2:Run2023C-22Sep2023_v2-v1 Cv4:Run2023C-22Sep2023_v4-v1 Dv1:Run2023D-22Sep2023_v1-v1; do
+  i=0
+  for LFN in $(dasgoclient -query="file dataset=/EGamma0/${T#*:}/MINIAOD" | sort | head -40); do
+    L=inputs.txt; [ $i -ge 10 ] && L=inputs_more.txt   # run on 20 Nov as two loops (files 0-9, 10-39); same lines
+    echo "${T%%:*} stock   $W/plain   $LFN $i" >> $L
+    echo "${T%%:*} pr52514 $W/pr52514 $LFN $i" >> $L
+    echo "${T%%:*} both    $W/fixed   $LFN $i" >> $L
+    i=$((i+1))
+  done
+done
+wc -l inputs.txt inputs_more.txt                      # 90, 270
+for T in Cv2 Cv4 Dv1; do for S in stock pr52514 both; do mkdir -p $W/closure_2023/$T/$S; done; done
+sed 's/from inputs.txt/from inputs_more.txt/' closure.sub > closure_more.sub
+condor_submit closure.sub
+condor_submit closure_more.sub
+```
+Quick check that does not wait for condor: file 0 of each dataset in each area under `nohup` on lxplus9108,
+output on node-local `/tmp/smahata_closure/<step>/nano_<tag>_0.{log,root}`:
+```bash
+mkdir -p /tmp/smahata_closure
+cp /tmp/x509up_u170597 /tmp/smahata_closure/x509_proxy
+cd /tmp/smahata_closure
+for S in stock:plain pr52514:pr52514 both:fixed; do
+  STEP=${S%%:*}
+  AREA=/eos/user/s/smahata/nano3018_test/${S#*:}
+  mkdir -p $STEP
+  for T in Cv2 Cv4 Dv1; do
+    LFN=$(awk -v t=$T -v s=$STEP '$1==t && $2==s && $5==0 {print $4}' ~/closure_2023_condor/inputs.txt)
+    nohup bash -c "source /cvmfs/cms.cern.ch/cmsset_default.sh; export SCRAM_ARCH=el9_amd64_gcc13; \
+      export X509_USER_PROXY=/tmp/smahata_closure/x509_proxy; \
+      cd $AREA/CMSSW_16_1_3/src && eval \`scram runtime -sh\` && cd /tmp/smahata_closure/$STEP && \
+      python3 -c 'import PhysicsTools.NanoAOD.triggerObjects_cff as m; print(m.__file__)' > nano_${T}_0.log && \
+      cmsDriver.py nano_${T} -s NANO --data --era Run3_2023,run3_nanoAOD_pre142X --conditions auto:run3_data \
+        --datatier NANOAOD --eventcontent NANOAOD --filein root://cms-xrd-global.cern.ch/$LFN \
+        --fileout file:nano_${T}_0.root -n -1 --python_filename nano_${T}_cfg.py >> nano_${T}_0.log 2>&1; \
+      echo \"cmsDriver exit \$?\" >> nano_${T}_0.log" > /dev/null 2>&1 &
+  done
+done
+sleep 240; pgrep -u smahata -c cmsRun; grep -c "Begin processing" /tmp/smahata_closure/*/nano_*_0.log
+```
+**Expect (20 November):** `90 job(s) submitted to cluster 9803546`, `270 job(s) submitted to cluster 9803547`;
+outputs `$W/closure_2023/<tag>/<step>/nano_<idx>.{log,root}`, each log ending `cmsDriver exit 0`. Quick check:
+9 `cmsRun`, about 2000 events processed per run after 4 minutes, each log's first line the area's own
+`triggerObjects_cff.py`. NOT YET VERIFIED: job exits, outputs, and the tag-and-probe (`tnp_unseeded.py` per file,
+`merge_tnp.py` per dataset and step; a three-series plot is still to be written). The tag needs a seeded-leg bit,
+so stock and pr52514 on new-name files (C-v4, D-v1) are expected to give no tags.
+
 ## Conventions
 - Never push to `cms-sw/cmssw`, never open a PR or issue. Data access is read-only; only small test files.
 - The PR to `cms-sw/cmssw` is opened by me, by hand (step 12); nothing here opens or comments on it.
@@ -244,7 +399,13 @@ body from `pr/PR_body.md`.
   trailers, branch names. Commits are authored and committed as `santanumahata <santanuedu.m@gmail.com>`; local paths
   containing such a name become placeholders (`$MAMBA_ENV`, `SESSION_WORKDIR`, `SESSION_SCRATCH`).
 - Fork branches: `nanoaod-trigobj-notes` (this repository), `nano-photon-trigobj-unseeded` (fix `8bb009d9b` on
-  upstream master), `nano-photon-trigobj-unseeded-forkmaster` (fix `42555a463` on the fork's May 2025 master).
+  upstream master), `nano-photon-trigobj-unseeded-forkmaster` (fix `42555a463` on the fork's May 2025 master),
+  `nano-photon-diphoton3018-2023names` (second change `8983610a713` on `8bb009d9b`; not a PR).
+- A fix for upstream goes to my fork first; the upstream PR is opened only after I confirm the fork branch.
+- The 2023 closure is cumulative, one change at a time: `stock` (area plain, neither change), `pr52514` (#52514 only),
+  `both` (area fixed, the rename on top of #52514). Same MINIAOD files in all three.
+- The closure runs in CMSSW_16_1_3, not on master: master cannot read 2023 MINIAOD (Gotchas), and
+  `triggerObjects_cff.py` is the same blob (`2691ff0e80b`) in CMSSW_16_1_3 and master.
 - Tag-and-probe: tag tight electron, pT > 35, |eta_SC| < 2.1, `HLT_Ele32_WPTight_Gsf`, matched (dR < 0.1) to the
   WPTight electron object and to a seeded-leg photon object of the family measured; probe cutBased >= 2, pT > 15,
   |eta_SC| < 2.5 outside 1.4442-1.566, opposite sign, 70 < m_ee < 110 GeV. Counting only, no fit; same-sign pairs
@@ -283,10 +444,12 @@ body from `pr/PR_body.md`.
   **Fix:** use a MINIAOD file of the same run and dataset as input.
 - **Symptom:** `dasgoclient` prints a Python error with the LCG view set up.
   **Cause:** LCG Python vs dasgoclient. Harmless; the query output is still correct.
-- **Symptom:** the Diphoton30_18 unseeded bit stays 0 even with the fix on 2023 or later input.
-  **Cause:** the 30_18 filters were renamed in 2023; the bit list has only the 2018 and 2022 names
-  (`NOTES.md` sections 7, 8, 15).
-  **Fix:** none in the one-line fix; measure the 30_18 leg on 2022 data.
+- **Symptom:** the Diphoton30_18 bits (18, 19 in master; 16, 17 in v12-v14) stay 0 on 2023 input from run 367661
+  (Run2023C-v3 on), even with #52514; on 2023D-v1 the seeded bit is 0 too.
+  **Cause:** the HLT renamed both 30_18 filters from run 367661; the bit list has only the old names (step 14;
+  `NOTES.md` sections 7, 8, 15).
+  **Fix:** branch `nano-photon-diphoton3018-2023names` (step 13) ORs old and new names; on 20000 D-v1 events bit 18 / 19
+  go from 0 / 0 to 13753 / 1781 (step 16).
 - **Symptom:** `node: No such file` for `$MAMBA_ENV/bin/node`.
   **Fix:** use `/usr/bin/node` with `NODE_PATH` set to the Playwright modules of `$MAMBA_ENV` (step 9).
 - **Symptom:** the local notes clone is gone after a session restart.
@@ -309,6 +472,28 @@ body from `pr/PR_body.md`.
 - **Symptom:** the MINIAOD and fixed NanoAOD counts differ by 1-3 tags or pairs in some files.
   **Cause:** NanoAOD stores eta, phi with 12 mantissa bits (deltaEtaSC 10); objects at a cut or bin edge move across.
   **Fix:** none needed; `tnp_miniaod.py ... nanoprec` reproduces the NanoAOD counts exactly (NOTES.md section 22).
+- **Symptom:** `cmsDriver.py: error: unrecognized arguments: --eras Run3_2023,run3_nanoAOD_pre142X` (exit 2).
+  **Fix:** the option is `--era`, with the comma-separated list.
+- **Symptom:** reading `Cv2_old.root` after `cmsRun <cfg> maxEvents=20000 outputFile=$OUT/Cv2_old.root` gives
+  "file ... does not exist" and a ROOT segmentation violation.
+  **Cause:** VarParsing appends `_numEvent<maxEvents>` to `outputFile`.
+  **Fix:** open `Cv2_old_numEvent20000.root` (step 14).
+- **Symptom:** `/afs/cern.ch/work/s/smahata: Read-only file system` or `No such file or directory` when creating a
+  release area.
+  **Cause:** no AFS work area for this account.
+  **Fix:** release areas on EOS, `/eos/user/s/smahata/nano3018_test/`.
+- **Symptom:** after `kill -TERM` of the parent bash of a loop of cmsDriver calls, the cmsRun it was running ended too.
+  **Fix:** one ssh session per cmsDriver (step 16), or one `nohup` per run (step 17).
+- **Symptom:** on the master IB `CMSSW_20_1_X_2026-11-19-2300` (= cms-sw/cmssw master `7167add78d2`) every 2023 MINIAOD
+  job stops while opening the input, stock included: `FileOpenError`, `Fatal Root Error: @SUB=TStreamerInfo::BuildCheck`,
+  "The StreamerInfo of class reco::PixelClusterTagInfo ... has the same version (=3) as the active class but a
+  different checksum"; cmsDriver exit 84 (HTCondor cluster 9802761, 3 / 3 jobs, 20 November).
+  **Cause:** per the ROOT message, the class changed on master without a version bump; not investigated further.
+  **Fix:** none on master; the closure runs in CMSSW_16_1_3 (Conventions). Reported on the backup page of the
+  supervisor deck.
+- **Symptom:** `ls -l` on the EOS mount shows `-?????????` and "No such file or directory" for a log a condor job
+  just wrote with `xrdcp`.
+  **Fix:** read it with `xrdcp -f root://eosuser.cern.ch/<path> <local file>`; cause not investigated.
 
 ## Changelog
 - 2026-11-09 — Runbook created from the 5–9 November work: 16_0_X and v13 data NANO, recipe check, local and
@@ -319,3 +504,7 @@ body from `pr/PR_body.md`.
   convention; gotchas for `python3 -I` with LCG and NanoAOD rounding; fixed-node and scratchpad-wipe entries tightened.
 - 2026-11-13 — Split into card `RUNBOOK.md` and this detail; new step 12 (fix branch onto upstream master by sparse
   clone and cherry-pick, compare API check, patch, PR text); conventions for the PR body, the EGM tag and signing.
+- 2026-11-20 — New steps 13-17 (2023 Diphoton30_18 rename change on the fork, MiniAOD name check, three 16_1_3 areas,
+  20k re-Nano bit count, cumulative closure submitted but unverified); Diphoton30_18 gotcha now points at the fix;
+  gotchas for `--era`, VarParsing output name, AFS work area, killed cmsDriver loop, master PixelClusterTagInfo,
+  EOS `?????????`; conventions for branches, fork-first, cumulative closure, 16_1_3 not master; deck line 15 pages.

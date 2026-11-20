@@ -60,14 +60,15 @@ basic faces).
 
 ## Where this lives on GitHub
 
-Everything is in the fork `santanumahata/cmssw` only; nothing was pushed to `cms-sw/cmssw` and no pull
-request has been opened.
+The branches are in the fork `santanumahata/cmssw`; nothing was pushed to `cms-sw/cmssw`. The fix is pull
+request #52514 (opened 14 November from `nano-photon-trigobj-unseeded`).
 
 - Notes, scripts, scan outputs, report and slides (this repository, as a branch of the fork):
   https://github.com/santanumahata/cmssw/tree/nanoaod-trigobj-notes
-- The fix on top of upstream master (branch for the future pull request, commit 8bb009d9b on upstream master 43690ddd6):
+- The fix on top of upstream master (the branch of #52514, commit 8bb009d9b on upstream master 43690ddd6):
   https://github.com/santanumahata/cmssw/tree/nano-photon-trigobj-unseeded
 - The same fix on the fork's own master (session working branch, commit 42555a463):
   https://github.com/santanumahata/cmssw/tree/nano-photon-trigobj-unseeded-forkmaster
-- To open the pull request later (creates nothing by itself):
-  https://github.com/cms-sw/cmssw/compare/master...santanumahata:cmssw:nano-photon-trigobj-unseeded
+- Second change, 2023 Diphoton30_18 filter names ORed into bits 18 and 19 (commit 8983610a713 on 8bb009d9b; not a
+  pull request):
+  https://github.com/santanumahata/cmssw/tree/nano-photon-diphoton3018-2023names

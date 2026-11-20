@@ -1,7 +1,7 @@
 # NanoAOD photon TrigObj fix: measurement, fix test and tag-and-probe — Quick Reference
 
 **Detail:** `RUNBOOK-DETAIL.md` — expected output, gotchas, conventions, changelog.
-**Where it runs:** lxplus (EL9) for steps 2-7a; locally for steps 1 (`kinit`), 8-12.
+**Where it runs:** lxplus (EL9) for steps 2-7a, 14-17; locally for steps 1 (`kinit`), 8-13.
 
 ### 1. Log in and get a proxy (by me, by hand)
 By hand: `kinit` locally, `voms-proxy-init` on lxplus; then
@@ -120,22 +120,45 @@ git ls-remote https://github.com/santanumahata/cmssw.git refs/heads/nanoaod-trig
 Rare and destructive (backup bundle, `filter-branch`, lease push): run it from `RUNBOOK-DETAIL.md` step 11.
 
 ### 12. Prepare the PR: fix branch on current upstream master
+Done 14 November (PR 52514 opened); see `RUNBOOK-DETAIL.md` step 12.
+
+### 13. Second change: Diphoton30_18 bits accept old and new filter names (fork only)
+One-off, done 19 November (`8983610a713` on `8bb009d9b`); see `RUNBOOK-DETAIL.md` step 13.
+
+### 14. MiniAOD check: which Diphoton30_18 filter names fire in which 2023 era
+Four `cmsRun` in `cmssw-el7` (CMSSW_13_0_13 analyzer), counts with ROOT; see `RUNBOOK-DETAIL.md` step 14.
+
+### 15. Build three CMSSW_16_1_3 areas on EOS: plain, pr52514, fixed
 ```bash
-S=SESSION_SCRATCH; N=$S/notes_repo
-cd $S && git clone -q --depth 1 --filter=blob:none --sparse https://github.com/cms-sw/cmssw.git rebase_fix
-cd rebase_fix
-git sparse-checkout set PhysicsTools/NanoAOD/python
-git config user.name santanumahata
-git config user.email santanuedu.m@gmail.com
-git fetch -q --depth 2 https://github.com/santanumahata/cmssw.git nano-photon-trigobj-unseeded
-git cherry-pick FETCH_HEAD
-git log -2 --format='%h %an <%ae> | %cn <%ce> | %s'
-git diff --stat HEAD~1 HEAD
-git -c credential.helper='!f(){ echo username=santanumahata; echo password=$GH_TOKEN; }; f' \
-  push --force-with-lease=nano-photon-trigobj-unseeded:<old full sha> \
-  https://github.com/santanumahata/cmssw.git HEAD:refs/heads/nano-photon-trigobj-unseeded
-git ls-remote https://github.com/santanumahata/cmssw.git refs/heads/nano-photon-trigobj-unseeded
-curl -s "https://api.github.com/repos/cms-sw/cmssw/compare/master...santanumahata:cmssw:nano-photon-trigobj-unseeded" \
- | python3 -c 'import json,sys; d=json.load(sys.stdin); print("status", d.get("status"), "ahead", d.get("ahead_by"), "behind", d.get("behind_by")); [print(f["filename"], "+%d -%d" % (f["additions"], f["deletions"])) for f in d.get("files", [])]'
-git format-patch -1 HEAD --stdout > $N/pr/0001-NanoAOD-photon-TrigObj-unseeded-collection.patch
+source /cvmfs/cms.cern.ch/cmsset_default.sh
+export SCRAM_ARCH=el9_amd64_gcc13
+W=/eos/user/s/smahata/nano3018_test
+mkdir -p $W/plain $W/pr52514 $W/fixed
+cd $W/plain && scram project CMSSW CMSSW_16_1_3
+cd $W/pr52514 && scram project CMSSW CMSSW_16_1_3 && cd CMSSW_16_1_3/src && eval `scram runtime -sh`
+git cms-init --upstream-only
+git cms-addpkg PhysicsTools/NanoAOD
+git fetch https://github.com/santanumahata/cmssw.git nano-photon-trigobj-unseeded
+git checkout FETCH_HEAD -- PhysicsTools/NanoAOD/python/triggerObjects_cff.py
+git diff --stat HEAD
+scram b -j 8 > $W/pr52514/build.log 2>&1; echo "build exit $?"
+# same six lines in $W/fixed with branch nano-photon-diphoton3018-2023names
 ```
+
+### 16. Re-make 2023 NANO (20000 events) and count bits 18, 19
+One-off, done 19-20 November: one `cmsDriver.py ... -n 20000` per area and file, each in its own ssh session, then a ROOT
+count; see `RUNBOOK-DETAIL.md` step 16.
+
+### 17. Closure: 2023 trigger efficiency, cumulative steps (outputs not yet checked)
+```bash
+cd ~/closure_2023_condor && mkdir -p logs
+cp /tmp/x509up_u170597 ~/private/x509_proxy
+source /cvmfs/cms.cern.ch/cmsset_default.sh
+W=/eos/user/s/smahata/nano3018_test
+# write inputs.txt (files 0-9) and inputs_more.txt (10-39): loop in RUNBOOK-DETAIL.md step 17
+for T in Cv2 Cv4 Dv1; do for S in stock pr52514 both; do mkdir -p $W/closure_2023/$T/$S; done; done
+sed 's/from inputs.txt/from inputs_more.txt/' closure.sub > closure_more.sub
+condor_submit closure.sub
+condor_submit closure_more.sub
+```
+The `nohup` quick check on lxplus9108 is in `RUNBOOK-DETAIL.md` step 17.

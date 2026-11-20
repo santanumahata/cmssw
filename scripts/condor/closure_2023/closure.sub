@@ -1,0 +1,11 @@
+executable            = nano_job.sh
+arguments             = $(tag) $(step) $(area) $(lfn) $(idx)
+output                = logs/$(tag)_$(step)_$(idx).out
+error                 = logs/$(tag)_$(step)_$(idx).err
+log                   = logs/closure.log
+use_x509userproxy     = true
+x509userproxy         = /afs/cern.ch/user/s/smahata/private/x509_proxy
++JobFlavour           = "workday"
+MY.WantOS             = "el9"
+request_cpus          = 1
+queue tag, step, area, lfn, idx from inputs.txt
