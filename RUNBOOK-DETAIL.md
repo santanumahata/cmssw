@@ -172,8 +172,9 @@ export NODE_PATH=$MAMBA_ENV/lib/node_playwright/node_modules   # MAMBA_ENV: the 
 are flagged; they were flagged before the November changes too. HTML slides embed figures as base64 data URIs;
 a new slide is a file in `project/slides/` plus its id in `project/deck.json` `order`.
 The supervisor deck (local only, not in this repository) is built the same way as the Beamer one, from
-`<session folder>/slides/supervisor_10/src/trigobj_short.tex`: 15 pages, 0 overfull (20 November); the last page,
-after `\appendix`, is backup.
+`<session folder>/slides/supervisor_10/src/trigobj_short.tex`: 19 pages, 0 overfull (20 November); title page
+"EGM General Meeting" with `plots/logo_tifr.png` and `plots/logo_cms.png`; the last page, after `\appendix`, is backup
+(the efficiency-plot captions).
 
 ### 10. Commit and push to the fork only
 **Known-good command:**
@@ -235,28 +236,37 @@ commit, diff and `pr/PR_body.md` 0. I then open the PR by hand from
 `https://github.com/cms-sw/cmssw/compare/master...santanumahata:cmssw:nano-photon-trigobj-unseeded`, title and
 body from `pr/PR_body.md`.
 
-### 13. Second change: Diphoton30_18 bits accept old and new filter names (fork only)
-**Known-good command (local cmssw clone, run 19 November):**
+### 13. Second change: Diphoton30_18 bits accept old and new filter names (fork branch on master, PR-ready)
+**Known-good command (local cmssw clone, run 20 November; remotes `origin` = cms-sw, `my-cmssw` = my fork):**
 ```bash
-cd /home/santanu/Videos/cmssw
-git remote add my-cmssw https://github.com/santanumahata/cmssw.git
-git fetch my-cmssw nano-photon-trigobj-unseeded
-git checkout -b nano-photon-diphoton3018-2023names my-cmssw/nano-photon-trigobj-unseeded
-# edit PhysicsTools/NanoAOD/python/triggerObjects_cff.py, Photon bits: the two Diphoton30_18 mksel lines become
+# the change is commit 8983610a713 (made 19 November on top of 8bb009d9b); the two Diphoton30_18 mksel lines become
 #   # Diphoton30_18 legs: HLT renamed both filters during Run2023C-v3, keep old and new names
 #   mksel(["hltEG30Iso60CaloId15b35eR9Id50b90eHE12b10eR9Id50b80eEcalIsoFilter","hltEG30Iso60b40eCaloId11b32eHE10b9eR9Id50b90eEcalIsoFilter"]),
 #   mksel(["hltEG18TrackIso60Iso60CaloId15b35eR9Id50b90eHE12b10eR9Id50b80eTrackIsoUnseededFilter","hltDiEG18TrackIso60Iso60b40eCaloId11b32eHE10b9eR9Id50b90eTrackIsoUnseededFilter"]),
-python3 -c "import ast; ast.parse(open('PhysicsTools/NanoAOD/python/triggerObjects_cff.py').read()); print('parse OK')"
-git diff --stat
-git add PhysicsTools/NanoAOD/python/triggerObjects_cff.py
-git commit -m "NanoAOD TrigObj: OR the 2023 Diphoton30_18 filter names into the photon bits"
-git -c credential.helper='!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f' \
-  push -q https://github.com/santanumahata/cmssw.git HEAD:refs/heads/nano-photon-diphoton3018-2023names
-git ls-remote https://github.com/santanumahata/cmssw.git refs/heads/nano-photon-diphoton3018-2023names   # equals HEAD
+cd /home/santanu/Videos/cmssw
+F=PhysicsTools/NanoAOD/python/triggerObjects_cff.py
+git fetch origin master
+git log --oneline 5cc01a5cbb4..origin/master -- $F         # empty: file unchanged upstream since my May fetch
+git grep -n -e 'Iso60CaloId15b35e' -e 'Iso60b40eCaloId11b32e' origin/master -- $F
+git branch -m nano-photon-diphoton3018-2023names nano-photon-diphoton3018-2023names-on52514   # keeps 8983610a713
+git switch -c nano-photon-diphoton3018-2023names origin/master
+git cherry-pick 8983610a713
+git log --oneline origin/master..HEAD
+git diff --stat origin/master..HEAD
+python3 -m py_compile $F
+git push --force-with-lease=nano-photon-diphoton3018-2023names:8983610a713 \
+  "https://santanumahata:${GH_TOKEN}@github.com/santanumahata/cmssw.git" nano-photon-diphoton3018-2023names
+git fetch -q my-cmssw nano-photon-diphoton3018-2023names
+git rev-list --left-right --count origin/master...FETCH_HEAD
 ```
-**Expect:** parse OK; hunk `@@ -113,2 +113,3 @@` (+3 -2); commit `8983610a713` on `8bb009d9b`, `git log` author `smahata <santanu.mahata@cern.ch>`, 19 Nov 23:56 +0100.
-`mksel` of a list ORs the names; the bit documentation reads "old OR new". Not a PR: an upstream PR only after I
-confirm the fork branch.
+**Expect (20 November):** master `7167add78d2`; the Diphoton30_18 lines 113-114 carry the old names only (the grep also
+matches the Diphoton30_22 lines 110-111); `mksel` takes a list on master (`triggerObjects_cff.py:24`). Cherry-pick clean; one commit `68fc08904d9`,
+author and committer `smahata <santanu.mahata@cern.ch>`; `triggerObjects_cff.py | 5 +++--`; parse OK. Push
+`8983610a713...68fc08904d9 (forced update)`; rev-list `0 1`. Name check of commit, diff, branch name and PR text 0.
+The code is independent of #52514 (different line); the unseeded bit needs both. Upstream diff, without opening a PR:
+`https://github.com/cms-sw/cmssw/compare/master...santanumahata:cmssw:nano-photon-diphoton3018-2023names`. The
+cms-sw PR template is `pull_request_template.md` at the cmssw root: PR description, PR validation, a backport
+section, a checklist. Not yet a PR: I open it only after I confirm.
 
 ### 14. MiniAOD check: which Diphoton30_18 filter names fire in which 2023 era
 Analyzer area `/eos/user/s/smahata/edanalyzer/CMSSW_13_0_13` (an EL7 release, so `cmssw-el7`); configs
@@ -400,8 +410,11 @@ so stock and pr52514 on new-name files (C-v4, D-v1) are expected to give no tags
   containing such a name become placeholders (`$MAMBA_ENV`, `SESSION_WORKDIR`, `SESSION_SCRATCH`).
 - Fork branches: `nanoaod-trigobj-notes` (this repository), `nano-photon-trigobj-unseeded` (fix `8bb009d9b` on
   upstream master), `nano-photon-trigobj-unseeded-forkmaster` (fix `42555a463` on the fork's May 2025 master),
-  `nano-photon-diphoton3018-2023names` (second change `8983610a713` on `8bb009d9b`; not a PR).
+  `nano-photon-diphoton3018-2023names` (second change `68fc08904d9` on upstream master `7167add78d2`; not yet a PR;
+  the earlier `8983610a713` on `8bb009d9b` is kept only in the local branch `nano-photon-diphoton3018-2023names-on52514`).
 - A fix for upstream goes to my fork first; the upstream PR is opened only after I confirm the fork branch.
+- Each upstream PR branch sits on current cms-sw master and carries only its own lines
+  (`git diff --stat origin/master..HEAD`), also when its effect needs another open PR (step 13).
 - The 2023 closure is cumulative, one change at a time: `stock` (area plain, neither change), `pr52514` (#52514 only),
   `both` (area fixed, the rename on top of #52514). Same MINIAOD files in all three.
 - The closure runs in CMSSW_16_1_3, not on master: master cannot read 2023 MINIAOD (Gotchas), and
@@ -494,6 +507,12 @@ so stock and pr52514 on new-name files (C-v4, D-v1) are expected to give no tags
 - **Symptom:** `ls -l` on the EOS mount shows `-?????????` and "No such file or directory" for a log a condor job
   just wrote with `xrdcp`.
   **Fix:** read it with `xrdcp -f root://eosuser.cern.ch/<path> <local file>`; cause not investigated.
+- **Symptom:** pushing the rebuilt second-change branch: `! [rejected] ... (non-fast-forward)`.
+  **Cause:** the fork already had `nano-photon-diphoton3018-2023names` at the old commit `8983610a713` (on #52514).
+  **Fix:** `git push --force-with-lease=<branch>:<old sha>` (step 13); the old commit stays in a local backup branch.
+- **Symptom:** a raw-byte grep of a PDF for `NAME_PATTERN` reports one hit; `pdftotext` and `pdfinfo` show none.
+  **Cause:** a short name in the pattern matches random bytes inside a compressed stream (`strings <pdf> | grep`
+  shows the byte run). **Fix:** none needed; the name check of a PDF is `pdftotext` plus `pdfinfo` (step 10).
 
 ## Changelog
 - 2026-11-09 — Runbook created from the 5–9 November work: 16_0_X and v13 data NANO, recipe check, local and
@@ -508,3 +527,6 @@ so stock and pr52514 on new-name files (C-v4, D-v1) are expected to give no tags
   20k re-Nano bit count, cumulative closure submitted but unverified); Diphoton30_18 gotcha now points at the fix;
   gotchas for `--era`, VarParsing output name, AFS work area, killed cmsDriver loop, master PixelClusterTagInfo,
   EOS `?????????`; conventions for branches, fork-first, cumulative closure, 16_1_3 not master; deck line 15 pages.
+- 2026-11-20 — Step 13 redone: second change cherry-picked onto cms-sw master `7167add78d2` as `68fc08904d9` (only
+  its 3 lines), fork branch replaced by a lease push, old commit kept locally; convention one PR branch = own lines on
+  master; gotchas for the rejected push and the raw-byte PDF grep; deck line 19 pages, EGM title page and logos.

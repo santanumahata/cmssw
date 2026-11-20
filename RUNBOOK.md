@@ -122,8 +122,8 @@ Rare and destructive (backup bundle, `filter-branch`, lease push): run it from `
 ### 12. Prepare the PR: fix branch on current upstream master
 Done 14 November (PR 52514 opened); see `RUNBOOK-DETAIL.md` step 12.
 
-### 13. Second change: Diphoton30_18 bits accept old and new filter names (fork only)
-One-off, done 19 November (`8983610a713` on `8bb009d9b`); see `RUNBOOK-DETAIL.md` step 13.
+### 13. Second change: Diphoton30_18 bits accept old and new filter names (fork branch on master, PR-ready)
+One-off, done 20 November (`68fc08904d9` on master `7167add78d2`); see `RUNBOOK-DETAIL.md` step 13.
 
 ### 14. MiniAOD check: which Diphoton30_18 filter names fire in which 2023 era
 Four `cmsRun` in `cmssw-el7` (CMSSW_13_0_13 analyzer), counts with ROOT; see `RUNBOOK-DETAIL.md` step 14.
