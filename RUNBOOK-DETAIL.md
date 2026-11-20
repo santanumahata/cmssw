@@ -172,7 +172,8 @@ export NODE_PATH=$MAMBA_ENV/lib/node_playwright/node_modules   # MAMBA_ENV: the 
 are flagged; they were flagged before the November changes too. HTML slides embed figures as base64 data URIs;
 a new slide is a file in `project/slides/` plus its id in `project/deck.json` `order`.
 The supervisor deck (local only, not in this repository) is built the same way as the Beamer one, from
-`<session folder>/slides/supervisor_10/src/trigobj_short.tex`: 19 pages, 0 overfull (20 November); title page
+`<session folder>/slides/supervisor_10/src/Missing_unseeded_photon_filter_bits_in_NanoAOD_identification_and_fix_Santanu_Mahata.tex`
+(file name = talk title plus my name; was `trigobj_short.tex`): 19 pages, 0 overfull (20 November); title page
 "EGM General Meeting" with `plots/logo_tifr.png` and `plots/logo_cms.png`; the last page, after `\appendix`, is backup
 (the efficiency-plot captions).
 
@@ -530,3 +531,4 @@ so stock and pr52514 on new-name files (C-v4, D-v1) are expected to give no tags
 - 2026-11-20 — Step 13 redone: second change cherry-picked onto cms-sw master `7167add78d2` as `68fc08904d9` (only
   its 3 lines), fork branch replaced by a lease push, old commit kept locally; convention one PR branch = own lines on
   master; gotchas for the rejected push and the raw-byte PDF grep; deck line 19 pages, EGM title page and logos.
+- 2026-11-20 — Supervisor deck source and outputs renamed to the talk title plus my name (step 9).
